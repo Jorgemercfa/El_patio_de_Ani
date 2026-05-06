@@ -36,6 +36,16 @@ import Footer from '@/components/Footer-item.vue';
             </div>
 
             <div class="form-group">
+              <label>Distrito</label>
+              <input type="text" name="Distrito" />
+            </div>
+
+            <div class="form-group">
+              <label>Fecha</label>
+              <input type="date" name="Fecha" />
+            </div>
+
+            <div class="form-group">
               <label>Mensaje</label>
               <textarea name="Mensaje" rows="4"></textarea>
             </div>
@@ -46,9 +56,9 @@ import Footer from '@/components/Footer-item.vue';
           <!-- INFORMACIÓN -->
           <div class="contact-info">
             <h2>Información de contacto</h2>
-            <p><strong>Teléfono:</strong> (01) 111 1111</p>
-            <p><strong>Celular:</strong> 999 999 999</p>
-            <p><strong>Correo:</strong> altoque@gamil.com</p>
+            <!-- <p><strong>Teléfono:</strong> (01) 111 1111</p> -->
+            <p><strong class="contact-info-subtitle">Celular:</strong> +51 975 495 623</p>
+            <p><strong class="contact-info-subtitle">Correo:</strong> elpatiodeani@gmail.com</p>
           </div>
         </div>
       </div>
@@ -84,13 +94,14 @@ import Footer from '@/components/Footer-item.vue';
   font-weight: 700;
   margin-bottom: 50px;
   position: relative;
+  color: #2D3E94;
 }
 
 .main-title::after {
   content: '';
   width: 80px;
   height: 4px;
-  background-color: #325bcd;
+  background-color: #E91E81;
   display: block;
   margin-top: 10px;
   border-radius: 2px;
@@ -122,7 +133,7 @@ import Footer from '@/components/Footer-item.vue';
 .form-group label {
   font-weight: 500;
   margin-bottom: 6px;
-  color: #333;
+  color: #E91E81;
 }
 
 .form-group input,
@@ -148,15 +159,15 @@ import Footer from '@/components/Footer-item.vue';
   padding: 14px;
   border-radius: 12px;
   border: none;
-  background-color: #325bcd;
-  color: white;
+  background-color: #FFD200;
+  color: #2D3E94;
   font-weight: 600;
   cursor: pointer;
   transition: 0.3s ease;
 }
 
 .submit-btn:hover {
-  background-color: #2e8f12;
+  background-color: #FFD200;
   transform: translateY(-2px);
 }
 
@@ -168,11 +179,20 @@ import Footer from '@/components/Footer-item.vue';
   justify-content: center;
   gap: 15px;
   font-size: 15px;
+  color: #2D3E94;
 }
 
 .contact-info h2 {
   margin-bottom: 15px;
+  color: #2D3E94;
 }
+
+.contact-info-subtitle {
+  font-size: 14px;
+  color: #E91E81;
+}
+
+
 
 /* RESPONSIVE */
 @media (max-width: 900px) {
