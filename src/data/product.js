@@ -219,43 +219,9 @@ export default [
     details_button: 'Ver Detalles',
   },
 
-  // --- SERVICIOS: CARRITOS DE SNACKS ---
-  {
-    id: 8,
-    name: 'Carrito de Snacks Salados',
-    shortDescription: 'Popcorn, Panchos y Mini Hamburguesas',
-    longDescription:
-      'Servicio de snacks que incluye opciones como Mini Cheeseburgers, Mini Chorizos y Popcorn en cono o caja.',
-    image: product4,
-    price: 350,
-    category: 'Catering',
-    subcategory: 'Snacks',
-    options: ['Popcorn', 'Mini Hamburguesas', 'Panchos'],
-    Terms_of_use:
-      'Instalación 1 hora antes. No se instala en vía pública. Reserva con el 50%.',
-    buy_button: 'RESERVAR',
-    details_button: 'Ver Snacks',
-  },
-  {
-    id: 9,
-    name: 'Carrito de Snacks Dulces',
-    shortDescription: 'Algodón de azúcar y Helados Soft',
-    longDescription:
-      'Variedad de dulces para eventos: Algodón de azúcar, Churros, Mini Piononos y Helados Soft.',
-    image: product5,
-    price: 350,
-    category: 'Catering',
-    subcategory: 'Snacks',
-    options: ['Algodón de Azúcar', 'Helados', 'Churros'],
-    Terms_of_use:
-      'Sujeto a disponibilidad de fecha. Incluye personal de atención.',
-    buy_button: 'RESERVAR',
-    details_button: 'Ver Dulces',
-  },
-
   // --- SERVICIOS: JUEGOS E INFLABLES ---
   {
-    id: 10,
+    id: 8,
     name: 'Inflable Temático Tropical',
     shortDescription: 'Inflable acuático o con pelotas',
     longDescription:
@@ -271,7 +237,7 @@ export default [
     details_button: 'Ver Dimensiones',
   },
   {
-    id: 11,
+    id: 9,
     name: 'Trampolín Grande (3.60m)',
     shortDescription: 'Cama elástica con malla de seguridad',
     longDescription:
@@ -289,7 +255,7 @@ export default [
 
   // --- SERVICIOS: PINTACARITAS Y ESTÉTICA ---
   {
-  id: 12,
+  id: 10,
   name: 'Pintacaritas - Paquete Mix',
   shortDescription: 'Caritas pintadas con glitter y diseños a elección',
   longDescription: 'Show de maquillaje artístico infantil con diseños a elección, pinturas profesionales y aplicación de glitter. El artista llega con todo el equipo listo para transformar a los niños con sus personajes favoritos.',
@@ -312,7 +278,7 @@ export default [
 },
 
 {
-  id: 13,
+  id: 11,
   name: 'Glitter Bar Kids - Paquete Único',
   shortDescription: 'Glitter, gemas y tatuajes de brillantina',
   longDescription: 'Experiencia de belleza infantil llena de brillo y glamour. Incluye artista especializada, mucho glitter, gemas y glitter tattoo para que los niños luzcan increíbles en su fiesta.',
@@ -337,7 +303,7 @@ export default [
 // CARRITOS SNACKS - SALADOS
 // ================================
 {
-  id: 14,
+  id: 12,
   name: 'Popcorn en Cono',
   shortDescription: 'Palomitas de maíz servidas en cono',
   longDescription: 'Carrito de popcorn clásico con 100 unidades servidas en cono. Perfecto para animar cualquier evento infantil.',
@@ -352,7 +318,7 @@ export default [
 },
 
 {
-  id: 15,
+  id: 13,
   name: 'Popcorn en Caja',
   shortDescription: 'Palomitas de maíz servidas en caja',
   longDescription: 'Carrito de popcorn con 100 unidades servidas en caja. Una presentación más elegante para tus eventos.',
@@ -367,7 +333,7 @@ export default [
 },
 
 {
-  id: 16,
+  id: 14,
   name: 'Mini Cheeseburger',
   shortDescription: 'Mini hamburguesas con queso para eventos',
   longDescription: 'Deliciosas mini cheeseburgers preparadas al momento. 50 unidades ideales para compartir en fiestas y eventos infantiles.',
@@ -382,7 +348,7 @@ export default [
 },
 
 {
-  id: 17,
+  id: 15,
   name: 'Mini Hamburguesa',
   shortDescription: 'Mini hamburguesas clásicas para eventos',
   longDescription: 'Mini hamburguesas clásicas preparadas al momento. 50 unidades perfectas para cualquier celebración.',
@@ -397,7 +363,7 @@ export default [
 },
 
 {
-  id: 18,
+  id: 16,
   name: 'Panchos',
   shortDescription: 'Panchos en palito estilo feria',
   longDescription: 'Los clásicos panchos en palito, crujientes por fuera y jugosos por dentro. 50 unidades para alegrar tu evento.',
@@ -412,7 +378,7 @@ export default [
 },
 
 {
-  id: 19,
+  id: 17,
   name: 'Mini Hot Dog',
   shortDescription: 'Mini hot dogs para compartir en eventos',
   longDescription: 'Mini hot dogs preparados al momento, tiernos y sabrosos. 50 unidades ideales para eventos y cumpleaños.',
@@ -427,7 +393,7 @@ export default [
 },
 
 {
-  id: 20,
+  id: 18,
   name: 'Mini Chorizo',
   shortDescription: 'Mini chorizos al pan para eventos',
   longDescription: 'Mini chorizos jugosos servidos en pan. 50 unidades con todo el sabor para disfrutar en tu celebración.',
@@ -445,7 +411,7 @@ export default [
 // CARRITOS SNACKS - DULCES
 // ================================
 {
-  id: 21,
+  id: 19,
   name: 'Algodón de Azúcar',
   shortDescription: 'Algodón de azúcar esponjoso y colorido',
   longDescription: 'El clásico algodón de azúcar que encanta a chicos y grandes. 100 unidades de puro dulzor para tu evento.',
@@ -460,7 +426,7 @@ export default [
 },
 
 {
-  id: 22,
+  id: 20,
   name: 'Churros',
   shortDescription: 'Churros crujientes recién hechos',
   longDescription: 'Churros dorados y crujientes preparados al momento. 100 unidades para endulzar cualquier celebración.',
@@ -475,7 +441,7 @@ export default [
 },
 
 {
-  id: 23,
+  id: 21,
   name: 'Mini Pionono',
   shortDescription: 'Mini piononos dulces enrollados',
   longDescription: 'Deliciosos mini piononos esponjosos y dulces. 100 unidades ideales para endulzar tu evento o cumpleaños.',
@@ -490,7 +456,7 @@ export default [
 },
 
 {
-  id: 24,
+  id: 22,
   name: 'Mini Orejitas',
   shortDescription: 'Mini orejitas hojaldradas y crocantes',
   longDescription: 'Mini orejitas de hojaldre crocantes y dulces. 100 unidades perfectas para acompañar cualquier fiesta.',
@@ -505,7 +471,7 @@ export default [
 },
 
 {
-  id: 25,
+  id: 23,
   name: 'Niditos de Amor',
   shortDescription: 'Galletas nidito con mermelada de corazón',
   longDescription: 'Tiernas galletas nidito rellenas de mermelada en forma de corazón. 100 unidades que llenan de amor y dulzura tu evento.',
@@ -520,7 +486,7 @@ export default [
 },
 
 {
-  id: 26,
+  id: 24,
   name: 'Helados Soft',
   shortDescription: 'Helados soft cremosos para eventos',
   longDescription: 'Helados soft cremosos preparados al instante con máquina profesional. 100 unidades para refrescar y deleitar a todos en tu fiesta.',
@@ -538,7 +504,7 @@ export default [
 // DÚO PACKS
 // ================================
 {
-  id: 27,
+  id: 25,
   name: 'Dúo Pack - Algodón + Popcorn',
   shortDescription: 'Combo dulce: algodón de azúcar y popcorn en cono',
   longDescription: 'El dúo perfecto para satisfacer a todos: algodón de azúcar y popcorn en cono. Dos carritos en uno para tu evento.',
@@ -557,7 +523,7 @@ export default [
 },
 
 {
-  id: 28,
+  id: 26,
   name: 'Dúo Pack - Popcorn + Mini Hamb',
   shortDescription: 'Combo salado: popcorn en cono y mini hamburguesas',
   longDescription: 'La combinación ganadora entre salado y más salado: popcorn en cono y mini hamburguesas para tu evento.',
@@ -576,7 +542,7 @@ export default [
 },
 
 {
-  id: 29,
+  id: 27,
   name: 'Dúo Pack - Popcorn + Panchos',
   shortDescription: 'Combo salado: popcorn en cono y panchos',
   longDescription: 'El dúo clásico de feria: popcorn en cono y panchos en palito. Dos sabores favoritos para alegrar tu celebración.',
@@ -598,7 +564,7 @@ export default [
 // COMBOS SNACKS
 // ================================
 {
-  id: 30,
+  id: 28,
   name: 'Combo Snacks - Popcorn + Mini Hamb + Panchos',
   shortDescription: 'Combo triple salado para grandes eventos',
   longDescription: 'El combo más completo en salados: popcorn en cono, mini hamburguesas y panchos. Ideal para eventos con muchos invitados.',
@@ -618,7 +584,7 @@ export default [
 },
 
 {
-  id: 31,
+  id: 29,
   name: 'Combo Snacks - Churros + Mini Hamb + Mini Chorizo',
   shortDescription: 'Combo mixto dulce y salado para eventos',
   longDescription: 'La mezcla perfecta de dulce y salado: churros, mini hamburguesas y mini chorizos. Un combo irresistible para tu fiesta.',
@@ -638,7 +604,7 @@ export default [
 },
 
 {
-  id: 32,
+  id: 30,
   name: 'Combo Snacks - Popcorn en Caja + Algodón + Mini Hot Dog',
   shortDescription: 'Combo dulce-salado con hot dog, algodón y popcorn',
   longDescription: 'El equilibrio ideal entre dulce y salado: popcorn en caja, algodón de azúcar y mini hot dogs. Un combo para todos los gustos.',
