@@ -3,10 +3,16 @@ import product2 from '@/assets/showpackage2.png';
 import product3 from '@/assets/showpackage3.png';
 import product4 from '@/assets/competitionsgames.png';
 import product5 from '@/assets/magics_show.png';
-import product6 from '@/assets/coupon6.png';
-import product7 from '@/assets/coupon7.png';
-
-import product12 from '@/assets/picture3.png';
+import product6 from '@/assets/inflatable1.png';
+import product7 from '@/assets/inflatable2.png';
+import product8 from '@/assets/inflatable3.png';
+import product9 from '@/assets/inflatable4.png';
+import product10 from '@/assets/inflatable5.png';
+import product11 from '@/assets/inflatable6.png';
+import product12 from '@/assets/inflatable7.png';
+import product13 from '@/assets/inflatable8.png';
+import product14 from '@/assets/inflatable9.png';
+import facepaint from '@/assets/picture3.png';
 import productSnack1 from '@/assets/productSnack1.png';
 import productSnack2 from '@/assets/productSnack2.png';
 import productSnack3 from '@/assets/productSnack3.png';
@@ -219,7 +225,7 @@ export default [
     details_button: 'Ver Detalles',
   },
 
-  // --- SERVICIOS: JUEGOS E INFLABLES ---
+  // --- SERVICIOS: INFLABLES ---
   {
     id: 8,
     name: 'Inflable Temático Tropical',
@@ -237,7 +243,152 @@ export default [
     details_button: 'Ver Dimensiones',
   },
   {
-    id: 9,
+  id: 9,
+  name: 'Inflable Splash',
+  shortDescription: 'Inflable con área de juego y agua o pelotas',
+  longDescription: 'Inflable Splash ideal para niños de 2 a 10 años. Disfrútalo con agua para refrescarse o con pelotitas de colores. Base cuadrada perfecta para espacios medianos.',
+  image: product7,
+  price: 400,
+  category: 'Juegos e Inflables',
+  subcategory: 'Inflables',
+  age_range: '2-10 años',
+  dimensions: 'Alto: 2.30m | Base: 4m x 4m',
+  options: [
+    'Con agua: S/ 480.00',
+    'Con pelotitas: S/ 400.00',
+  ],
+  Terms_of_use: 'Requiere conexión eléctrica. El precio no incluye movilidad.',
+  buy_button: 'ALQUILAR',
+  details_button: 'Ver Detalles',
+},
+{
+  id: 10,
+  name: 'Inflable Lava',
+  shortDescription: 'Inflable grande con doble tobogán y agua o pelotas',
+  longDescription: 'Impresionante inflable temática lava con doble tobogán y amplia zona de juego. Disponible con agua o pelotitas. Ideal para grandes celebraciones al aire libre.',
+  image: product8,
+  price: 550,
+  category: 'Juegos e Inflables',
+  subcategory: 'Inflables',
+  dimensions: 'Alto: 3.7m | Ancho: 5.5m | Largo: 6.8m',
+  options: [
+    'Con agua: S/ 630.00',
+    'Con pelotitas: S/ 550.00',
+  ],
+  Terms_of_use: 'Requiere conexión eléctrica. El precio no incluye movilidad.',
+  buy_button: 'ALQUILAR',
+  details_button: 'Ver Detalles',
+},
+{
+  id: 11,
+  name: 'Inflable Blanco',
+  shortDescription: 'Inflable blanco personalizable con vinilos o arco de globos',
+  longDescription: 'Elegante inflable blanco tipo castillo, perfecto para personalizar con vinilos temáticos o arco de globos. Ideal para fiestas con temática específica para los más pequeños.',
+  image: product9,
+  price: 420,
+  category: 'Juegos e Inflables',
+  subcategory: 'Inflables',
+  age_range: '2-6 años',
+  dimensions: 'Alto: 3m | Base: 4m x 4m',
+  options: [
+    'Precio base: S/ 420.00',
+    '+ 1 Vinil temático: S/ 90.00',
+    '+ 2 Vinilos temáticos: S/ 160.00',
+    '+ Arco de globos: S/ 120.00',
+  ],
+  Terms_of_use: 'Requiere conexión eléctrica. El precio base no incluye movilidad ni personalización.',
+  buy_button: 'ALQUILAR',
+  details_button: 'Ver Detalles',
+},
+{
+  id: 12,
+  name: 'Inflable Camaleón',
+  shortDescription: '8 diseños temáticos a elección',
+  longDescription: 'Inflable grande con tobogán disponible en 8 diseños temáticos: Frozen, Moana, Encanto, Jurassic World, Paw Patrol, Cars, Mickey Mouse y Princess. Elige el favorito de los niños.',
+  image: product10,
+  price: 650,
+  category: 'Juegos e Inflables',
+  subcategory: 'Inflables',
+  dimensions: 'Alto: 4m | Ancho: 5.5m | Largo: 5.5m',
+  options: [
+    'Frozen',
+    'Moana',
+    'Encanto',
+    'Jurassic World',
+    'Paw Patrol',
+    'Cars',
+    'Mickey Mouse Club House',
+    'Princess',
+  ],
+  Terms_of_use: 'Requiere conexión eléctrica. El precio no incluye movilidad.',
+  buy_button: 'ALQUILAR',
+  details_button: 'Ver Diseños',
+},
+{
+  id: 13,
+  name: 'Inflable Arcoíris',
+  shortDescription: 'Megainflable con doble tobogán de altura',
+  longDescription: 'El inflable más alto del catálogo con 6.5 metros de altura y doble tobogán en colores arcoíris. Perfecto para eventos grandes que buscan la atracción principal.',
+  image: product11,
+  price: 750,
+  category: 'Juegos e Inflables',
+  subcategory: 'Inflables',
+  dimensions: 'Alto: 6.5m | Ancho: 4.5m | Largo: 11m',
+  Terms_of_use: 'Requiere conexión eléctrica. El precio no incluye movilidad.',
+  buy_button: 'ALQUILAR',
+  details_button: 'Ver Detalles',
+},
+{
+  id: 14,
+  name: 'Inflable Acuático Curve Little Tikes',
+  shortDescription: 'Inflable acuático con tobogán y área de pelotas',
+  longDescription: 'Inflable acuático Little Tikes con tobogán curvo, piscina inferior y área de pelotas. Doble modalidad: con agua o con pelotitas. Ideal para niños de 5 a 10 años.',
+  image: product12,
+  price: 450,
+  category: 'Juegos e Inflables',
+  subcategory: 'Inflables',
+  age_range: '5-10 años',
+  dimensions: 'Alto: 2.4m | Ancho: 2.9m | Largo: 3.9m',
+  options: [
+    'Con pelotitas: S/ 450.00',
+    'Acuático: S/ 530.00',
+  ],
+  Terms_of_use: 'Requiere conexión eléctrica. El precio no incluye movilidad.',
+  buy_button: 'ALQUILAR',
+  details_button: 'Ver Detalles',
+},
+{
+  id: 15,
+  name: 'Inflable Grande Little Tikes',
+  shortDescription: 'Inflable clásico con tobogán para los más pequeños',
+  longDescription: 'Inflable Little Tikes con tobogán y zona de saltos. Diseño seguro y colorido especialmente pensado para niños de 2 a 5 años.',
+  image: product13,
+  price: 400,
+  category: 'Juegos e Inflables',
+  subcategory: 'Inflables',
+  age_range: '2-5 años',
+  dimensions: 'Alto: 2.80m | Base: 3.20m x 3.20m',
+  Terms_of_use: 'Requiere conexión eléctrica. El precio no incluye movilidad.',
+  buy_button: 'ALQUILAR',
+  details_button: 'Ver Detalles',
+},
+{
+  id: 16,
+  name: 'Inflable Cubo Little Tikes',
+  shortDescription: 'Inflable compacto con tobogán suave',
+  longDescription: 'Inflable cubo Little Tikes de tamaño compacto con tobogán suave. Ideal para espacios más reducidos y niños de 2 a 5 años.',
+  image: product14,
+  price: 370,
+  category: 'Juegos e Inflables',
+  subcategory: 'Inflables',
+  age_range: '2-5 años',
+  dimensions: 'Alto: 1.90m | Base: 3.70m x 2.80m',
+  Terms_of_use: 'Requiere conexión eléctrica. El precio no incluye movilidad.',
+  buy_button: 'ALQUILAR',
+  details_button: 'Ver Detalles',
+},
+  {
+    id: 31,
     name: 'Trampolín Grande (3.60m)',
     shortDescription: 'Cama elástica con malla de seguridad',
     longDescription:
@@ -259,7 +410,7 @@ export default [
   name: 'Pintacaritas - Paquete Mix',
   shortDescription: 'Caritas pintadas con glitter y diseños a elección',
   longDescription: 'Show de maquillaje artístico infantil con diseños a elección, pinturas profesionales y aplicación de glitter. El artista llega con todo el equipo listo para transformar a los niños con sus personajes favoritos.',
-  image: product12,
+  image: facepaint,
   price: 300,
   category: 'Estética Infantil',
   subcategory: 'Pintacaritas',
@@ -282,7 +433,7 @@ export default [
   name: 'Glitter Bar Kids - Paquete Único',
   shortDescription: 'Glitter, gemas y tatuajes de brillantina',
   longDescription: 'Experiencia de belleza infantil llena de brillo y glamour. Incluye artista especializada, mucho glitter, gemas y glitter tattoo para que los niños luzcan increíbles en su fiesta.',
-  image: product12,
+  image: facepaint,
   price: 300,
   category: 'Estética Infantil',
   subcategory: 'Glitter Bar',
