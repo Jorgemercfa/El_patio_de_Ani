@@ -7,6 +7,25 @@ import product6 from '@/assets/coupon6.png';
 import product7 from '@/assets/coupon7.png';
 
 import product12 from '@/assets/picture3.png';
+import productSnack1 from '@/assets/productSnack1.png';
+import productSnack2 from '@/assets/productSnack2.png';
+import productSnack3 from '@/assets/productSnack3.png';
+import productSnack4 from '@/assets/productSnack4.png';
+import productSnack5 from '@/assets/productSnack5.png';
+import productSnack6 from '@/assets/productSnack6.png';
+import productSnack7 from '@/assets/productSnack7.png';
+import productSnack8 from '@/assets/productSnack8.png';
+import productSnack9 from '@/assets/productSnack9.png';
+import productSnack10 from '@/assets/productSnack10.png';
+import productSnack11 from '@/assets/productSnack11.png';
+import productSnack12 from '@/assets/productSnack12.png';
+import productSnack13 from '@/assets/productSnack13.png';
+import productSnack14 from '@/assets/productSnack14.png';
+import productSnack15 from '@/assets/productSnack15.png';
+import productSnack16 from '@/assets/productSnack16.png';
+import productSnack17 from '@/assets/productSnack17.png';
+import productSnack18 from '@/assets/productSnack18.png';
+import productSnack19 from '@/assets/productSnack19.png';
 
 export default [
   // --- SERVICIOS: SHOWS E INFANTILES ---
@@ -313,5 +332,328 @@ export default [
   Terms_of_use: 'Contrato sujeto a disponibilidad. Reserva con el 50% del total. El personal se instala 15 minutos antes. No aplica movilidad (costo aparte según distrito). No se instala en vía pública. Los precios son por alquiler por evento.',
   buy_button: 'RESERVAR',
   details_button: 'Ver Diseños',
+},
+// ================================
+// CARRITOS SNACKS - SALADOS
+// ================================
+{
+  id: 14,
+  name: 'Popcorn en Cono',
+  shortDescription: 'Palomitas de maíz servidas en cono',
+  longDescription: 'Carrito de popcorn clásico con 100 unidades servidas en cono. Perfecto para animar cualquier evento infantil.',
+  image: productSnack1,
+  price: 250,
+  category: 'Carritos Snacks',
+  subcategory: 'Salados',
+  options: ['100 unidades en cono', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 15,
+  name: 'Popcorn en Caja',
+  shortDescription: 'Palomitas de maíz servidas en caja',
+  longDescription: 'Carrito de popcorn con 100 unidades servidas en caja. Una presentación más elegante para tus eventos.',
+  image: productSnack2,
+  price: 300,
+  category: 'Carritos Snacks',
+  subcategory: 'Salados',
+  options: ['100 unidades en caja', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 16,
+  name: 'Mini Cheeseburger',
+  shortDescription: 'Mini hamburguesas con queso para eventos',
+  longDescription: 'Deliciosas mini cheeseburgers preparadas al momento. 50 unidades ideales para compartir en fiestas y eventos infantiles.',
+  image: productSnack3,
+  price: 400,
+  category: 'Carritos Snacks',
+  subcategory: 'Salados',
+  options: ['50 unidades', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 17,
+  name: 'Mini Hamburguesa',
+  shortDescription: 'Mini hamburguesas clásicas para eventos',
+  longDescription: 'Mini hamburguesas clásicas preparadas al momento. 50 unidades perfectas para cualquier celebración.',
+  image: productSnack4,
+  price: 350,
+  category: 'Carritos Snacks',
+  subcategory: 'Salados',
+  options: ['50 unidades', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 18,
+  name: 'Panchos',
+  shortDescription: 'Panchos en palito estilo feria',
+  longDescription: 'Los clásicos panchos en palito, crujientes por fuera y jugosos por dentro. 50 unidades para alegrar tu evento.',
+  image: productSnack5,
+  price: 300,
+  category: 'Carritos Snacks',
+  subcategory: 'Salados',
+  options: ['50 unidades', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 19,
+  name: 'Mini Hot Dog',
+  shortDescription: 'Mini hot dogs para compartir en eventos',
+  longDescription: 'Mini hot dogs preparados al momento, tiernos y sabrosos. 50 unidades ideales para eventos y cumpleaños.',
+  image: productSnack6,
+  price: 340,
+  category: 'Carritos Snacks',
+  subcategory: 'Salados',
+  options: ['50 unidades', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 20,
+  name: 'Mini Chorizo',
+  shortDescription: 'Mini chorizos al pan para eventos',
+  longDescription: 'Mini chorizos jugosos servidos en pan. 50 unidades con todo el sabor para disfrutar en tu celebración.',
+  image: productSnack7,
+  price: 350,
+  category: 'Carritos Snacks',
+  subcategory: 'Salados',
+  options: ['50 unidades', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+// ================================
+// CARRITOS SNACKS - DULCES
+// ================================
+{
+  id: 21,
+  name: 'Algodón de Azúcar',
+  shortDescription: 'Algodón de azúcar esponjoso y colorido',
+  longDescription: 'El clásico algodón de azúcar que encanta a chicos y grandes. 100 unidades de puro dulzor para tu evento.',
+  image: productSnack8,
+  price: 250,
+  category: 'Carritos Snacks',
+  subcategory: 'Dulces',
+  options: ['100 unidades', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 22,
+  name: 'Churros',
+  shortDescription: 'Churros crujientes recién hechos',
+  longDescription: 'Churros dorados y crujientes preparados al momento. 100 unidades para endulzar cualquier celebración.',
+  image: productSnack9,
+  price: 330,
+  category: 'Carritos Snacks',
+  subcategory: 'Dulces',
+  options: ['100 unidades', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 23,
+  name: 'Mini Pionono',
+  shortDescription: 'Mini piononos dulces enrollados',
+  longDescription: 'Deliciosos mini piononos esponjosos y dulces. 100 unidades ideales para endulzar tu evento o cumpleaños.',
+  image: productSnack10,
+  price: 250,
+  category: 'Carritos Snacks',
+  subcategory: 'Dulces',
+  options: ['100 unidades', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 24,
+  name: 'Mini Orejitas',
+  shortDescription: 'Mini orejitas hojaldradas y crocantes',
+  longDescription: 'Mini orejitas de hojaldre crocantes y dulces. 100 unidades perfectas para acompañar cualquier fiesta.',
+  image: productSnack11,
+  price: 220,
+  category: 'Carritos Snacks',
+  subcategory: 'Dulces',
+  options: ['100 unidades', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 25,
+  name: 'Niditos de Amor',
+  shortDescription: 'Galletas nidito con mermelada de corazón',
+  longDescription: 'Tiernas galletas nidito rellenas de mermelada en forma de corazón. 100 unidades que llenan de amor y dulzura tu evento.',
+  image: productSnack12,
+  price: 230,
+  category: 'Carritos Snacks',
+  subcategory: 'Dulces',
+  options: ['100 unidades', 'Carrito decorado con personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 26,
+  name: 'Helados Soft',
+  shortDescription: 'Helados soft cremosos para eventos',
+  longDescription: 'Helados soft cremosos preparados al instante con máquina profesional. 100 unidades para refrescar y deleitar a todos en tu fiesta.',
+  image: productSnack13,
+  price: 470,
+  category: 'Carritos Snacks',
+  subcategory: 'Dulces',
+  options: ['100 unidades', 'Máquina de helados soft profesional', 'Personal de atención'],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+// ================================
+// DÚO PACKS
+// ================================
+{
+  id: 27,
+  name: 'Dúo Pack - Algodón + Popcorn',
+  shortDescription: 'Combo dulce: algodón de azúcar y popcorn en cono',
+  longDescription: 'El dúo perfecto para satisfacer a todos: algodón de azúcar y popcorn en cono. Dos carritos en uno para tu evento.',
+  image: productSnack14,
+  price: 320,
+  category: 'Carritos Snacks',
+  subcategory: 'Dúo Packs',
+  options: [
+    '50 unidades de Algodón de Azúcar',
+    '50 unidades de Popcorn en cono',
+    'Carritos decorados con personal de atención',
+  ],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 28,
+  name: 'Dúo Pack - Popcorn + Mini Hamb',
+  shortDescription: 'Combo salado: popcorn en cono y mini hamburguesas',
+  longDescription: 'La combinación ganadora entre salado y más salado: popcorn en cono y mini hamburguesas para tu evento.',
+  image: productSnack15,
+  price: 500,
+  category: 'Carritos Snacks',
+  subcategory: 'Dúo Packs',
+  options: [
+    '50 unidades de Popcorn en cono',
+    '50 unidades de Mini Hamburguesa',
+    'Carritos decorados con personal de atención',
+  ],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 29,
+  name: 'Dúo Pack - Popcorn + Panchos',
+  shortDescription: 'Combo salado: popcorn en cono y panchos',
+  longDescription: 'El dúo clásico de feria: popcorn en cono y panchos en palito. Dos sabores favoritos para alegrar tu celebración.',
+  image: productSnack16,
+  price: 450,
+  category: 'Carritos Snacks',
+  subcategory: 'Dúo Packs',
+  options: [
+    '50 unidades de Popcorn en cono',
+    '50 unidades de Panchos',
+    'Carritos decorados con personal de atención',
+  ],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+// ================================
+// COMBOS SNACKS
+// ================================
+{
+  id: 30,
+  name: 'Combo Snacks - Popcorn + Mini Hamb + Panchos',
+  shortDescription: 'Combo triple salado para grandes eventos',
+  longDescription: 'El combo más completo en salados: popcorn en cono, mini hamburguesas y panchos. Ideal para eventos con muchos invitados.',
+  image: productSnack17,
+  price: 800,
+  category: 'Carritos Snacks',
+  subcategory: 'Combos',
+  options: [
+    '50 unidades de Popcorn en cono',
+    '50 unidades de Mini Hamburguesa',
+    '50 unidades de Panchos',
+    'Carritos decorados con personal de atención',
+  ],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 31,
+  name: 'Combo Snacks - Churros + Mini Hamb + Mini Chorizo',
+  shortDescription: 'Combo mixto dulce y salado para eventos',
+  longDescription: 'La mezcla perfecta de dulce y salado: churros, mini hamburguesas y mini chorizos. Un combo irresistible para tu fiesta.',
+  image: productSnack18,
+  price: 875,
+  category: 'Carritos Snacks',
+  subcategory: 'Combos',
+  options: [
+    '50 unidades de Churros',
+    '50 unidades de Mini Hamburguesa',
+    '50 unidades de Mini Chorizo',
+    'Carritos decorados con personal de atención',
+  ],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
+},
+
+{
+  id: 32,
+  name: 'Combo Snacks - Popcorn en Caja + Algodón + Mini Hot Dog',
+  shortDescription: 'Combo dulce-salado con hot dog, algodón y popcorn',
+  longDescription: 'El equilibrio ideal entre dulce y salado: popcorn en caja, algodón de azúcar y mini hot dogs. Un combo para todos los gustos.',
+  image: productSnack19,
+  price: 450,
+  category: 'Carritos Snacks',
+  subcategory: 'Combos',
+  options: [
+    '50 unidades de Popcorn en caja',
+    '50 unidades de Algodón de Azúcar',
+    '25 unidades de Mini Hot Dog',
+    'Carritos decorados con personal de atención',
+  ],
+  Terms_of_use: 'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.',
+  buy_button: 'RESERVAR',
+  details_button: 'Ver Snacks',
 },
 ];
