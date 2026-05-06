@@ -17,6 +17,10 @@ function goToCheckout() {
   }
   router.push({ name: 'Checkout' });
 }
+
+function getItemPrice(item) {
+  return Number(item.discount_price ?? item.price ?? 0);
+}
 </script>
 
 <template>
@@ -36,7 +40,7 @@ function goToCheckout() {
               <div class="cart-info">
                 <h3 class="item-name">{{ item.name }}</h3>
                 <p class="item-price">
-                  S/ {{ item.discount_price.toFixed(2) }}
+                  S/ {{ getItemPrice(item).toFixed(2) }}
                 </p>
               </div>
               <div class="cart-controls">
@@ -67,11 +71,9 @@ function goToCheckout() {
           <div class="cart-summary">
             <h2 class="summary-title">Resumen</h2>
             <div class="summary-row">
-              <span
-                >Subtotal ({{ cartCount }} item{{
-                  cartCount !== 1 ? 's' : ''
-                }})</span
-              >
+              <span>
+                Subtotal ({{ cartCount }} item{{ cartCount !== 1 ? 's' : '' }})
+              </span>
               <span>S/ {{ cartTotal.toFixed(2) }}</span>
             </div>
             <div class="summary-total">
@@ -242,7 +244,6 @@ function goToCheckout() {
   color: #e53935;
 }
 
-/* Summary */
 .cart-summary {
   width: 280px;
   background: white;
@@ -295,7 +296,6 @@ function goToCheckout() {
   transform: translateY(-2px);
 }
 
-/* Empty state */
 .empty-state {
   text-align: center;
   padding: 80px 20px;

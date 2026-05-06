@@ -43,6 +43,17 @@ onBeforeUnmount(() => {
 });
 
 /* =============================
+   HELPERS
+============================= */
+const getProductPrice = (product) => Number(product.discount_price ?? product.price ?? 0);
+
+const getProductName = (product) => product.name ?? 'Producto sin nombre';
+
+const getProductCategory = (product) => product.category ?? '';
+
+const getProductImage = (product) => product.image ?? '';
+
+/* =============================
    CARRUSEL PRODUCTOS (HORIZONTAL)
 ============================= */
 const productsTrackRef = ref(null);
@@ -70,7 +81,7 @@ const restaurantproducts = computed(() =>
 );
 
 /* =============================
-   CARRUSEL RESTAURANTES (scroll)
+   CARRUSEL SHOWS (scroll)
 ============================= */
 const restaurantTrackRef = ref(null);
 
@@ -94,10 +105,8 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
   </header>
 
   <div class="home-area">
-
-    <!-- Carrusel automático -->
     <div class="carousel-container">
-      <img class="img-home" :src="images[currentImageIndex]" />
+      <img class="img-home" :src="images[currentImageIndex]" alt="Carrusel principal" />
       <div class="carousel-dots">
         <span
           v-for="(image, index) in images"
@@ -108,12 +117,10 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
       </div>
     </div>
 
-    <!-- Texto hero -->
     <div class="text-home">
-      Second Hand donde le damos una segunda oportunidad a los productos.
+      Encuentra todo lo que necesitas para una celebración inolvidable: desde shows mágicos y juegos inflables hasta deliciosos carritos de snacks. Nos encargamos de la diversión para que tú solo te preocupes por disfrutar
     </div>
 
-    <!-- Sección: Productos destacados -->
     <h1 class="title-home">Productos destacados</h1>
 
     <div class="our-products-wrapper">
@@ -133,19 +140,21 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
           :to="{ name: 'productsDetails', params: { id: product.id } }"
           class="logs-item"
         >
-          <div class="product-mini-badge" v-if="product.percentage">
-            {{ product.percentage }}
-          </div>
-
-          <img class="card-icons" :src="product.image" :alt="product.name" />
+          <img
+            class="card-icons"
+            :src="getProductImage(product)"
+            :alt="getProductName(product)"
+          />
 
           <div class="product-mini-info">
-            <h4 class="product-mini-title">{{ product.name }}</h4>
-            <div class="product-mini-category" v-if="product.category">
-              {{ product.category }}
+            <h4 class="product-mini-title">{{ getProductName(product) }}</h4>
+
+            <div class="product-mini-category" v-if="getProductCategory(product)">
+              {{ getProductCategory(product) }}
             </div>
+
             <div class="product-mini-price">
-              S/ {{ product.discount_price ?? product.price }}
+              S/ {{ getProductPrice(product).toFixed(2) }}
             </div>
           </div>
         </router-link>
@@ -161,7 +170,6 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
       </button>
     </div>
 
-    <!-- Sección: Electrodomésticos -->
     <h1 class="title-home">Shows</h1>
 
     <div class="our-products-wrapper">
@@ -181,19 +189,16 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
           :to="{ name: 'productsDetails', params: { id: product.id } }"
           class="logs-item"
         >
-          <div class="product-mini-badge" v-if="product.percentage">
-            {{ product.percentage }}
-          </div>
-
-          <img class="card-icons" :src="product.image" :alt="product.name" />
+          <img
+            class="card-icons"
+            :src="getProductImage(product)"
+            :alt="getProductName(product)"
+          />
 
           <div class="product-mini-info">
-            <h4 class="product-mini-title">{{ product.name }}</h4>
+            <h4 class="product-mini-title">{{ getProductName(product) }}</h4>
             <div class="product-mini-price">
-              S/ {{ product.discount_price ?? product.price }}
-            </div>
-            <div class="product-mini-date" v-if="product.expiration_date">
-              Hasta {{ product.expiration_date }}
+              S/ {{ getProductPrice(product).toFixed(2) }}
             </div>
           </div>
         </router-link>
@@ -212,7 +217,6 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
         ›
       </button>
     </div>
-
   </div>
 
   <footer>
@@ -221,9 +225,6 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
 </template>
 
 <style>
-/* ===============================
-   HERO / CARRUSEL PRINCIPAL
-================================= */
 .img-home {
   width: 100%;
   height: 80vh;
@@ -242,7 +243,7 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(45, 62, 148, 0.3); /* --azul-torres con opacidad */
+  background: rgba(45, 62, 148, 0.3);
 }
 
 .carousel-dots {
@@ -266,20 +267,17 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
 }
 
 .carousel-dots .active {
-  background: #FFD200; /* --amarillo-brillante */
+  background: #FFD200;
   transform: scale(1.2);
 }
 
-/* ===============================
-   TEXTO + TÍTULOS
-================================= */
 .text-home {
   max-width: 900px;
   margin: 60px auto;
   text-align: center;
   font-size: 18px;
   line-height: 1.7;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
 }
 
 .title-home {
@@ -288,14 +286,14 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
   font-weight: 700;
   margin: 80px 0 40px 0;
   position: relative;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
 }
 
 .title-home::after {
   content: '';
   width: 60px;
   height: 4px;
-  background-color: #E91E81; /* --rosa-principal */
+  background-color: #E91E81;
   position: absolute;
   bottom: -12px;
   left: 50%;
@@ -303,9 +301,6 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
   border-radius: 5px;
 }
 
-/* ===============================
-   CARRUSEL HORIZONTAL
-================================= */
 .our-products-wrapper {
   position: relative;
   width: 100%;
@@ -326,11 +321,10 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
 }
 
 .our-products::-webkit-scrollbar-thumb {
-  background: rgba(233, 30, 129, 0.3); /* --rosa-principal con opacidad */
+  background: rgba(233, 30, 129, 0.3);
   border-radius: 10px;
 }
 
-/* botones nav */
 .products-nav {
   position: absolute;
   top: 50%;
@@ -338,10 +332,10 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: 2px solid #E91E81; /* --rosa-principal */
+  border: 2px solid #E91E81;
   cursor: pointer;
-  background: #FFFFFF; /* --blanco-puro */
-  color: #E91E81; /* --rosa-principal */
+  background: #FFFFFF;
+  color: #E91E81;
   font-size: 28px;
   line-height: 1;
   display: grid;
@@ -351,28 +345,25 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
 }
 
 .products-nav:hover {
-  background: #E91E81; /* --rosa-principal */
-  color: #FFFFFF; /* --blanco-puro */
+  background: #E91E81;
+  color: #FFFFFF;
 }
 
 .products-nav-left  { left: 14px; }
 .products-nav-right { right: 14px; }
 
-/* ===============================
-   CARD (logs-item)
-================================= */
 .logs-item {
   scroll-snap-align: start;
   flex: 0 0 220px;
   min-height: 300px;
   position: relative;
-  background: #FFFFFF; /* --blanco-puro */
-  border: 2px solid #E91E81; /* --rosa-principal */
+  background: #FFFFFF;
+  border: 2px solid #E91E81;
   border-radius: 12px;
   padding: 15px;
   text-align: center;
   text-decoration: none;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
   box-shadow: 0 6px 20px rgba(233, 30, 129, 0.1);
   transition: 0.25s;
 }
@@ -399,14 +390,14 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
 .product-mini-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
   margin-bottom: 4px;
 }
 
 .product-mini-category {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #E91E81; /* --rosa-principal */
+  color: #E91E81;
   background: rgba(233, 30, 129, 0.08);
   padding: 2px 8px;
   border-radius: 20px;
@@ -415,13 +406,13 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
 
 .product-mini-price {
   font-weight: bold;
-  color: #E91E81; /* --rosa-principal */
+  color: #E91E81;
   font-size: 1rem;
 }
 
 .product-mini-date {
   font-size: 0.8rem;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
   opacity: 0.65;
 }
 
@@ -429,17 +420,14 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
   position: absolute;
   top: 10px;
   right: 10px;
-  background: #FFD200; /* --amarillo-brillante */
-  color: #2D3E94; /* --azul-torres */
+  background: #FFD200;
+  color: #2D3E94;
   padding: 4px 8px;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: bold;
 }
 
-/* ===============================
-   EMPTY STATE
-================================= */
 .empty-carousel {
   padding: 40px 20px;
   color: #2D3E94;
@@ -447,12 +435,9 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
   font-size: 0.95rem;
 }
 
-/* ===============================
-   CLIENTES
-================================= */
 .our-customers {
   overflow: hidden;
-  background: #E91E81; /* --rosa-principal */
+  background: #E91E81;
   padding: 50px 0;
   position: relative;
 }
@@ -473,7 +458,7 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
   width: auto;
   opacity: 0.85;
   transition: all 0.3s ease;
-  filter: brightness(0) invert(1); /* blanco sobre fondo rosa */
+  filter: brightness(0) invert(1);
 }
 
 .customer-icons:hover {
@@ -486,13 +471,10 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
   100% { transform: translateX(-50%); }
 }
 
-/* ===============================
-   SECTOR
-================================= */
 .our-sector {
   width: 100%;
   height: 300px;
-  background: #2D3E94; /* --azul-torres */
+  background: #2D3E94;
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -500,9 +482,6 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
   gap: 20px;
 }
 
-/* ===============================
-   RESPONSIVE
-================================= */
 @media (max-width: 768px) {
   .img-home {
     height: 55vh;

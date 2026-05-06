@@ -14,7 +14,7 @@
         >Servicios</router-link
       >
       <router-link @click="closeMenu" to="/Contact-item" class="text-navbar"
-        >Ayuda</router-link
+        >Contacto</router-link
       >
       <router-link @click="closeMenu" to="/Cart" class="text-navbar cart-link">
         <i class="pi pi-shopping-cart"></i>
