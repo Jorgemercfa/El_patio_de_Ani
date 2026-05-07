@@ -30,7 +30,13 @@ export function getCompanyproducts() {
   }
 
   const seedIds = new Set(normalizedSeed.map((product) => product.id));
-  const extraStored = stored.filter((product) => !seedIds.has(product?.id));
+  const extraStored = stored.filter(
+    (product) =>
+      product &&
+      product.id !== null &&
+      product.id !== undefined &&
+      !seedIds.has(product.id),
+  );
   const merged = [...normalizedSeed, ...extraStored];
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
