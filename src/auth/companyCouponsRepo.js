@@ -16,11 +16,6 @@ function safeParse(json) {
 
 export function getCompanyproducts() {
   const stored = safeParse(localStorage.getItem(STORAGE_KEY));
-
-  if (Array.isArray(stored) && stored.length > 0) {
-    return stored;
-  }
-
   const normalizedSeed = productsSeed.map((product) => ({
     ...product,
     companyId: null,
@@ -29,9 +24,18 @@ export function getCompanyproducts() {
     createdAt: null,
   }));
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedSeed));
+  if (!Array.isArray(stored) || stored.length === 0) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedSeed));
+    return normalizedSeed;
+  }
 
-  return normalizedSeed;
+  const seedIds = new Set(normalizedSeed.map((product) => product.id));
+  const extraStored = stored.filter((product) => !seedIds.has(product?.id));
+  const merged = [...normalizedSeed, ...extraStored];
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+
+  return merged;
 }
 
 export function saveCompanyproducts(products) {
