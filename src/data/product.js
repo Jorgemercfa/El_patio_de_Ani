@@ -12,6 +12,7 @@ import product11 from '@/assets/inflatable6.png';
 import product12 from '@/assets/inflatable7.png';
 import product13 from '@/assets/inflatable8.png';
 import product14 from '@/assets/inflatable9.png';
+import product15 from '@/assets/inflatable10.png';
 import facepaint from '@/assets/picture3.png';
 import productSnack1 from '@/assets/productSnack1.png';
 import productSnack2 from '@/assets/productSnack2.png';
@@ -383,6 +384,21 @@ export default [
   subcategory: 'Inflables',
   age_range: '2-5 años',
   dimensions: 'Alto: 1.90m | Base: 3.70m x 2.80m',
+  Terms_of_use: 'Requiere conexión eléctrica. El precio no incluye movilidad.',
+  buy_button: 'ALQUILAR',
+  details_button: 'Ver Detalles',
+},
+{
+  id: 42,
+  name: 'Inflable Cubito',
+  shortDescription: 'Mini inflable para bebés y primeros pasos',
+  longDescription: 'Pequeño inflable seguro y colorido, perfecto para los más pequeñitos de 0 a 2 años que empiezan a dar sus primeros pasos y saltos.',
+  image: product15,
+  price: 200,
+  category: 'Juegos e Inflables',
+  subcategory: 'Inflables',
+  age_range: '0-2 años',
+  dimensions: 'Alto: 1.60m | Base: 2.40m x 2.70m',
   Terms_of_use: 'Requiere conexión eléctrica. El precio no incluye movilidad.',
   buy_button: 'ALQUILAR',
   details_button: 'Ver Detalles',
