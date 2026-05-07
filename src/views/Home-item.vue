@@ -80,6 +80,10 @@ const restaurantproducts = computed(() =>
   products.value.filter((c) => c.category === 'Shows Infantiles'),
 );
 
+const restaurantproducts2 = computed(() =>
+  products.value.filter((c) => c.category === 'Juegos e Inflables'),
+);
+
 /* =============================
    CARRUSEL SHOWS (scroll)
 ============================= */
@@ -97,6 +101,24 @@ const scrollRestaurantsBy = (direction) => {
 
 const scrollRestaurantsLeft = () => scrollRestaurantsBy(-1);
 const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
+
+/* =============================
+   CARRUSEL Juegos e Inflables (scroll)
+============================= */
+const restaurantTrackRef2 = ref(null);
+
+const scrollRestaurantsBy2 = (direction) => {
+  const el = restaurantTrackRef2.value;
+  if (!el) return;
+  const card = el.querySelector('.logs-item');
+  const cardWidth = card ? card.getBoundingClientRect().width : 220;
+  const gap = 20;
+  const step = cardWidth + gap;
+  el.scrollBy({ left: direction * step, behavior: 'smooth' });
+};
+
+const scrollRestaurantsLeft2 = () => scrollRestaurantsBy2(-1);
+const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 </script>
 
 <template>
@@ -121,7 +143,7 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
       Encuentra todo lo que necesitas para una celebración inolvidable: desde shows mágicos y juegos inflables hasta deliciosos carritos de snacks. Nos encargamos de la diversión para que tú solo te preocupes por disfrutar
     </div>
 
-    <h1 class="title-home">Productos destacados</h1>
+    <h1 class="title-home">Más populares</h1>
 
     <div class="our-products-wrapper">
       <button
@@ -213,6 +235,54 @@ const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
         type="button"
         aria-label="Siguiente"
         @click="scrollRestaurantsRight"
+      >
+        ›
+      </button>
+    </div>
+
+    <h1 class="title-home">Juegos e Inflables</h1>
+
+    <div class="our-products-wrapper">
+      <button
+        class="products-nav products-nav-left"
+        type="button"
+        aria-label="Anterior"
+        @click="scrollRestaurantsLeft2"
+      >
+        ‹
+      </button>
+
+      <div class="our-products" ref="restaurantTrackRef2">
+        <router-link
+          v-for="product in restaurantproducts2"
+          :key="product.id"
+          :to="{ name: 'productsDetails', params: { id: product.id } }"
+          class="logs-item"
+        >
+          <img
+            class="card-icons"
+            :src="getProductImage(product)"
+            :alt="getProductName(product)"
+          />
+
+          <div class="product-mini-info">
+            <h4 class="product-mini-title">{{ getProductName(product) }}</h4>
+            <div class="product-mini-price">
+              S/ {{ getProductPrice(product).toFixed(2) }}
+            </div>
+          </div>
+        </router-link>
+
+        <div v-if="restaurantproducts2.length === 0" class="empty-carousel">
+          No hay productos en esta categoría todavía.
+        </div>
+      </div>
+
+      <button
+        class="products-nav products-nav-right"
+        type="button"
+        aria-label="Siguiente"
+        @click="scrollRestaurantsRight2"
       >
         ›
       </button>
