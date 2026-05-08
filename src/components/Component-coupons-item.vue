@@ -7,6 +7,7 @@ import Footer from '@/components/Footer-item.vue';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart.js';
 import { useSession } from '@/auth/session';
+import { PREMIUM_INFLABLE_PRICE, WHATSAPP_BUSINESS_NUMBER } from '@/constants/inflables';
 
 const route = useRoute();
 const router = useRouter();
@@ -19,20 +20,67 @@ const product = computed(() =>
   products.value.find((s) => s.id === Number(route.params.id)),
 );
 
+const parsePrice = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string') return null;
+
+  const cleaned = value.trim().replace(/[^\d.,-]/g, '');
+  if (!cleaned) return null;
+
+  const lastComma = cleaned.lastIndexOf(',');
+  const lastDot = cleaned.lastIndexOf('.');
+  const decimalIndex = Math.max(lastComma, lastDot);
+
+  const normalizedValue =
+    decimalIndex >= 0
+      ? `${cleaned.slice(0, decimalIndex).replace(/[.,]/g, '')}.${cleaned
+          .slice(decimalIndex + 1)
+          .replace(/[.,]/g, '')}`
+      : cleaned.replace(/[.,]/g, '');
+
+  const parsed = Number(normalizedValue);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 const displayPrice = computed(() => {
   const currentProduct = product.value;
   if (!currentProduct) return null;
 
-  const rawPrice =
-    currentProduct.price ??
-    currentProduct.discount_price ??
-    currentProduct.originalPrice ??
-    currentProduct.tributo;
+  return (
+    parsePrice(currentProduct.price) ??
+    parsePrice(currentProduct.discount_price) ??
+    parsePrice(currentProduct.originalPrice) ??
+    parsePrice(currentProduct.tributo)
+  );
+});
 
-  const normalizedPrice =
-    typeof rawPrice === 'string' ? Number(rawPrice) : rawPrice;
+const isInflable = computed(() =>
+  (product.value?.category || '').toLowerCase().includes('juegos e inflables'),
+);
 
-  return Number.isFinite(normalizedPrice) ? normalizedPrice : null;
+const inflableSubcategory = computed(() => {
+  const sub = product.value?.subcategory?.toLowerCase() || '';
+  if (sub.includes('bebé') || sub.includes('bebe') || sub.includes('baby')) return 'bebes';
+  if (sub.includes('grande')) return 'grande';
+  return 'mediano';
+});
+
+const inflableDisplayTier = computed(() => {
+  if (!isInflable.value) return null;
+
+  if ((displayPrice.value || 0) > PREMIUM_INFLABLE_PRICE || inflableSubcategory.value === 'grande') {
+    return 'grande';
+  }
+
+  return inflableSubcategory.value;
+});
+
+const inflableBadgeLabel = computed(() => {
+  if (inflableDisplayTier.value === 'bebes') return '👶 Para Bebés';
+  if (inflableDisplayTier.value === 'grande') return '🏰 Grande';
+  if (inflableDisplayTier.value === 'mediano') return '🎪 Mediano';
+  return '';
 });
 
 const addedFeedback = ref(false);
@@ -47,6 +95,17 @@ function handleAddToCart() {
   setTimeout(() => {
     addedFeedback.value = false;
   }, 1500);
+}
+
+function reserveInflable() {
+  router.push({ path: '/Inflable-reserva', query: { id: product.value.id } });
+}
+
+function consultInflableByWhatsApp() {
+  const productName = product.value?.name || 'inflable';
+  const message = `Hola! Quiero consultar disponibilidad del inflable ${productName} para mi evento.`;
+  const url = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function getScrollContainer() {
@@ -99,47 +158,42 @@ watch(
 
   <main class="container">
     <div v-if="product" class="product-wrapper">
-
-      <!-- regresar -->
       <router-link to="/product-item" class="return-area">
         <button class="card-button">Regresar</button>
       </router-link>
 
-      <!-- titulo -->
       <h1 class="title">{{ product.name }}</h1>
 
-      <!-- imagen -->
+      <div class="header-badges">
+        <span v-if="product.category" class="badge badge-category">{{ product.category }}</span>
+        <span v-if="product.subcategory" class="badge badge-subcategory">{{ product.subcategory }}</span>
+        <span
+          v-if="inflableBadgeLabel"
+          class="badge"
+          :class="`badge-inflable-${inflableDisplayTier}`"
+        >
+          {{ inflableBadgeLabel }}
+        </span>
+      </div>
+
       <img
         v-if="product.image"
         class="product-image-details"
         :src="product.image"
       />
 
-      <!-- precios -->
       <div class="product-prices">
         <span class="discount-price">
           S/ {{ displayPrice !== null ? displayPrice.toFixed(2) : '-' }}
         </span>
       </div>
 
-      <!-- descripción -->
       <div class="text-product-type">
         {{ product.longDescription }}
       </div>
 
-      <!-- info -->
       <div class="product-details">
-
-        <!-- campos generales -->
         <div class="product-info">
-          <div class="info-item" v-if="product.category">
-            <span class="label">Categoría</span>
-            <span class="value">{{ product.category }}</span>
-          </div>
-          <div class="info-item" v-if="product.subcategory">
-            <span class="label">Subcategoría</span>
-            <span class="value">{{ product.subcategory }}</span>
-          </div>
           <div class="info-item" v-if="product.duration">
             <span class="label">Duración</span>
             <span class="value">{{ product.duration }}</span>
@@ -158,7 +212,6 @@ watch(
           </div>
         </div>
 
-        <!-- opciones incluidas -->
         <div class="product-options" v-if="product.options?.length">
           <span class="label">Incluye</span>
           <div class="options-tags">
@@ -170,17 +223,33 @@ watch(
           </div>
         </div>
 
-        <!-- términos de uso -->
         <div class="product-terms" v-if="product.Terms_of_use">
           <span class="label">Términos de uso</span>
           <p class="terms-text">{{ product.Terms_of_use }}</p>
         </div>
 
-        <!-- botón -->
-        <button class="buy-button" @click="handleAddToCart">
+        <div v-if="isInflable" class="inflable-actions">
+          <button
+            v-if="isAuthenticated"
+            class="buy-button"
+            @click="reserveInflable"
+          >
+            📋 Reservar este inflable
+          </button>
+
+          <template v-else>
+            <button class="wa-button" @click="consultInflableByWhatsApp">
+              💬 Consultar disponibilidad
+            </button>
+            <button class="secondary-login-button" @click="router.push('/Sign-in')">
+              🔑 Iniciar sesión para reservar
+            </button>
+          </template>
+        </div>
+
+        <button v-else class="buy-button" @click="handleAddToCart">
           {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
         </button>
-
       </div>
     </div>
 
@@ -200,6 +269,7 @@ watch(
   margin: 0 auto;
   padding: 40px 20px;
   font-family: Outfit, Inter, Avenir, Helvetica, Arial, sans-serif;
+  background: #f4f6f3;
 }
 
 .product-wrapper {
@@ -207,109 +277,148 @@ watch(
   flex-direction: column;
   align-items: center;
   text-align: center;
+  background: #fff;
+  border-radius: 16px;
+  border: 2px solid #E91E81;
+  box-shadow: 0 10px 32px rgba(233, 30, 129, 0.12);
+  padding: 24px;
 }
 
 .return-area {
   align-self: flex-start;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .title {
-  font-size: 2.2rem;
-  margin-bottom: 40px;
-  color: #2D3E94; /* --azul-torres */
+  font-size: 2.1rem;
+  margin-bottom: 14px;
   position: relative;
   display: inline-block;
+  background: linear-gradient(135deg, #E91E81, #2D3E94);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .title::after {
   content: '';
   width: 70px;
   height: 4px;
-  background-color: #E91E81; /* --rosa-principal */
+  background-color: #E91E81;
   position: absolute;
-  bottom: -15px;
+  bottom: -12px;
   left: 50%;
   transform: translateX(-50%);
   border-radius: 6px;
 }
 
+.header-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 8px 0 20px;
+}
+
+.badge {
+  font-size: 0.77rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+
+.badge-category {
+  background: linear-gradient(135deg, #E91E81, #2D3E94);
+  color: #fff;
+}
+
+.badge-subcategory {
+  background: #f0f4ff;
+  color: #1a2d7a;
+}
+
+.badge-inflable-bebes {
+  background: #efe7ff;
+  color: #4f3d9a;
+}
+
+.badge-inflable-mediano {
+  background: #e6f8e8;
+  color: #1b6b32;
+}
+
+.badge-inflable-grande {
+  background: #fff2d9;
+  color: #8a5b00;
+}
+
 .product-image-details {
   width: 100%;
-  height: 420px;
+  max-width: 820px;
+  max-height: 460px;
   object-fit: cover;
-  border-radius: 14px;
-  margin-bottom: 30px;
-  box-shadow: 0 10px 30px rgba(233, 30, 129, 0.15);
+  border-radius: 16px;
+  margin-bottom: 26px;
+  box-shadow: 0 10px 30px rgba(45, 62, 148, 0.16);
 }
 
 .text-product-type {
   max-width: 800px;
-  font-size: 1.1rem;
-  line-height: 1.8;
-  color: #2D3E94; /* --azul-torres */
-  opacity: 0.8;
-  margin-bottom: 40px;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #2D3E94;
+  opacity: 0.9;
+  margin-bottom: 28px;
 }
 
 .product-prices {
   display: flex;
   gap: 10px;
   align-items: center;
-  margin-top: 8px;
-  margin-bottom: 20px;
-}
-
-.original-price {
-  text-decoration: line-through;
-  color: #dcdcdc;
-  font-size: 0.95rem;
+  margin: 0 0 18px;
 }
 
 .discount-price {
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: #E91E81; /* --rosa-principal */
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #E91E81;
 }
 
 .product-details {
   width: 100%;
-  max-width: 600px;
-  margin-top: 30px;
+  max-width: 720px;
+  margin-top: 8px;
 }
 
-/* grid de campos */
 .product-info {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 15px;
-  margin-bottom: 25px;
+  gap: 14px;
+  margin-bottom: 24px;
 }
 
 .info-item {
-  background: rgba(233, 30, 129, 0.06); /* rosa muy suave */
+  background: rgba(233, 30, 129, 0.06);
   border: 1px solid rgba(233, 30, 129, 0.2);
-  padding: 12px 16px;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
   text-align: left;
 }
 
 .label {
   display: block;
   font-size: 0.85rem;
-  color: #E91E81; /* --rosa-principal */
+  color: #E91E81;
   margin-bottom: 2px;
 }
 
 .value {
   font-weight: 600;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
 }
 
-/* opciones como tags */
 .product-options {
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   text-align: left;
 }
 
@@ -321,85 +430,123 @@ watch(
 }
 
 .option-tag {
-  background: #FFD200; /* --amarillo-brillante */
-  color: #2D3E94; /* --azul-torres */
-  font-size: 0.85rem;
-  font-weight: 600;
+  background: #FFD200;
+  color: #2D3E94;
+  font-size: 0.84rem;
+  font-weight: 700;
   padding: 5px 12px;
   border-radius: 20px;
 }
 
-/* términos de uso */
 .product-terms {
   width: 100%;
   background: rgba(233, 30, 129, 0.05);
-  border-left: 3px solid #E91E81; /* --rosa-principal */
-  border-radius: 0 8px 8px 0;
+  border-left: 3px solid #E91E81;
+  border-radius: 0 10px 10px 0;
   padding: 12px 16px;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
   text-align: left;
 }
 
 .terms-text {
   font-size: 0.9rem;
-  color: #2D3E94; /* --azul-torres */
-  opacity: 0.8;
+  color: #2D3E94;
+  opacity: 0.85;
   margin: 4px 0 0;
   line-height: 1.6;
 }
 
-/* botón agregar al carrito */
-.buy-button {
+.inflable-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.buy-button,
+.wa-button,
+.secondary-login-button {
   width: 100%;
-  background: #FFD200; /* --amarillo-brillante */
-  color: #2D3E94; /* --azul-torres */
   border: none;
   padding: 14px;
   font-size: 1rem;
   font-weight: 700;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.25s;
+}
+
+.buy-button {
+  background: #FFD200;
+  color: #2D3E94;
+  box-shadow: 0 4px 16px rgba(255, 210, 0, 0.4);
 }
 
 .buy-button:hover {
-  background-color: #e6bd00;
-  transform: scale(1.01);
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(255, 210, 0, 0.55);
 }
 
-/* botón regresar */
+.wa-button {
+  background: #25D366;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.35);
+}
+
+.wa-button:hover {
+  transform: scale(1.02);
+  box-shadow: 0 7px 20px rgba(37, 211, 102, 0.5);
+}
+
+.secondary-login-button {
+  background: #fff;
+  color: #E91E81;
+  border: 2px solid #E91E81;
+}
+
+.secondary-login-button:hover {
+  transform: scale(1.02);
+  background: #fff0f7;
+}
+
 .card-button {
-  background-color: #FFFFFF; /* --blanco-puro */
-  color: #2D3E94; /* --azul-torres */
-  border: 2px solid #E91E81; /* --rosa-principal */
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 6px;
+  background-color: #FFFFFF;
+  color: #2D3E94;
+  border: 2px solid #E91E81;
+  padding: 10px 22px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .card-button:hover {
-  background-color: #E91E81; /* --rosa-principal */
-  color: #FFFFFF; /* --blanco-puro */
-}
-
-.product-badge {
-  top: 10px;
-  right: 10px;
-  background: #FFD200; /* --amarillo-brillante */
-  color: #2D3E94; /* --azul-torres */
-  font-weight: bold;
-  padding: 6px 10px;
-  border-radius: 6px;
+  background-color: #E91E81;
+  color: #FFFFFF;
 }
 
 .not-found {
   text-align: center;
   padding: 40px 20px;
   font-size: 1.2rem;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
   opacity: 0.6;
+}
+
+@media (max-width: 700px) {
+  .container {
+    padding: 24px 12px;
+  }
+
+  .product-wrapper {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 1.6rem;
+  }
+
+  .discount-price {
+    font-size: 1.5rem;
+  }
 }
 </style>

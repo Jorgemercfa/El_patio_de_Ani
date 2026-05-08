@@ -10,6 +10,7 @@ import SignIn from './views/Sign-in.vue';
 import SignUp from './views/Sign-up.vue';
 import ForgetPassword from './views/Forget-Password.vue';
 import Profile from './views/Profile-item.vue';
+import InflableReserva from './views/Inflable-reserva.vue';
 
 import Cart from './views/Cart-item.vue';
 import Checkout from './views/Checkout-item.vue';
@@ -65,6 +66,16 @@ const routes = [
     name: 'OrderConfirmation',
     component: OrderConfirmation,
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/Inflable-reserva',
+    name: 'InflableReserva',
+    component: InflableReserva,
+    meta: {
+      requiresAuth: true,
+      authOptional: true,
+      title: 'Reservar Inflable | El Patio de Ani',
+    },
   },
 
   // EMPRESA
@@ -131,7 +142,7 @@ router.beforeEach((to) => {
   // Rutas de usuario
   if (to.meta?.requiresAuth) {
     const { isAuthenticated } = useSession();
-    if (!isAuthenticated.value) {
+    if (!isAuthenticated.value && !to.meta?.authOptional) {
       return { name: 'SignIn' };
     }
   }
