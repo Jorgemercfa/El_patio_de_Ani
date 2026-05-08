@@ -8,6 +8,7 @@ import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart.js';
 import { useSession } from '@/auth/session';
 import {
+  EL_PATIO_WHATSAPP_NUMBER,
   getInflableBadge,
   getInflableSize,
   getProductPrice,
@@ -48,12 +49,12 @@ function openWhatsAppInquiry() {
   if (!product.value) return;
 
   const message =
-    `Hola! Quiero consultar por el servicio "${product.value.name}".\n` +
+    `¡Hola! Quiero consultar por el servicio "${product.value.name}".\n` +
     `Precio referencial: S/ ${displayPrice.value !== null ? displayPrice.value.toFixed(2) : 'Por confirmar'}.\n` +
     'Es mi primera reserva y quisiera coordinar los detalles por WhatsApp.';
 
   window.open(
-    `https://wa.me/51975495623?text=${encodeURIComponent(message)}`,
+    `https://wa.me/${EL_PATIO_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
     '_blank',
   );
 }
@@ -258,6 +259,7 @@ watch(
 }
 
 .product-wrapper {
+  --hero-badges-offset: -16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -269,7 +271,7 @@ watch(
   gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
-  margin: -16px 0 20px;
+  margin: var(--hero-badges-offset) 0 20px;
 }
 
 .badge {

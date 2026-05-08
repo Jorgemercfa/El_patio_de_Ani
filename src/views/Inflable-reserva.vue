@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import Navbar from '@/components/Navbar-item.vue';
@@ -7,6 +7,8 @@ import Footer from '@/components/Footer-item.vue';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
 import {
+  EL_PATIO_WHATSAPP_NUMBER,
+  LARGE_INFLABLE_PRICE_THRESHOLD,
   getInflableBadge,
   getInflableGuestsInfo,
   getInflableSize,
@@ -15,6 +17,9 @@ import {
   getSurfaceNote,
   isInflableProduct,
 } from '@/utils/inflables';
+
+const INFLABLE_DRAFT_KEY_PREFIX = 'el-patio-inflable-draft';
+const NOT_PROVIDED_LABEL = 'No indicado';
 
 const route = useRoute();
 const router = useRouter();
@@ -30,13 +35,32 @@ const isValidInflable = computed(
 );
 const inflableSize = computed(() => getInflableSize(product.value));
 const inflableBadge = computed(() => getInflableBadge(inflableSize.value));
-const price = computed(() => getProductPrice(product.value) ?? 0);
+const price = computed(() => Number(getProductPrice(product.value) || 0));
+const formattedPrice = computed(() => price.value.toFixed(2));
 const minimumSpace = computed(() => getInflableSpaceRequirement(product.value));
 const guestsInfo = computed(() => getInflableGuestsInfo(product.value));
-const needsMeasurementVisit = computed(() => price.value > 600);
-const today = new Date().toISOString().split('T')[0];
+const needsMeasurementVisit = computed(
+  () => price.value > LARGE_INFLABLE_PRICE_THRESHOLD,
+);
+const minDate = ref(new Date().toISOString().split('T')[0]);
 
-const draftKey = computed(() => `el-patio-inflable-draft-${productId.value || 'general'}`);
+function updateMinimumEventDate() {
+  minDate.value = new Date().toISOString().split('T')[0];
+}
+
+onMounted(() => {
+  window.addEventListener('focus', updateMinimumEventDate);
+  document.addEventListener('visibilitychange', updateMinimumEventDate);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', updateMinimumEventDate);
+  document.removeEventListener('visibilitychange', updateMinimumEventDate);
+});
+
+const draftKey = computed(
+  () => `${INFLABLE_DRAFT_KEY_PREFIX}-${productId.value || 'general'}`,
+);
 
 const createInitialForm = () => ({
   responsibleName: '',
@@ -60,6 +84,15 @@ const form = reactive(createInitialForm());
 
 const submitAttempted = ref(false);
 const showConfirmationModal = ref(false);
+
+function toMinutes(time) {
+  if (!time) return null;
+
+  const [hours, minutes] = time.split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+
+  return hours * 60 + minutes;
+}
 
 function hydrateDraft() {
   Object.assign(form, createInitialForm());
@@ -136,7 +169,13 @@ const submitErrors = computed(() => {
   if (!form.eventDate) errors.push('Selecciona la fecha del evento.');
   if (!form.startTime) errors.push('Selecciona la hora de inicio.');
   if (!form.endTime) errors.push('Selecciona la hora de fin.');
-  if (form.startTime && form.endTime && form.endTime <= form.startTime) {
+  if (
+    form.startTime &&
+    form.endTime &&
+    toMinutes(form.endTime) !== null &&
+    toMinutes(form.startTime) !== null &&
+    toMinutes(form.endTime) <= toMinutes(form.startTime)
+  ) {
     errors.push('La hora de fin debe ser posterior a la hora de inicio.');
   }
   if (!form.powerSource) errors.push('Selecciona una opción de logística eléctrica.');
@@ -184,19 +223,19 @@ const whatsappMessage = computed(() => {
     `🏙️ Distrito: ${form.district}\n` +
     `📅 Fecha: ${form.eventDate}\n` +
     `⏰ Horario: ${form.startTime} - ${form.endTime}\n` +
-    `⚡ Logística eléctrica: ${powerOptionsMap[form.powerSource] || 'No indicado'}\n` +
+    `⚡ Logística eléctrica: ${powerOptionsMap[form.powerSource] ?? NOT_PROVIDED_LABEL}\n` +
     `📏 Espacio disponible: ${form.spaceLength}m x ${form.spaceWidth}m\n` +
-    `🧱 Tipo de suelo: ${surfaceLabelMap[form.surfaceType] || 'No indicado'}\n` +
+    `🧱 Tipo de suelo: ${surfaceLabelMap[form.surfaceType] ?? NOT_PROVIDED_LABEL}\n` +
     `👧 Invitados: ${form.childrenCount} niños\n` +
     `🎂 Edades: ${form.ageRange}\n` +
     `🚪 Ruta de acceso libre: ${form.accessConfirmed ? 'Sí' : 'No'}\n` +
     measurementLine +
-    `💰 Precio referencial: S/ ${price.value.toFixed(2)}`
+    `💰 Precio referencial: S/ ${formattedPrice.value}`
   );
 });
 
 const whatsappUrl = computed(
-  () => `https://wa.me/51975495623?text=${encodeURIComponent(whatsappMessage.value)}`,
+  () => `https://wa.me/${EL_PATIO_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage.value)}`,
 );
 
 function submitReservation() {
@@ -267,7 +306,7 @@ const surfaceLabelMap = {
               </div>
               <h2>{{ product.name }}</h2>
               <p>{{ minimumSpace.label }}</p>
-              <strong>S/ {{ price.toFixed(2) }}</strong>
+              <strong>S/ {{ formattedPrice }}</strong>
             </div>
           </div>
         </div>
@@ -284,7 +323,7 @@ const surfaceLabelMap = {
           <div class="guest-actions">
             <a
               class="whatsapp-btn"
-              href="https://wa.me/51975495623?text=Hola!%20Quiero%20reservar%20un%20inflable"
+              :href="`https://wa.me/${EL_PATIO_WHATSAPP_NUMBER}?text=%C2%A1Hola!%20Quiero%20reservar%20un%20inflable`"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -328,7 +367,7 @@ const surfaceLabelMap = {
               </label>
               <label class="field">
                 <span>Fecha del evento</span>
-                <input v-model="form.eventDate" :min="today" type="date" />
+                <input v-model="form.eventDate" :min="minDate" type="date" />
               </label>
               <label class="field">
                 <span>Horario inicio</span>
@@ -473,7 +512,10 @@ const surfaceLabelMap = {
               <span class="section-number">7</span>
               <div>
                 <h2>📐 Toma de medidas</h2>
-                <p>Este inflable incluye visita de medidas sin costo por su tamaño o valor superior a S/ 600.</p>
+                <p>
+                  Este inflable incluye visita de medidas sin costo por su tamaño o valor superior a
+                  S/ {{ LARGE_INFLABLE_PRICE_THRESHOLD }}.
+                </p>
               </div>
             </div>
 

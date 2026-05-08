@@ -1,3 +1,15 @@
+export const EL_PATIO_WHATSAPP_NUMBER = '51975495623';
+export const LARGE_INFLABLE_PRICE_THRESHOLD = 600;
+const BABY_KEYWORDS = [
+  'bebé',
+  'bebe',
+  'baby',
+  'pequeño',
+  'pequeno',
+  'cubito',
+];
+const LARGE_KEYWORDS = ['grande', 'mega', 'arcoíris', 'arcoiris'];
+
 function normalizePriceValue(value) {
   if (value === null || value === undefined || value === '') return null;
 
@@ -48,27 +60,19 @@ export function getInflableSize(product) {
   const price = getProductPrice(product) ?? 0;
 
   if (
-    searchText.includes('bebé') ||
-    searchText.includes('bebe') ||
-    searchText.includes('baby') ||
-    searchText.includes('pequeño') ||
-    searchText.includes('pequeno') ||
-    searchText.includes('cubito') ||
+    BABY_KEYWORDS.some((keyword) => searchText.includes(keyword)) ||
     subcategory.includes('juegos para bebés') ||
     subcategory.includes('juegos para bebes') ||
     ageRange.includes('0-2') ||
     ageRange.includes('1-3') ||
-    ageRange.includes('8 meses')
+    ageRange.includes('meses')
   ) {
     return 'bebes';
   }
 
   if (
-    searchText.includes('grande') ||
-    searchText.includes('mega') ||
-    searchText.includes('arcoíris') ||
-    searchText.includes('arcoiris') ||
-    price > 600
+    LARGE_KEYWORDS.some((keyword) => searchText.includes(keyword)) ||
+    price > LARGE_INFLABLE_PRICE_THRESHOLD
   ) {
     return 'grande';
   }
@@ -108,7 +112,10 @@ export function getInflableSpaceRequirement(product) {
     return { length: 3, width: 3, label: 'Mínimo recomendado: 3m x 3m' };
   }
 
-  if (size === 'grande' || (getProductPrice(product) ?? 0) > 600) {
+  if (
+    size === 'grande' ||
+    (getProductPrice(product) ?? 0) > LARGE_INFLABLE_PRICE_THRESHOLD
+  ) {
     return { length: 8, width: 6, label: 'Mínimo recomendado: 8m x 6m' };
   }
 

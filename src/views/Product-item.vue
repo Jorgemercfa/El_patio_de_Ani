@@ -13,6 +13,14 @@ import {
 
 const router = useRouter()
 const allProducts = computed(() => getCompanyproducts())
+const enrichedProducts = computed(() =>
+  allProducts.value.map((product) => ({
+    ...product,
+    inflableBadgeMeta: isInflableProduct(product)
+      ? getInflableBadge(getInflableSize(product))
+      : null,
+  })),
+)
 
 const categories = [
   'Todas',
@@ -25,8 +33,8 @@ const activeFilter = ref('Todas')
 
 const products = computed(() =>
   activeFilter.value === 'Todas'
-    ? allProducts.value
-    : allProducts.value.filter((p) => p.category === activeFilter.value),
+    ? enrichedProducts.value
+    : enrichedProducts.value.filter((p) => p.category === activeFilter.value),
 )
 
 const getProductName = (product) => product.name || 'Producto sin nombre'
@@ -34,7 +42,6 @@ const getButtonText = (product) => product.details_button || 'Ver detalles'
 const getShortDescription = (product) => product.shortDescription || ''
 const getCategory = (product) => product.category || ''
 const getSubcategory = (product) => product.subcategory || ''
-const getInflableBadgeMeta = (product) => getInflableBadge(getInflableSize(product))
 
 const formatPrice = (product) => {
   const price = getProductPrice(product)
@@ -87,11 +94,11 @@ const formatPrice = (product) => {
               v-if="isInflableProduct(product)"
               class="badge-size"
               :style="{
-                background: getInflableBadgeMeta(product).background,
-                color: getInflableBadgeMeta(product).color,
+                background: product.inflableBadgeMeta.background,
+                color: product.inflableBadgeMeta.color,
               }"
             >
-              {{ getInflableBadgeMeta(product).shortLabel }}
+              {{ product.inflableBadgeMeta.shortLabel }}
             </span>
           </div>
 
