@@ -4,6 +4,7 @@ import Home from './views/Home-item.vue';
 import products from './views/Product-item.vue';
 import Contact from './views/Contact-item.vue';
 import productsDetails from './components/Component-coupons-item.vue';
+import InflableReserva from './views/Inflable-reserva.vue';
 
 // NUEVO
 import SignIn from './views/Sign-in.vue';
@@ -33,6 +34,12 @@ const routes = [
   { path: '/Product-item', name: 'product', component: products, meta: { title: 'Servicios | El patio de Ani' }, },
   { path: '/Contact-item', name: 'Contact', component: Contact, meta: { title: 'Contacto | El patio de Ani' }, },
   { path: '/product/:id', name: 'productsDetails', component: productsDetails, meta: { title: 'Detalles del Servicio | El patio de Ani' } },
+  {
+    path: '/Inflable-reserva',
+    name: 'InflableReserva',
+    component: InflableReserva,
+    meta: { requiresAuth: false, title: 'Reservar Inflable | El Patio de Ani' },
+  },
 
   // USUARIO
   { path: '/Sign-in', name: 'SignIn', component: SignIn },

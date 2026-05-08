@@ -7,6 +7,12 @@ import Footer from '@/components/Footer-item.vue';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart.js';
 import { useSession } from '@/auth/session';
+import {
+  getInflableBadge,
+  getInflableSize,
+  getProductPrice,
+  isInflableProduct,
+} from '@/utils/inflables';
 
 const route = useRoute();
 const router = useRouter();
@@ -19,21 +25,10 @@ const product = computed(() =>
   products.value.find((s) => s.id === Number(route.params.id)),
 );
 
-const displayPrice = computed(() => {
-  const currentProduct = product.value;
-  if (!currentProduct) return null;
-
-  const rawPrice =
-    currentProduct.price ??
-    currentProduct.discount_price ??
-    currentProduct.originalPrice ??
-    currentProduct.tributo;
-
-  const normalizedPrice =
-    typeof rawPrice === 'string' ? Number(rawPrice) : rawPrice;
-
-  return Number.isFinite(normalizedPrice) ? normalizedPrice : null;
-});
+const displayPrice = computed(() => getProductPrice(product.value));
+const isInflable = computed(() => isInflableProduct(product.value));
+const inflableSize = computed(() => getInflableSize(product.value));
+const inflableBadge = computed(() => getInflableBadge(inflableSize.value));
 
 const addedFeedback = ref(false);
 
@@ -47,6 +42,26 @@ function handleAddToCart() {
   setTimeout(() => {
     addedFeedback.value = false;
   }, 1500);
+}
+
+function openWhatsAppInquiry() {
+  if (!product.value) return;
+
+  const message =
+    `Hola! Quiero consultar por el servicio "${product.value.name}".\n` +
+    `Precio referencial: S/ ${displayPrice.value !== null ? displayPrice.value.toFixed(2) : 'Por confirmar'}.\n` +
+    'Es mi primera reserva y quisiera coordinar los detalles por WhatsApp.';
+
+  window.open(
+    `https://wa.me/51975495623?text=${encodeURIComponent(message)}`,
+    '_blank',
+  );
+}
+
+function goToInflableReservation() {
+  if (!product.value) return;
+
+  router.push(`/Inflable-reserva?id=${product.value.id}`);
 }
 
 function getScrollContainer() {
@@ -107,6 +122,25 @@ watch(
 
       <!-- titulo -->
       <h1 class="title">{{ product.name }}</h1>
+
+      <div class="hero-badges">
+        <span v-if="product.category" class="badge badge-category">
+          {{ product.category }}
+        </span>
+        <span v-if="product.subcategory" class="badge badge-subcategory">
+          {{ product.subcategory }}
+        </span>
+        <span
+          v-if="isInflable"
+          class="badge badge-size"
+          :style="{
+            background: inflableBadge.background,
+            color: inflableBadge.color,
+          }"
+        >
+          {{ inflableBadge.label }}
+        </span>
+      </div>
 
       <!-- imagen -->
       <img
@@ -176,10 +210,31 @@ watch(
           <p class="terms-text">{{ product.Terms_of_use }}</p>
         </div>
 
-        <!-- botón -->
-        <button class="buy-button" @click="handleAddToCart">
+      <div class="action-area">
+        <template v-if="isInflable">
+          <button
+            v-if="isAuthenticated"
+            class="buy-button"
+            @click="goToInflableReservation"
+          >
+            📋 Reservar este inflable
+          </button>
+          <template v-else>
+            <button class="whatsapp-button" @click="openWhatsAppInquiry">
+              💬 Consultar por WhatsApp
+            </button>
+            <button
+              class="secondary-button"
+              @click="router.push({ name: 'SignIn' })"
+            >
+              🔑 Iniciar sesión para reservar
+            </button>
+          </template>
+        </template>
+        <button v-else class="buy-button" @click="handleAddToCart">
           {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
         </button>
+      </div>
 
       </div>
     </div>
@@ -207,6 +262,32 @@ watch(
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+.hero-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: -16px 0 20px;
+}
+
+.badge {
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.badge-category {
+  background: linear-gradient(135deg, #E91E81, #2D3E94);
+  color: #fff;
+}
+
+.badge-subcategory {
+  background: #f0f4ff;
+  color: #2D3E94;
 }
 
 .return-area {
@@ -367,6 +448,46 @@ watch(
   transform: scale(1.01);
 }
 
+.action-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.secondary-button,
+.whatsapp-button {
+  width: 100%;
+  border: none;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.whatsapp-button {
+  background: linear-gradient(135deg, #25D366, #128C7E);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(37, 211, 102, 0.24);
+}
+
+.whatsapp-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(37, 211, 102, 0.32);
+}
+
+.secondary-button {
+  background: #fff;
+  border: 2px solid #E91E81;
+  color: #E91E81;
+}
+
+.secondary-button:hover {
+  background: #E91E81;
+  color: #fff;
+}
+
 /* botón regresar */
 .card-button {
   background-color: #FFFFFF; /* --blanco-puro */
@@ -401,5 +522,15 @@ watch(
   font-size: 1.2rem;
   color: #2D3E94; /* --azul-torres */
   opacity: 0.6;
+}
+
+@media (max-width: 640px) {
+  .hero-badges {
+    margin-top: -10px;
+  }
+
+  .product-image-details {
+    height: 260px;
+  }
 }
 </style>
