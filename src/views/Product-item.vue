@@ -71,6 +71,14 @@ const formatPrice = (product) => {
   if (price === null) return 'Precio no disponible'
   return `S/ ${price.toFixed(2)}`
 }
+
+const getInflableSize = (product) => {
+  if (product.category !== 'Juegos e Inflables') return null
+  const sub = (product.subcategory || '').toLowerCase()
+  if (sub.includes('bebé') || sub.includes('bebe') || sub.includes('baby') || sub.includes('pequeño')) return 'bebes'
+  if (sub.includes('grande')) return 'grande'
+  return 'mediano'
+}
 </script>
 
 <template>
@@ -97,12 +105,15 @@ const formatPrice = (product) => {
       <div v-for="product in products" :key="product.id" class="product-card">
 
         <!-- imagen -->
-        <img
-          v-if="product.image"
-          :src="product.image"
-          :alt="getProductName(product)"
-          class="product-image"
-        />
+        <div class="product-image-wrap">
+          <img
+            v-if="product.image"
+            :src="product.image"
+            :alt="getProductName(product)"
+            class="product-image"
+          />
+          <div v-else class="product-image-placeholder">🎪</div>
+        </div>
 
         <div class="product-content">
 
@@ -112,6 +123,19 @@ const formatPrice = (product) => {
             <span class="badge-subcategory" v-if="getSubcategory(product)">
               {{ getSubcategory(product) }}
             </span>
+            <!-- inflable size badge -->
+            <span
+              v-if="getInflableSize(product) === 'bebes'"
+              class="badge-inflable badge-bebes"
+            >👶 Bebés</span>
+            <span
+              v-else-if="getInflableSize(product) === 'grande'"
+              class="badge-inflable badge-grande"
+            >🏰 Grande</span>
+            <span
+              v-else-if="getInflableSize(product) === 'mediano'"
+              class="badge-inflable badge-mediano"
+            >🎪 Mediano</span>
           </div>
 
           <!-- nombre -->
@@ -152,18 +176,22 @@ const formatPrice = (product) => {
 
 .title-products {
   font-size: 2rem;
-  color: #2D3E94; /* --azul-torres */
+  background: linear-gradient(90deg, #E91E81, #2D3E94);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-bottom: 30px;
   font-weight: bold;
   text-align: left;
   position: relative;
+  display: inline-block;
 }
 
 .title-products::after {
   content: '';
   width: 60px;
   height: 4px;
-  background-color: #E91E81; /* --rosa-principal */
+  background-color: #E91E81;
   position: absolute;
   bottom: -10px;
   left: 0;
@@ -176,6 +204,7 @@ const formatPrice = (product) => {
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 36px;
+  margin-top: 20px;
 }
 
 .filter-pill {
@@ -205,24 +234,20 @@ const formatPrice = (product) => {
   }
 }
 
-
 .products-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 30px;
-  justify-items: center;
 }
 
 .product-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  background: #FFFFFF; /* --blanco-puro */
-  color: #2D3E94; /* --azul-torres */
+  background: #FFFFFF;
+  color: #2D3E94;
   border-radius: 14px;
   overflow: hidden;
-  width: 320px;
-  border: 2px solid #E91E81; /* --rosa-principal */
+  border: 2px solid #E91E81;
   box-shadow: 0 10px 25px rgba(233, 30, 129, 0.12);
   transition: all 0.3s ease;
 }
@@ -232,11 +257,28 @@ const formatPrice = (product) => {
   box-shadow: 0 15px 30px rgba(233, 30, 129, 0.25);
 }
 
-/* imagen ocupa todo el ancho superior */
+/* imagen aspect-ratio 4/3 */
+.product-image-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
 .product-image {
   width: 100%;
-  height: 180px;
+  height: 100%;
   object-fit: cover;
+}
+
+.product-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  background: rgba(233, 30, 129, 0.06);
 }
 
 .product-content {
@@ -246,6 +288,8 @@ const formatPrice = (product) => {
   align-items: center;
   padding: 20px 20px 0;
   width: 100%;
+  box-sizing: border-box;
+  flex: 1;
 }
 
 /* badges */
@@ -266,13 +310,35 @@ const formatPrice = (product) => {
 }
 
 .badge-category {
-  background: #E91E81; /* --rosa-principal */
-  color: #FFFFFF; /* --blanco-puro */
+  background: #E91E81;
+  color: #FFFFFF;
 }
 
 .badge-subcategory {
   background: rgba(233, 30, 129, 0.12);
-  color: #E91E81; /* --rosa-principal */
+  color: #E91E81;
+}
+
+.badge-inflable {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.badge-bebes {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.badge-mediano {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.badge-grande {
+  background: #fff3e0;
+  color: #e65100;
 }
 
 .product-title {
@@ -280,42 +346,42 @@ const formatPrice = (product) => {
   font-weight: bold;
   text-align: center;
   margin: 0;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
 }
 
 .product-description {
   font-size: 0.9rem;
   text-align: center;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
   opacity: 0.75;
   margin: 0;
   line-height: 1.5;
 }
 
 .product-price {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: bold;
-  color: #E91E81; /* --rosa-principal */
+  color: #E91E81;
   margin: 4px 0 0;
 }
 
 /* botón */
 .details-button {
   margin: 20px;
-  background-color: #FFD200; /* --amarillo-brillante */
-  color: #2D3E94; /* --azul-torres */
+  background-color: #FFD200;
+  color: #2D3E94;
   border: none;
   padding: 10px 20px;
   font-size: 1rem;
   font-weight: 700;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
   width: calc(100% - 40px);
 }
 
 .details-button:hover {
-  background-color: #e6bd00; /* amarillo ligeramente más oscuro para el hover */
-  transform: scale(1.02);
+  background-color: #e6bd00;
+  transform: scale(1.05);
 }
 </style>

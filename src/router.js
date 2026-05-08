@@ -4,6 +4,7 @@ import Home from './views/Home-item.vue';
 import products from './views/Product-item.vue';
 import Contact from './views/Contact-item.vue';
 import productsDetails from './components/Component-coupons-item.vue';
+import InflableReserva from './views/Inflable-reserva.vue';
 
 // NUEVO
 import SignIn from './views/Sign-in.vue';
@@ -113,6 +114,7 @@ const routes = [
     component: CompanyProfile,
     meta: { requiresCompanyAuth: true },
   },
+  { path: '/Inflable-reserva', name: 'InflableReserva', component: InflableReserva, meta: { title: 'Reservar Inflable | El Patio de Ani' } },
 
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ];

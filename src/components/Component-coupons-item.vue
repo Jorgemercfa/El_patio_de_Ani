@@ -13,6 +13,14 @@ const router = useRouter();
 const { addToCart } = useCart();
 const { isAuthenticated } = useSession();
 
+const isInflable = computed(() => product.value?.category === 'Juegos e Inflables')
+const inflableSize = computed(() => {
+  const sub = (product.value?.subcategory || '').toLowerCase()
+  if (sub.includes('bebé') || sub.includes('bebe') || sub.includes('baby') || sub.includes('pequeño')) return 'bebes'
+  if (sub.includes('grande')) return 'grande'
+  return 'mediano'
+})
+
 const products = computed(() => getCompanyproducts());
 
 const product = computed(() =>
@@ -176,10 +184,47 @@ watch(
           <p class="terms-text">{{ product.Terms_of_use }}</p>
         </div>
 
-        <!-- botón -->
-        <button class="buy-button" @click="handleAddToCart">
-          {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
-        </button>
+        <!-- inflable size badge -->
+        <div v-if="isInflable" style="margin-bottom: 16px;">
+          <span v-if="inflableSize === 'bebes'" class="inflable-size-badge badge-bebes">👶 Para Bebés</span>
+          <span v-else-if="inflableSize === 'grande'" class="inflable-size-badge badge-grande">🏰 Grande</span>
+          <span v-else class="inflable-size-badge badge-mediano">🎪 Mediano</span>
+        </div>
+
+        <!-- botón: inflable autenticado -->
+        <template v-if="isInflable && isAuthenticated">
+          <button
+            class="buy-button buy-button-reserva"
+            @click="router.push('/Inflable-reserva?id=' + product.id)"
+          >
+            📋 Reservar este inflable
+          </button>
+        </template>
+
+        <!-- botón: inflable no autenticado -->
+        <template v-else-if="isInflable && !isAuthenticated">
+          <div class="inflable-buttons">
+            <button
+              class="buy-button buy-button-whatsapp"
+              @click="() => window.open('https://wa.me/51975495623?text=Hola!%20Me%20interesa%3A%20' + encodeURIComponent(product.name))"
+            >
+              💬 Consultar por WhatsApp
+            </button>
+            <button
+              class="buy-button buy-button-signin"
+              @click="router.push('/Sign-in')"
+            >
+              🔑 Iniciar sesión para reservar
+            </button>
+          </div>
+        </template>
+
+        <!-- botón: producto normal -->
+        <template v-else>
+          <button class="buy-button" @click="handleAddToCart">
+            {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
+          </button>
+        </template>
 
       </div>
     </div>
@@ -401,5 +446,61 @@ watch(
   font-size: 1.2rem;
   color: #2D3E94; /* --azul-torres */
   opacity: 0.6;
+}
+
+/* inflable size badges */
+.inflable-size-badge {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 20px;
+}
+
+.badge-bebes {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.badge-mediano {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.badge-grande {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+/* inflable action buttons */
+.inflable-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.buy-button-reserva {
+  background: #FFD200;
+  color: #2D3E94;
+}
+
+.buy-button-whatsapp {
+  background: #25D366;
+  color: white;
+}
+
+.buy-button-whatsapp:hover {
+  background: #1ebe5d !important;
+}
+
+.buy-button-signin {
+  background: white;
+  color: #2D3E94;
+  border: 2px solid #2D3E94 !important;
+}
+
+.buy-button-signin:hover {
+  background: rgba(45, 62, 148, 0.07) !important;
 }
 </style>
