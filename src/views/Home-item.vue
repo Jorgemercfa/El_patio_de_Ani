@@ -171,24 +171,24 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
     <h1 class="title-home">Nuestros Servicios</h1>
 
     <div class="services-grid">
-      <router-link to="/Product-item" class="service-card" style="background:#FFF9C4">
+      <router-link to="/Product-item" class="service-card service-card-shows">
         <span class="service-icon">🎭</span>
         <h3 class="service-name">Shows Infantiles</h3>
         <p class="service-desc">Animación, magia y mucha diversión</p>
       </router-link>
-      <router-link to="/Product-item" class="service-card" style="background:#E8F5E9">
+      <router-link to="/Product-item" class="service-card service-card-games">
         <span class="service-icon">🎪</span>
         <h3 class="service-name">Juegos e Inflables</h3>
         <p class="service-desc">Inflables, trampolines y juegos para todos</p>
       </router-link>
-      <router-link to="/Product-item" class="service-card" style="background:#FFF3E0">
+      <router-link to="/Product-item" class="service-card service-card-snacks">
         <span class="service-icon">🍿</span>
         <h3 class="service-name">Carritos Snacks</h3>
         <p class="service-desc">Delicias saladas, dulces y combos</p>
       </router-link>
-      <router-link to="/Product-item" class="service-card" style="background:#FCE4EC">
+      <router-link to="/Product-item" class="service-card service-card-estetica">
         <span class="service-icon">🎨</span>
-        <h3 class="service-name">Estética / Caritas Pintadas</h3>
+        <h3 class="service-name">Estética Infantil</h3>
         <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
       </router-link>
     </div>
@@ -630,6 +630,11 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   cursor: pointer;
 }
+
+.service-card-shows   { background: #FFF9C4; }
+.service-card-games   { background: #E8F5E9; }
+.service-card-snacks  { background: #FFF3E0; }
+.service-card-estetica { background: #FCE4EC; }
 
 .service-card:hover {
   transform: translateY(-4px);
