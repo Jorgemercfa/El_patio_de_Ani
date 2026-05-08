@@ -4,15 +4,15 @@ import { useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
-import { useCart } from '@/store/cart.js';
+// import { useCart } from '@/store/cart.js';
 
 const router = useRouter();
 const { state, logout } = useSession();
-const { getPurchasedproducts } = useCart();
+// const { getPurchasedproducts } = useCart();
 
-const purchasedproducts = computed(() =>
-  state.user ? getPurchasedproducts(state.user.id) : [],
-);
+// const purchasedproducts = computed(() =>
+//   state.user ? getPurchasedproducts(state.user.id) : [],
+// );
 const initials = computed(() => {
   const name = state.user?.name || '';
   return name
@@ -23,14 +23,14 @@ const initials = computed(() => {
     .join('') || 'UA';
 });
 
-function formatDate(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleDateString('es-PE', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
+// function formatDate(iso) {
+//   if (!iso) return '';
+//   return new Date(iso).toLocaleDateString('es-PE', {
+//     year: 'numeric',
+//     month: 'long',
+//     day: 'numeric',
+//   });
+// }
 
 const onLogout = () => {
   logout();
@@ -74,7 +74,7 @@ const onLogout = () => {
         </div>
 
         <!-- Purchased products -->
-        <div class="products-section">
+        <!-- <div class="products-section">
           <h2 class="section-title">Mis cupones adquiridos</h2>
           <div v-if="purchasedproducts.length > 0" class="products-grid">
             <div
@@ -101,7 +101,7 @@ const onLogout = () => {
               <button class="browse-btn">Ver cupones disponibles</button>
             </router-link>
           </div>
-        </div>
+        </div> -->
       </div>
     </section>
 
