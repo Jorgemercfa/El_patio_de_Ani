@@ -33,7 +33,12 @@ const inflableSize = computed(() => {
 const isPremium = computed(() => (displayPrice.value ?? 0) > 600)
 
 // ── Today date for min ────────────────────────────────────
+// Note: recalculated on component mount; if a user keeps the page open past
+// midnight the date may become stale until they reload.
 const today = new Date().toISOString().split('T')[0]
+
+// ── WhatsApp contact ──────────────────────────────────────
+const WA_NUMBER = '51975495623'
 
 // ── Form fields ──────────────────────────────────────────
 const form = ref({
@@ -107,6 +112,9 @@ const errors = computed(() => {
   if (!form.value.eventDate) e.eventDate = 'La fecha del evento es obligatoria.'
   if (!form.value.startTime) e.startTime = 'La hora de inicio es obligatoria.'
   if (!form.value.endTime) e.endTime = 'La hora de fin es obligatoria.'
+  if (form.value.startTime && form.value.endTime && form.value.endTime <= form.value.startTime) {
+    e.endTime = 'La hora de fin debe ser posterior a la hora de inicio.'
+  }
   if (!form.value.electricity) e.electricity = 'Selecciona la opción de suministro eléctrico.'
   if (!form.value.largo || Number(form.value.largo) <= 0) e.largo = 'Ingresa el largo disponible.'
   if (!form.value.ancho || Number(form.value.ancho) <= 0) e.ancho = 'Ingresa el ancho disponible.'
@@ -152,7 +160,7 @@ const whatsappMessage = computed(() => {
   return encodeURIComponent(msg)
 })
 
-const whatsappUrl = computed(() => `https://wa.me/51975495623?text=${whatsappMessage.value}`)
+const whatsappUrl = computed(() => `https://wa.me/${WA_NUMBER}?text=${whatsappMessage.value}`)
 </script>
 
 <template>
@@ -180,7 +188,7 @@ const whatsappUrl = computed(() => `https://wa.me/51975495623?text=${whatsappMes
         Para tu primera reserva, contáctanos por WhatsApp y nuestro equipo te asesorará personalmente.
       </p>
       <a
-        href="https://wa.me/51975495623?text=Hola!%20Quiero%20reservar%20un%20inflable"
+        :href="`https://wa.me/${WA_NUMBER}?text=Hola!%20Quiero%20reservar%20un%20inflable`"
         target="_blank"
         rel="noopener noreferrer"
         class="btn-whatsapp"
