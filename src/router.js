@@ -14,6 +14,7 @@ import Profile from './views/Profile-item.vue';
 import Cart from './views/Cart-item.vue';
 import Checkout from './views/Checkout-item.vue';
 import OrderConfirmation from './views/OrderConfirmation-item.vue';
+import InflableReserva from './views/Inflable-reserva.vue';
 
 // EMPRESA
 import SignInCompany from './views/views_companies/Sign-in-companies.vue';
@@ -65,6 +66,12 @@ const routes = [
     name: 'OrderConfirmation',
     component: OrderConfirmation,
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/Inflable-reserva',
+    name: 'InflableReserva',
+    component: InflableReserva,
+    meta: { title: 'Reservar Inflable | El Patio de Ani' },
   },
 
   // EMPRESA

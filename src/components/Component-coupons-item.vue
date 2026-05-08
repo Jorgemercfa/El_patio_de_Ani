@@ -37,6 +37,30 @@ const displayPrice = computed(() => {
 
 const addedFeedback = ref(false);
 
+const isInflable = computed(() => product.value?.category === 'Juegos e Inflables')
+
+const inflableSize = computed(() => {
+  const sub = product.value?.subcategory?.toLowerCase() || ''
+  if (sub.includes('bebé') || sub.includes('bebe') || sub.includes('baby') || sub.includes('pequeño') || sub.includes('peque')) return 'bebes'
+  if (sub.includes('grande')) return 'grande'
+  return 'mediano'
+})
+
+const inflableSizeBadgeLabel = computed(() => {
+  if (!isInflable.value) return null
+  if (inflableSize.value === 'bebes') return '👶 Para Bebés'
+  if (inflableSize.value === 'grande') return '🏰 Grande'
+  return '🎪 Mediano'
+})
+
+function handleReserveInflable() {
+  router.push('/Inflable-reserva?id=' + product.value.id)
+}
+
+function handleWhatsAppInflable() {
+  window.open('https://wa.me/51975495623?text=Hola!%20Me%20interesa%20el%20inflable%3A%20' + encodeURIComponent(product.value.name))
+}
+
 function handleAddToCart() {
   if (!isAuthenticated.value) {
     router.push({ name: 'SignIn' });
@@ -158,6 +182,14 @@ watch(
           </div>
         </div>
 
+        <!-- badge de tamaño de inflable -->
+        <div v-if="inflableSizeBadgeLabel" class="inflable-size-badge-wrapper">
+          <span
+            class="inflable-size-badge"
+            :class="`inflable-size--${inflableSize}`"
+          >{{ inflableSizeBadgeLabel }}</span>
+        </div>
+
         <!-- opciones incluidas -->
         <div class="product-options" v-if="product.options?.length">
           <span class="label">Incluye</span>
@@ -176,8 +208,24 @@ watch(
           <p class="terms-text">{{ product.Terms_of_use }}</p>
         </div>
 
-        <!-- botón -->
-        <button class="buy-button" @click="handleAddToCart">
+        <!-- botón: flujo inflable vs carrito -->
+        <template v-if="isInflable">
+          <!-- cliente autenticado: reservar directamente -->
+          <button v-if="isAuthenticated" class="buy-button buy-button--reserve" @click="handleReserveInflable">
+            📋 Reservar este inflable
+          </button>
+          <!-- cliente no autenticado: dos opciones -->
+          <template v-else>
+            <button class="buy-button buy-button--whatsapp" @click="handleWhatsAppInflable">
+              💬 Consultar por WhatsApp
+            </button>
+            <button class="buy-button buy-button--signin" @click="router.push('/Sign-in')">
+              🔑 Iniciar sesión para reservar
+            </button>
+          </template>
+        </template>
+        <!-- flujo normal carrito -->
+        <button v-else class="buy-button" @click="handleAddToCart">
           {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
         </button>
 
@@ -401,5 +449,69 @@ watch(
   font-size: 1.2rem;
   color: #2D3E94; /* --azul-torres */
   opacity: 0.6;
+}
+
+/* inflable size badge */
+.inflable-size-badge-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 18px;
+}
+
+.inflable-size-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+
+.inflable-size--bebes {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.inflable-size--mediano {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.inflable-size--grande {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+/* botón reservar inflable (amarillo) */
+.buy-button--reserve {
+  background: #FFD200;
+  color: #2D3E94;
+  margin-bottom: 10px;
+}
+
+.buy-button--reserve:hover {
+  background: #e6bd00;
+}
+
+/* botón WhatsApp (verde) */
+.buy-button--whatsapp {
+  background: #25D366;
+  color: #FFFFFF;
+  margin-bottom: 10px;
+}
+
+.buy-button--whatsapp:hover {
+  background: #1ebe57;
+  transform: scale(1.01);
+}
+
+/* botón iniciar sesión (azul) */
+.buy-button--signin {
+  background: #2D3E94;
+  color: #FFFFFF;
+}
+
+.buy-button--signin:hover {
+  background: #22306f;
+  transform: scale(1.01);
 }
 </style>
