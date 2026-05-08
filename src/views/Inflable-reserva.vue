@@ -14,6 +14,13 @@ const product = computed(() =>
   products.value.find((p) => p.id === Number(route.query.id)),
 )
 
+// Minimum dimensions per inflable size (in meters)
+const MIN_DIMS = {
+  bebes: { largo: 3, ancho: 3 },
+  mediano: { largo: 5, ancho: 4 },
+  grande: { largo: 8, ancho: 6 },
+}
+
 // ─── Computed: inflable size ───────────────────────────────────────────────
 const inflableSize = computed(() => {
   const sub = (product.value?.subcategory || '').toLowerCase()
@@ -59,17 +66,15 @@ const spaceTooSmall = computed(() => {
   const largo = Number(form.value.largo)
   const ancho = Number(form.value.ancho)
   if (!largo || !ancho) return false
-  if (inflableSize.value === 'bebes') return largo < 3 || ancho < 3
-  if (inflableSize.value === 'grande') return largo < 8 || ancho < 6
-  return largo < 5 || ancho < 4
+  const min = MIN_DIMS[inflableSize.value]
+  return largo < min.largo || ancho < min.ancho
 })
 
 const accessWarning = computed(() => submitted.value && !form.value.accesoLibre)
 
 const minimumDimensions = computed(() => {
-  if (inflableSize.value === 'bebes') return '3m × 3m'
-  if (inflableSize.value === 'grande') return '8m × 6m'
-  return '5m × 4m'
+  const min = MIN_DIMS[inflableSize.value]
+  return `${min.largo}m \u00d7 ${min.ancho}m`
 })
 
 const sizeLabel = computed(() => {
