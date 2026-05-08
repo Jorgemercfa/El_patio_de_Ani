@@ -24,6 +24,7 @@ import Createproducts from './views/views_companies/Create-product-item.vue';
 import Companyproducts from './views/views_companies/Company-product-item.vue';
 import OrdersCompanies from './views/views_companies/Orders-companies.vue';
 import CompanyProfile from './views/views_companies/Company-profile-companies.vue';
+import InflableReserva from './views/Inflable-reserva.vue';
 
 import { useSession } from './auth/session';
 import { useSessionCompany } from './auth/session_companies';
@@ -112,6 +113,12 @@ const routes = [
     name: 'CompanyProfile',
     component: CompanyProfile,
     meta: { requiresCompanyAuth: true },
+  },
+  {
+    path: '/Inflable-reserva',
+    name: 'InflableReserva',
+    component: InflableReserva,
+    meta: { title: 'Reservar Inflable | El Patio de Ani' },
   },
 
   { path: '/:pathMatch(.*)*', redirect: '/' },

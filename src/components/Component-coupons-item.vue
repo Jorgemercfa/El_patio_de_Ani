@@ -13,6 +13,16 @@ const router = useRouter();
 const { addToCart } = useCart();
 const { isAuthenticated } = useSession();
 
+const isInflable = computed(() => product.value?.category === 'Juegos e Inflables')
+const inflableSize = computed(() => {
+  const s = (product.value?.subcategory || '').toLowerCase()
+  return s.includes('bebé') || s.includes('bebe') || s.includes('baby') || s.includes('pequeño')
+    ? 'bebes'
+    : s.includes('grande')
+    ? 'grande'
+    : 'mediano'
+})
+
 const products = computed(() => getCompanyproducts());
 
 const product = computed(() =>
@@ -132,6 +142,22 @@ watch(
 
         <!-- campos generales -->
         <div class="product-info">
+          <!-- badge tamaño inflable -->
+          <div class="info-item inflable-size-badge" v-if="isInflable">
+            <span class="label">Tamaño</span>
+            <span
+              class="value inflable-size-value"
+              :class="{
+                'size-bebes': inflableSize === 'bebes',
+                'size-grande': inflableSize === 'grande',
+                'size-mediano': inflableSize === 'mediano',
+              }"
+            >
+              <template v-if="inflableSize === 'bebes'">👶 Bebés</template>
+              <template v-else-if="inflableSize === 'grande'">🏰 Grande</template>
+              <template v-else>🎪 Mediano</template>
+            </span>
+          </div>
           <div class="info-item" v-if="product.category">
             <span class="label">Categoría</span>
             <span class="value">{{ product.category }}</span>
@@ -177,7 +203,33 @@ watch(
         </div>
 
         <!-- botón -->
-        <button class="buy-button" @click="handleAddToCart">
+        <div v-if="isInflable">
+          <template v-if="isAuthenticated">
+            <button
+              class="buy-button inflable-reserve-btn"
+              @click="router.push('/Inflable-reserva?id=' + product.id)"
+            >
+              📋 Reservar este inflable
+            </button>
+          </template>
+          <template v-else>
+            <a
+              class="buy-button whatsapp-btn"
+              :href="'https://wa.me/51975495623?text=' + encodeURIComponent('Hola! Quiero consultar sobre el inflable: ' + product.name)"
+              target="_blank"
+              rel="noopener"
+            >
+              💬 Consultar por WhatsApp
+            </a>
+            <button
+              class="buy-button signin-btn"
+              @click="router.push({ name: 'SignIn' })"
+            >
+              🔑 Iniciar sesión para reservar
+            </button>
+          </template>
+        </div>
+        <button v-else class="buy-button" @click="handleAddToCart">
           {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
         </button>
 
@@ -399,7 +451,54 @@ watch(
   text-align: center;
   padding: 40px 20px;
   font-size: 1.2rem;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
   opacity: 0.6;
+}
+
+/* inflable size badge */
+.size-bebes { color: #7c3aed; }
+.size-grande { color: #e65100; }
+.size-mediano { color: #2e7d32; }
+
+/* inflable buttons */
+.inflable-reserve-btn {
+  background: #FFD200;
+  color: #2D3E94;
+  margin-bottom: 10px;
+  display: block;
+  text-align: center;
+}
+
+.whatsapp-btn {
+  display: block;
+  width: 100%;
+  background: #25D366;
+  color: #FFFFFF;
+  border: none;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.whatsapp-btn:hover {
+  background-color: #1ebe5c;
+  transform: scale(1.01);
+}
+
+.signin-btn {
+  background: #2D3E94;
+  color: #FFFFFF;
+}
+
+.signin-btn:hover {
+  background: #1a2a6e;
+  transform: scale(1.01);
 }
 </style>

@@ -71,6 +71,20 @@ const formatPrice = (product) => {
   if (price === null) return 'Precio no disponible'
   return `S/ ${price.toFixed(2)}`
 }
+
+const getInflableSizeBadge = (product) => {
+  const sub = (product.subcategory || '').toLowerCase()
+  if (sub.includes('bebé') || sub.includes('bebe') || sub.includes('baby') || sub.includes('pequeño')) {
+    return { label: '👶 Bebés', cls: 'badge-size-bebes' }
+  }
+  if (sub.includes('grande')) {
+    return { label: '🏰 Grande', cls: 'badge-size-grande' }
+  }
+  if (product.category === 'Juegos e Inflables') {
+    return { label: '🎪 Mediano', cls: 'badge-size-mediano' }
+  }
+  return null
+}
 </script>
 
 <template>
@@ -97,12 +111,14 @@ const formatPrice = (product) => {
       <div v-for="product in products" :key="product.id" class="product-card">
 
         <!-- imagen -->
-        <img
-          v-if="product.image"
-          :src="product.image"
-          :alt="getProductName(product)"
-          class="product-image"
-        />
+        <div class="product-image-wrapper">
+          <img
+            v-if="product.image"
+            :src="product.image"
+            :alt="getProductName(product)"
+            class="product-image"
+          />
+        </div>
 
         <div class="product-content">
 
@@ -113,6 +129,15 @@ const formatPrice = (product) => {
               {{ getSubcategory(product) }}
             </span>
           </div>
+
+          <!-- badge de tamaño inflable -->
+          <span
+            v-if="getInflableSizeBadge(product)"
+            class="badge-size"
+            :class="getInflableSizeBadge(product).cls"
+          >
+            {{ getInflableSizeBadge(product).label }}
+          </span>
 
           <!-- nombre -->
           <h2 class="product-title">{{ getProductName(product) }}</h2>
@@ -152,18 +177,22 @@ const formatPrice = (product) => {
 
 .title-products {
   font-size: 2rem;
-  color: #2D3E94; /* --azul-torres */
+  background: linear-gradient(90deg, #E91E81, #2D3E94);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-bottom: 30px;
   font-weight: bold;
   text-align: left;
   position: relative;
+  display: inline-block;
 }
 
 .title-products::after {
   content: '';
   width: 60px;
   height: 4px;
-  background-color: #E91E81; /* --rosa-principal */
+  background-color: #E91E81;
   position: absolute;
   bottom: -10px;
   left: 0;
@@ -176,6 +205,7 @@ const formatPrice = (product) => {
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 36px;
+  margin-top: 20px;
 }
 
 .filter-pill {
@@ -205,7 +235,6 @@ const formatPrice = (product) => {
   }
 }
 
-
 .products-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -217,13 +246,13 @@ const formatPrice = (product) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #FFFFFF; /* --blanco-puro */
-  color: #2D3E94; /* --azul-torres */
+  background: #FFFFFF;
+  color: #2D3E94;
   border-radius: 14px;
   overflow: hidden;
   width: 320px;
-  border: 2px solid #E91E81; /* --rosa-principal */
-  box-shadow: 0 10px 25px rgba(233, 30, 129, 0.12);
+  border: 2px solid #E91E81;
+  box-shadow: 0 10px 25px rgba(233, 30, 129, 0.1);
   transition: all 0.3s ease;
 }
 
@@ -232,11 +261,19 @@ const formatPrice = (product) => {
   box-shadow: 0 15px 30px rgba(233, 30, 129, 0.25);
 }
 
-/* imagen ocupa todo el ancho superior */
+/* imagen con aspect-ratio 4/3 */
+.product-image-wrapper {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 14px 14px 0 0;
+}
+
 .product-image {
   width: 100%;
-  height: 180px;
+  height: 100%;
   object-fit: cover;
+  border-radius: 14px 14px 0 0;
 }
 
 .product-content {
@@ -266,13 +303,37 @@ const formatPrice = (product) => {
 }
 
 .badge-category {
-  background: #E91E81; /* --rosa-principal */
-  color: #FFFFFF; /* --blanco-puro */
+  background: linear-gradient(90deg, #E91E81, #2D3E94);
+  color: #FFFFFF;
 }
 
 .badge-subcategory {
-  background: rgba(233, 30, 129, 0.12);
-  color: #E91E81; /* --rosa-principal */
+  background: #dbe4ff;
+  color: #2D3E94;
+}
+
+/* badge tamaño inflable */
+.badge-size {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+
+.badge-size-bebes {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.badge-size-grande {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.badge-size-mediano {
+  background: #e8f5e9;
+  color: #2e7d32;
 }
 
 .product-title {
@@ -280,42 +341,42 @@ const formatPrice = (product) => {
   font-weight: bold;
   text-align: center;
   margin: 0;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
 }
 
 .product-description {
   font-size: 0.9rem;
   text-align: center;
-  color: #2D3E94; /* --azul-torres */
+  color: #2D3E94;
   opacity: 0.75;
   margin: 0;
   line-height: 1.5;
 }
 
 .product-price {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: bold;
-  color: #E91E81; /* --rosa-principal */
+  color: #E91E81;
   margin: 4px 0 0;
 }
 
 /* botón */
 .details-button {
   margin: 20px;
-  background-color: #FFD200; /* --amarillo-brillante */
-  color: #2D3E94; /* --azul-torres */
+  background-color: #FFD200;
+  color: #2D3E94;
   border: none;
   padding: 10px 20px;
   font-size: 1rem;
   font-weight: 700;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
   width: calc(100% - 40px);
 }
 
 .details-button:hover {
-  background-color: #e6bd00; /* amarillo ligeramente más oscuro para el hover */
-  transform: scale(1.02);
+  background-color: #e6bd00;
+  transform: scale(1.03);
 }
 </style>
