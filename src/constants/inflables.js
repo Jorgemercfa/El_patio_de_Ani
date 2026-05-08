@@ -1,0 +1,3 @@
+export const PREMIUM_INFLABLE_PRICE = 600;
+export const MAX_GUEST_COUNT = 200;
+export const WHATSAPP_BUSINESS_NUMBER = '51975495623';

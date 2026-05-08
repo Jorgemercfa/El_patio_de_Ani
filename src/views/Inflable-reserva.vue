@@ -5,9 +5,15 @@ import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
+import {
+  PREMIUM_INFLABLE_PRICE,
+  MAX_GUEST_COUNT,
+  WHATSAPP_BUSINESS_NUMBER,
+} from '@/constants/inflables';
 
 const route = useRoute();
 const { state, isAuthenticated } = useSession();
+const CURRENCY_PREFIX = 'S/';
 
 const allProducts = computed(() => getCompanyproducts());
 const selectedProduct = computed(() =>
@@ -69,7 +75,7 @@ const inflableType = computed(() => {
     return 'bebes';
   }
 
-  if (sub.includes('grande') || selectedPrice.value > 600) {
+  if (sub.includes('grande') || selectedPrice.value > PREMIUM_INFLABLE_PRICE) {
     return 'grande';
   }
 
@@ -82,7 +88,12 @@ const requiredSpace = computed(() => {
   return { length: 5, width: 4 };
 });
 
-const today = new Date().toISOString().split('T')[0];
+const getLocalDate = () => {
+  const now = new Date();
+  const timezoneOffset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - timezoneOffset).toISOString().split('T')[0];
+};
+const today = getLocalDate();
 
 const form = ref({
   responsibleName: state.user?.name || '',
@@ -147,9 +158,11 @@ const ageRecommendation = computed(() => {
   return 'Recomendado para niños de 2-8 años';
 });
 
-const requiresMeasureVisit = computed(() => selectedPrice.value > 600);
+const requiresMeasureVisit = computed(() => selectedPrice.value > PREMIUM_INFLABLE_PRICE);
 const formErrors = ref({});
 const showConfirmationModal = ref(false);
+const premiumPriceLabel = `${CURRENCY_PREFIX} ${PREMIUM_INFLABLE_PRICE}+`;
+const firstContactWhatsappUrl = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=Hola!%20Quiero%20reservar%20un%20inflable%20para%20mi%20evento`;
 
 const reservationSummary = computed(() => ({
   producto: selectedProduct.value?.name || 'Inflable',
@@ -190,7 +203,7 @@ const whatsappUrl = computed(() => {
     `Teléfono visita: ${reservationSummary.value.telefonoMedida}`,
   ].join('\n');
 
-  return `https://wa.me/51975495623?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`;
 });
 
 function validateForm() {
@@ -229,8 +242,12 @@ function validateForm() {
   if (!form.value.floorType) {
     errors.floorType = 'Selecciona el tipo de suelo';
   }
-  if (!form.value.guestCount || Number(form.value.guestCount) < 1 || Number(form.value.guestCount) > 200) {
-    errors.guestCount = 'Ingresa una cantidad de niños entre 1 y 200';
+  if (
+    !form.value.guestCount ||
+    Number(form.value.guestCount) < 1 ||
+    Number(form.value.guestCount) > MAX_GUEST_COUNT
+  ) {
+    errors.guestCount = `Ingresa una cantidad de niños entre 1 y ${MAX_GUEST_COUNT}`;
   }
   if (!form.value.ageRange.trim()) {
     errors.ageRange = 'Ingresa el rango de edades';
@@ -277,10 +294,10 @@ function submitReservation() {
 
         <template v-if="!isAuthenticated">
           <div class="warning-panel">
-            <h2>¿Eres nuevo con nosotros? ¡Contáctanos por WhatsApp para coordinar tu primera reserva!</h2>
+            <p class="warning-message">¿Eres nuevo con nosotros? ¡Contáctanos por WhatsApp para coordinar tu primera reserva!</p>
             <a
               class="whatsapp-cta"
-              href="https://wa.me/51975495623?text=Hola!%20Quiero%20reservar%20un%20inflable%20para%20mi%20evento"
+              :href="firstContactWhatsappUrl"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -391,7 +408,7 @@ function submitReservation() {
             <div class="section-grid">
               <div class="field">
                 <label for="guestCount">Cantidad estimada de niños</label>
-                <input id="guestCount" v-model="form.guestCount" min="1" max="200" type="number" placeholder="Ej: 20" />
+                <input id="guestCount" v-model="form.guestCount" min="1" :max="MAX_GUEST_COUNT" type="number" placeholder="Ej: 20" />
                 <p v-if="formErrors.guestCount" class="error-text">{{ formErrors.guestCount }}</p>
               </div>
 
@@ -416,7 +433,7 @@ function submitReservation() {
           <section class="form-section" v-if="requiresMeasureVisit">
             <h2>7️⃣ 📏 Toma de medidas</h2>
             <div class="alert warning-alert">
-              📏 Para inflables premium (S/ 600+), recomendamos una visita previa de toma de medidas sin costo. ¿Deseas coordinarla?
+              📏 Para inflables premium ({{ premiumPriceLabel }}), recomendamos una visita previa de toma de medidas sin costo. ¿Deseas coordinarla?
             </div>
             <div class="radios">
               <label><input v-model="form.measureVisitChoice" type="radio" value="Sí, quiero coordinar visita de medidas" /> Sí, quiero coordinar visita de medidas</label>
@@ -500,7 +517,7 @@ function submitReservation() {
   color: #7a5f00;
 }
 
-.warning-panel h2 {
+.warning-message {
   font-size: 1rem;
   line-height: 1.5;
   margin: 0 0 12px;

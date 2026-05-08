@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
 import { getCompanyproducts } from '@/auth/companyproductsRepo'
+import { PREMIUM_INFLABLE_PRICE } from '@/constants/inflables'
 
 const router = useRouter()
 const allProducts = computed(() => getCompanyproducts())
@@ -102,7 +103,7 @@ const getInflableSize = (product) => {
     return 'Bebés 👶'
   }
 
-  if (sub.includes('grande') || price > 600) {
+  if (sub.includes('grande') || price > PREMIUM_INFLABLE_PRICE) {
     return 'Grande 🏰'
   }
 

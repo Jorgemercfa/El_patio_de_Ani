@@ -71,7 +71,11 @@ const routes = [
     path: '/Inflable-reserva',
     name: 'InflableReserva',
     component: InflableReserva,
-    meta: { requiresAuth: true, title: 'Reservar Inflable | El Patio de Ani' },
+    meta: {
+      requiresAuth: true,
+      authOptional: true,
+      title: 'Reservar Inflable | El Patio de Ani',
+    },
   },
 
   // EMPRESA
@@ -138,7 +142,7 @@ router.beforeEach((to) => {
   // Rutas de usuario
   if (to.meta?.requiresAuth) {
     const { isAuthenticated } = useSession();
-    if (!isAuthenticated.value && to.name !== 'InflableReserva') {
+    if (!isAuthenticated.value && !to.meta?.authOptional) {
       return { name: 'SignIn' };
     }
   }

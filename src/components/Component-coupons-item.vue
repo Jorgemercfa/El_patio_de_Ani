@@ -7,6 +7,7 @@ import Footer from '@/components/Footer-item.vue';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart.js';
 import { useSession } from '@/auth/session';
+import { PREMIUM_INFLABLE_PRICE, WHATSAPP_BUSINESS_NUMBER } from '@/constants/inflables';
 
 const route = useRoute();
 const router = useRouter();
@@ -55,7 +56,7 @@ const displayPrice = computed(() => {
 });
 
 const isInflable = computed(() =>
-  product.value?.category === 'Juegos e Inflables',
+  (product.value?.category || '').toLowerCase().includes('juegos e inflables'),
 );
 
 const inflableSubcategory = computed(() => {
@@ -68,7 +69,7 @@ const inflableSubcategory = computed(() => {
 const inflableDisplayTier = computed(() => {
   if (!isInflable.value) return null;
 
-  if ((displayPrice.value || 0) > 600 || inflableSubcategory.value === 'grande') {
+  if ((displayPrice.value || 0) > PREMIUM_INFLABLE_PRICE || inflableSubcategory.value === 'grande') {
     return 'grande';
   }
 
@@ -103,7 +104,7 @@ function reserveInflable() {
 function consultInflableByWhatsApp() {
   const productName = product.value?.name || 'inflable';
   const message = `Hola! Quiero consultar disponibilidad del inflable ${productName} para mi evento.`;
-  const url = `https://wa.me/51975495623?text=${encodeURIComponent(message)}`;
+  const url = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`;
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
