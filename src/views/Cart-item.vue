@@ -127,6 +127,10 @@ function getItemPrice(item) {
   margin-bottom: 40px;
   color: #2D3E94;
   position: relative;
+  background: linear-gradient(135deg, #E91E81, #2D3E94);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .main-title::after {
@@ -161,6 +165,7 @@ function getItemPrice(item) {
   background: white;
   padding: 16px;
   border-radius: 14px;
+  border: 2px solid #E91E81;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
   flex-wrap: wrap;
 }
@@ -250,6 +255,7 @@ function getItemPrice(item) {
   background: white;
   padding: 28px;
   border-radius: 14px;
+  border: 2px solid #E91E81;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
 }
 
@@ -293,7 +299,7 @@ function getItemPrice(item) {
 }
 
 .checkout-btn:hover {
-  background: #2549ad;
+  background: #f2c500;
   transform: translateY(-2px);
 }
 
@@ -326,7 +332,7 @@ function getItemPrice(item) {
 }
 
 .browse-btn:hover {
-  background: #2D3E94;
+  background: #f2c500;
   transform: translateY(-2px);
 }
 

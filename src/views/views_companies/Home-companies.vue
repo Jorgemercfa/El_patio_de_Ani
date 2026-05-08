@@ -1,297 +1,206 @@
 <script setup>
 import { computed } from 'vue';
-import NavbarCompanies from '@/components/Navbar-company-item.vue';
-import Footer from '@/components/Footer-item.vue';
+import AdminLayout from '@/components/AdminLayout.vue';
 import { useSessionCompany } from '@/auth/session_companies';
+import {
+  getproductsByCompany,
+  getCompanyproducts,
+  saveCompanyproducts,
+} from '@/auth/companyproductsRepo';
+import { useCart } from '@/store/cart';
 
 const { state } = useSessionCompany();
+const { getPurchasedproducts } = useCart();
 
-const companyName = computed(() => state.company?.name || 'Empresa');
+const products = computed(() => getproductsByCompany(state.company));
+const totalProducts = computed(() => products.value.length);
+const totalOrders = computed(() => getPurchasedproducts().length);
+const activeOrders = computed(() =>
+  getPurchasedproducts().filter((item) => !item.completedAt).length,
+);
 
-// Fecha formateada
-const today = new Date().toLocaleDateString('es-PE', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-});
+function deleteProduct(productId) {
+  const allProducts = getCompanyproducts();
+  const filtered = allProducts.filter((product) => product.id !== productId);
+  saveCompanyproducts(filtered);
+}
 </script>
 
 <template>
-  <div class="page-wrapper-company">
-    <header>
-      <NavbarCompanies />
-    </header>
+  <AdminLayout>
+    <section class="stats-grid">
+      <article class="stat-card">
+        <p>Total de productos</p>
+        <h3>{{ totalProducts }}</h3>
+      </article>
+      <article class="stat-card">
+        <p>Pedidos recibidos</p>
+        <h3>{{ totalOrders }}</h3>
+      </article>
+      <article class="stat-card">
+        <p>Pedidos activos</p>
+        <h3>{{ activeOrders }}</h3>
+      </article>
+    </section>
 
-    <main class="dashboard-section">
-      <div class="dashboard-container">
-        <!-- Bienvenida -->
-        <div class="welcome-area">
-          <h1 class="welcome-title">
-            Bienvenido, <span class="company-highlight">{{ companyName }}</span>
-          </h1>
-          <p class="welcome-date">{{ today }}</p>
-        </div>
-
-        <!-- Tarjetas de acciones rápidas -->
-        <div class="quick-actions">
-          <router-link to="/Create-products" class="action-card create-card">
-            <div class="action-icon">
-              <i class="pi pi-plus-circle"></i>
-            </div>
-            <h3>Crear Producto</h3>
-            <p>Vende un producto que ya no uses</p>
-          </router-link>
-
-          <router-link to="/Company-products" class="action-card products-card">
-            <div class="action-icon">
-              <i class="pi pi-tags"></i>
-            </div>
-            <h3>Mis Productos</h3>
-            <p>Administra y revisa tus productos activos</p>
-          </router-link>
-
-          <router-link to="/Company-profile" class="action-card profile-card">
-            <div class="action-icon">
-              <i class="pi pi-building"></i>
-            </div>
-            <h3>Mi usuario vendedor</h3>
-            <p>Visualiza y edita el perfil de tu vendedor</p>
-          </router-link>
-        </div>
-
-        <!-- Sección informativa -->
-        <div class="info-section">
-          <div class="info-card">
-            <h2 class="info-title">
-              <i class="pi pi-chart-line"></i> Panel de vendedor
-            </h2>
-            <p class="info-text">
-              Desde aquí puedes gestionar todos los aspectos de tu presencia en
-              Al Toque. Crea cupones atractivos, revisa el rendimiento de tus
-              ofertas y mantén actualizada la información de tu vendedor.
-            </p>
-          </div>
-
-          <div class="tips-card">
-            <h2 class="tips-title"><i class="pi pi-lightbulb"></i> Consejos</h2>
-            <ul class="tips-list">
-              <li>
-                <strong>Descuentos claros:</strong> Usa porcentajes y precios
-                visibles para atraer más clientes.
-              </li>
-              <li>
-                <strong>Imágenes de calidad:</strong> Una buena foto aumenta las
-                conversiones hasta un 40%.
-              </li>
-              <li>
-                <strong>Códigos únicos:</strong> Genera códigos fáciles de
-                recordar para tus cupones.
-              </li>
-              <li>
-                <strong>Fechas estratégicas:</strong> Lanza ofertas en fechas
-                clave como fines de semana y feriados.
-              </li>
-            </ul>
-          </div>
-        </div>
+    <section class="products-panel">
+      <div class="panel-header">
+        <h2>Productos registrados</h2>
+        <router-link to="/Create-products" class="create-btn"
+          >+ Nuevo producto</router-link
+        >
       </div>
-    </main>
 
-    <footer>
-      <Footer />
-    </footer>
-  </div>
+      <div v-if="products.length === 0" class="empty-card">
+        Aún no hay productos registrados.
+      </div>
+
+      <div v-else class="products-list">
+        <article v-for="product in products" :key="product.id" class="product-row">
+          <div>
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.shortDescription }}</p>
+          </div>
+          <div class="product-meta">
+            <span>S/ {{ Number(product.price ?? 0).toFixed(2) }}</span>
+            <span>{{ product.category }}</span>
+          </div>
+          <div class="product-actions">
+            <router-link :to="`/Create-products?edit=${product.id}`" class="edit-btn"
+              >Editar</router-link
+            >
+            <button class="delete-btn" type="button" @click="deleteProduct(product.id)">
+              Eliminar
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </AdminLayout>
 </template>
 
 <style scoped>
-.page-wrapper-company {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #ffffff;
-  /* color: #e0e0e0; */
-  font-family: Outfit, Inter, Avenir, Helvetica, Arial, sans-serif;
-}
-
-.dashboard-section {
-  flex: 1;
-  padding: 100px 0 60px 0;
-}
-
-.dashboard-container {
-  width: 90%;
-  max-width: 1100px;
-  margin: auto;
-}
-
-/* ─── Bienvenida ─── */
-.welcome-area {
-  margin-bottom: 50px;
-}
-
-.welcome-title {
-  font-size: 2.4rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.company-highlight {
-  color: #325bcd;
-}
-
-.welcome-date {
-  font-size: 1rem;
-  color: #888;
-  text-transform: capitalize;
-}
-
-/* ─── Acciones rápidas ─── */
-.quick-actions {
+.stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
-  margin-bottom: 50px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
-.action-card {
-  background: #325bcd;
-  border: 1px solid #30363d;
-  border-radius: 16px;
-  padding: 32px 28px;
-  text-decoration: none;
-  color: #e0e0e0;
-  transition: all 0.3s ease;
-  cursor: pointer;
+.stat-card {
+  background: white;
+  border: 2px solid #E91E81;
+  border-radius: 14px;
+  padding: 16px;
 }
 
-.action-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+.stat-card p {
+  margin: 0;
+  color: #2D3E94;
 }
 
-.create-card:hover {
-  border-color: #4fc3f7;
+.stat-card h3 {
+  margin: 8px 0 0;
+  color: #E91E81;
+  font-size: 2rem;
 }
 
-.products-card:hover {
-  border-color: #66bb6a;
+.products-panel {
+  background: white;
+  border: 2px solid #E91E81;
+  border-radius: 14px;
+  padding: 18px;
 }
 
-.profile-card:hover {
-  border-color: #ffa726;
-}
-
-.action-icon {
-  font-size: 2.2rem;
-  margin-bottom: 16px;
-}
-
-.create-card .action-icon {
-  color: #4fc3f7;
-}
-
-.products-card .action-icon {
-  color: #66bb6a;
-}
-
-.profile-card .action-icon {
-  color: #ffa726;
-}
-
-.action-card h3 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #ffffff;
-}
-
-.action-card p {
-  font-size: 0.9rem;
-  color: #ffffff;
-  line-height: 1.5;
-}
-
-/* ─── Sección informativa ─── */
-.info-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.info-card,
-.tips-card {
-  background: #325bcd;
-  border: 1px solid #30363d;
-  border-radius: 16px;
-  padding: 32px;
-}
-
-.info-title,
-.tips-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 16px;
+.panel-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.panel-header h2 {
+  margin: 0;
+  color: #2D3E94;
+}
+
+.create-btn {
+  background: #FFD200;
+  color: #2D3E94;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.empty-card {
+  border-radius: 10px;
+  padding: 16px;
+  background: #f4f6f3;
+}
+
+.products-list {
+  display: grid;
   gap: 10px;
 }
 
-.info-title .pi {
-  color: #ffffff;
+.product-row {
+  border: 1px solid #f0d3e6;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr auto;
+  gap: 10px;
+  align-items: center;
 }
 
-.tips-title .pi {
-  color: #ffa726;
-}
-
-.info-text {
-  font-size: 0.95rem;
-  color: #ffffff;
-  line-height: 1.8;
-}
-
-.tips-list {
-  list-style: none;
-  padding: 0;
+.product-row h3 {
   margin: 0;
+  color: #2D3E94;
+}
+
+.product-row p {
+  margin: 4px 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.product-meta {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 4px;
+  color: #E91E81;
+  font-weight: 700;
 }
 
-.tips-list li {
-  font-size: 0.93rem;
-  color: #ffffff;
-  line-height: 1.6;
-  padding-left: 20px;
-  position: relative;
+.product-actions {
+  display: flex;
+  gap: 8px;
 }
 
-.tips-list li::before {
-  content: '▸';
-  position: absolute;
-  left: 0;
-  color: #4fc3f7;
-  font-weight: bold;
+.edit-btn,
+.delete-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
 }
 
-.tips-list li strong {
-  color: #e0e0e0;
+.edit-btn {
+  background: #FFD200;
+  color: #2D3E94;
 }
 
-/* ─── Responsive ─── */
-@media (max-width: 768px) {
-  .welcome-title {
-    font-size: 1.8rem;
-  }
+.delete-btn {
+  background: #E91E81;
+  color: white;
+}
 
-  .quick-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .info-section {
+@media (max-width: 900px) {
+  .product-row {
     grid-template-columns: 1fr;
   }
 }

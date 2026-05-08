@@ -22,6 +22,8 @@ import ForgetPasswordCompany from './views/views_companies/Forget-password-compa
 import HomeCompanies from './views/views_companies/Home-companies.vue';
 import Createproducts from './views/views_companies/Create-product-item.vue';
 import Companyproducts from './views/views_companies/Company-product-item.vue';
+import OrdersCompanies from './views/views_companies/Orders-companies.vue';
+import CompanyProfile from './views/views_companies/Company-profile-companies.vue';
 
 import { useSession } from './auth/session';
 import { useSessionCompany } from './auth/session_companies';
@@ -97,6 +99,18 @@ const routes = [
     path: '/Company-products',
     name: 'Companyproducts',
     component: Companyproducts,
+    meta: { requiresCompanyAuth: true },
+  },
+  {
+    path: '/Orders-companies',
+    name: 'OrdersCompanies',
+    component: OrdersCompanies,
+    meta: { requiresCompanyAuth: true },
+  },
+  {
+    path: '/Company-profile',
+    name: 'CompanyProfile',
+    component: CompanyProfile,
     meta: { requiresCompanyAuth: true },
   },
 

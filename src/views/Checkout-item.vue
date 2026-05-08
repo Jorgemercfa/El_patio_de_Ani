@@ -81,7 +81,7 @@ function confirmPayment() {
             <h2 class="section-title">Resumen del pedido</h2>
             <div v-for="item in cartItems" :key="item.id" class="order-row">
               <span class="order-name">{{ item.name }} <span class="order-qty">x{{ item.quantity }}</span></span>
-              <span class="order-price">S/ {{ (item.discount_price * item.quantity).toFixed(2) }}</span>
+              <span class="order-price">S/ {{ (Number(item.discount_price ?? item.price ?? 0) * item.quantity).toFixed(2) }}</span>
             </div>
             <div class="order-total">
               <span>Total</span>
@@ -184,15 +184,19 @@ function confirmPayment() {
   font-size: 2.2rem;
   font-weight: 700;
   margin-bottom: 40px;
-  color: #111;
+  color: #2D3E94;
   position: relative;
+  background: linear-gradient(135deg, #E91E81, #2D3E94);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .main-title::after {
   content: '';
   width: 80px;
   height: 4px;
-  background-color: #325bcd;
+  background-color: #E91E81;
   display: block;
   margin-top: 10px;
   border-radius: 2px;
@@ -212,6 +216,7 @@ function confirmPayment() {
   background: white;
   padding: 28px;
   border-radius: 14px;
+  border: 2px solid #E91E81;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
 }
 
@@ -219,7 +224,7 @@ function confirmPayment() {
   font-size: 1.15rem;
   font-weight: 700;
   margin-bottom: 18px;
-  color: #222;
+  color: #2D3E94;
 }
 
 .order-row {
@@ -251,7 +256,7 @@ function confirmPayment() {
   justify-content: space-between;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #111;
+  color: #E91E81;
   padding-top: 14px;
   margin-top: 6px;
 }
@@ -263,6 +268,7 @@ function confirmPayment() {
   background: white;
   padding: 36px;
   border-radius: 14px;
+  border: 2px solid #E91E81;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
 }
 
@@ -275,13 +281,13 @@ function confirmPayment() {
 .form-group label {
   font-weight: 500;
   margin-bottom: 6px;
-  color: #333;
+  color: #E91E81;
   font-size: 0.9rem;
 }
 
 .form-group input {
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1.5px solid #ddd;
   font-size: 1rem;
   transition: border 0.2s;
@@ -289,7 +295,7 @@ function confirmPayment() {
 }
 
 .form-group input:focus {
-  border-color: #325bcd;
+  border-color: #E91E81;
 }
 
 .input-error {
@@ -320,8 +326,8 @@ function confirmPayment() {
 .pay-btn {
   width: 100%;
   padding: 14px;
-  background: #325bcd;
-  color: white;
+  background: #FFD200;
+  color: #2D3E94;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
@@ -331,7 +337,7 @@ function confirmPayment() {
 }
 
 .pay-btn:hover:not(:disabled) {
-  background: #2549ad;
+  background: #f2c500;
   transform: translateY(-2px);
 }
 

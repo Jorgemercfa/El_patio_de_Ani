@@ -52,10 +52,10 @@ const onSignUp = () => {
     </header>
 
     <section class="contact-section">
-      <div class="contact-container">
-        <h1 class="main-title">Olvide Contraseña Vendedor</h1>
-
-        <div class="contact-card">
+      <div class="auth-container">
+        <div class="auth-card">
+          <h1 class="main-title">Panel Administrativo</h1>
+          <p class="subtitle">Recuperación de acceso</p>
           <form class="form-area" @submit.prevent="onSignUp" autocomplete="on">
             <div v-if="error" style="color: #b00020; font-weight: 600">
               {{ error }}
@@ -125,48 +125,41 @@ const onSignUp = () => {
 
 .contact-section {
   flex: 1;
-  padding: 120px 0 80px 0;
+  display: grid;
+  place-items: center;
+  padding: 120px 20px 80px;
 }
 
-.contact-container {
-  width: 90%;
-  max-width: 1100px;
-  margin: auto;
+.auth-container {
+  width: 100%;
+  max-width: 560px;
+}
+
+.auth-card {
+  background: white;
+  border-radius: 16px;
+  border: 2px solid #E91E81;
+  box-shadow: 0 14px 35px rgba(45, 62, 148, 0.12);
+  padding: 34px;
 }
 
 .main-title {
-  font-size: 42px;
-  font-weight: 700;
-  margin-bottom: 50px;
-  position: relative;
+  margin: 0;
+  text-align: center;
+  color: #2D3E94;
 }
 
-.main-title::after {
-  content: '';
-  width: 80px;
-  height: 4px;
-  background-color: #325bcd;
-  display: block;
-  margin-top: 10px;
-  border-radius: 2px;
-}
-
-.contact-card {
-  display: flex;
-  gap: 60px;
-  background: white;
-  padding: 60px;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-  flex-wrap: wrap;
+.subtitle {
+  margin: 8px 0 20px;
+  text-align: center;
+  color: #2D3E94;
+  font-weight: 600;
 }
 
 .form-area {
-  flex: 1;
-  min-width: 300px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
 .form-group {
@@ -175,9 +168,9 @@ const onSignUp = () => {
 }
 
 .form-group label {
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 6px;
-  color: #333;
+  color: #E91E81;
 }
 
 .form-group input {
@@ -190,22 +183,29 @@ const onSignUp = () => {
 
 .form-group input:focus {
   outline: none;
-  border-color: #325bcd;
+  border-color: #E91E81;
+  box-shadow: 0 0 0 3px rgba(233, 30, 129, 0.12);
 }
 
 .submit-btn {
-  background-color: #325bcd;
-  color: white;
+  background-color: #FFD200;
+  color: #2D3E94;
   border: none;
-  padding: 12px 24px;
+  padding: 14px;
   font-size: 1rem;
-  border-radius: 6px;
+  border-radius: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
 .submit-btn:hover {
-  background-color: #2549ad;
-  transform: translateY(-2px);
+  background-color: #f2c500;
+}
+
+.text-navbar {
+  color: #2D3E94;
+  text-decoration: none;
+  font-weight: 600;
 }
 </style>
