@@ -10,6 +10,8 @@ const route = useRoute()
 const router = useRouter()
 const { isAuthenticated, state } = useSession()
 
+const WA_NUMBER = '51975495623'
+
 const products = computed(() => getCompanyproducts())
 const product = computed(() => {
   const id = Number(route.query.id)
@@ -135,7 +137,7 @@ function sendWhatsApp() {
   }
 
   const message = lines.join('\n')
-  const url = `https://wa.me/51975495623?text=${encodeURIComponent(message)}`
+  const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`
   window.open(url, '_blank', 'noopener')
 }
 </script>
@@ -157,7 +159,7 @@ function sendWhatsApp() {
         </p>
         <a
           class="btn-whatsapp"
-          href="https://wa.me/51975495623?text=Hola!%20Quiero%20reservar%20un%20inflable%20para%20mi%20evento"
+          :href="`https://wa.me/${WA_NUMBER}?text=Hola!%20Quiero%20reservar%20un%20inflable%20para%20mi%20evento`"
           target="_blank"
           rel="noopener"
         >

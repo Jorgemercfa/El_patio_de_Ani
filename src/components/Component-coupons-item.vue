@@ -13,6 +13,8 @@ const router = useRouter();
 const { addToCart } = useCart();
 const { isAuthenticated } = useSession();
 
+const WA_NUMBER = '51975495623';
+
 const isInflable = computed(() => product.value?.category === 'Juegos e Inflables')
 const inflableSize = computed(() => {
   const s = (product.value?.subcategory || '').toLowerCase()
@@ -203,7 +205,7 @@ watch(
         </div>
 
         <!-- botón -->
-        <div v-if="isInflable">
+        <template v-if="isInflable">
           <template v-if="isAuthenticated">
             <button
               class="buy-button inflable-reserve-btn"
@@ -215,7 +217,7 @@ watch(
           <template v-else>
             <a
               class="buy-button whatsapp-btn"
-              :href="'https://wa.me/51975495623?text=' + encodeURIComponent('Hola! Quiero consultar sobre el inflable: ' + product.name)"
+              :href="`https://wa.me/${WA_NUMBER}?text=` + encodeURIComponent('Hola! Quiero consultar sobre el inflable: ' + product.name)"
               target="_blank"
               rel="noopener"
             >
@@ -228,7 +230,7 @@ watch(
               🔑 Iniciar sesión para reservar
             </button>
           </template>
-        </div>
+        </template>
         <button v-else class="buy-button" @click="handleAddToCart">
           {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
         </button>
