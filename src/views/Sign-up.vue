@@ -150,13 +150,14 @@ const onSignUp = () => {
   font-weight: 700;
   margin-bottom: 50px;
   position: relative;
+  color: #2D3E94;
 }
 
 .main-title::after {
   content: '';
   width: 80px;
   height: 4px;
-  background-color: #325bcd;
+  background-color: #E91E81;
   display: block;
   margin-top: 10px;
   border-radius: 2px;
@@ -188,7 +189,7 @@ const onSignUp = () => {
 .form-group label {
   font-weight: 500;
   margin-bottom: 6px;
-  color: #333;
+  color: #2D3E94;
 }
 
 .form-group input {
@@ -201,12 +202,12 @@ const onSignUp = () => {
 
 .form-group input:focus {
   outline: none;
-  border-color: #325bcd;
+  border-color: #E91E81;
 }
 
 .submit-btn {
-  background-color: #325bcd;
-  color: white;
+  background-color: #FFD200;
+  color: #2D3E94;
   border: none;
   padding: 12px 24px;
   font-size: 1rem;

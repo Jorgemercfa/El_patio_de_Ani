@@ -128,13 +128,14 @@ const onLogin = () => {
   font-weight: 700;
   margin-bottom: 50px;
   position: relative;
+  color: #2D3E94;
 }
 
 .main-title::after {
   content: '';
   width: 80px;
   height: 4px;
-  background-color: #325bcd;
+  background-color: #E91E81;
   display: block;
   margin-top: 10px;
   border-radius: 2px;
@@ -166,7 +167,7 @@ const onLogin = () => {
 .form-group label {
   font-weight: 500;
   margin-bottom: 6px;
-  color: #333;
+  color: #2D3E94;
 }
 
 .form-group input,
@@ -192,15 +193,15 @@ const onLogin = () => {
   padding: 14px;
   border-radius: 12px;
   border: none;
-  background-color: #325bcd;
-  color: white;
+  background-color: #FFD200;
+  color: #2D3E94;
   font-weight: 600;
   cursor: pointer;
   transition: 0.3s ease;
 }
 
 .submit-btn:hover {
-  background-color: #2549ad;
+  background-color: #FFD200;
   transform: translateY(-2px);
 }
 
@@ -210,15 +211,15 @@ const onLogin = () => {
   width: 50%;
   border-radius: 12px;
   border: none;
-  background-color: #325bcd;
-  color: white;
+  background-color: #FFD200;
+  color: #2D3E94;
   font-weight: 600;
   cursor: pointer;
   transition: 0.3s ease;
 }
 
 .other-btn:hover {
-  background-color: #2549ad;
+  background-color: #FFD200;
   transform: translateY(-2px);
 }
 
