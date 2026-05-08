@@ -13,23 +13,6 @@ const year = new Date().getFullYear();
           <div>+51 975 495 623</div>
         </div>
       </div>
-      <div class="social-media">
-        <h4 class="titile-footer">Redes Sociales</h4>
-        <div class="social-media2">
-          <div>
-            <a href="https://www.facebook.com/people/Alquiler-de-Juegos-Infantiles-El-Patio-de-Ani/100093147260858/?mibextid=wwXIfr&rdid=iwJ2cRP4IrJTbjBH&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F181BsAKpcd%2F%3Fmibextid%3DwwXIfr"><i class="pi pi-facebook"></i></a>
-          </div>
-          <div>
-            <a href="https://www.instagram.com/elpatiode.ani?igsh=MXExaW43dzV6cGpxcg=="><i class="pi pi-instagram"></i></a>
-          </div>
-          <div>
-            <a href="https://www.tiktok.com/@elpatiode.ani"><i class="pi pi-tiktok"></i></a>
-          </div>
-          <div>
-            <a href="https://wa.me/51975495623"><i class="pi pi-whatsapp"></i></a>
-          </div>
-        </div>
-      </div>
     </div>
     <div class="footer-bottom">
       © {{ year }} El Patio de Ani. Todos los derechos reservados.
@@ -80,28 +63,6 @@ const year = new Date().getFullYear();
   font-size: 0.95rem;
   color: #e6e6e6;
   line-height: 1.6;
-}
-
-/* ICONOS */
-.social-media2 {
-  display: flex;
-  gap: 20px;
-  margin-top: 15px;
-}
-
-.social-media2 a,
-.social-media2 i {
-  font-size: 1.8rem;
-  color: #e6e6e6;
-  transition: 0.3s ease;
-  cursor: pointer;
-}
-
-/* Hover elegante */
-.social-media2 a:hover,
-.social-media2 i:hover {
-  color: #ffffff;
-  transform: translateY(-3px);
 }
 
 /* BARRA INFERIOR */

@@ -1,52 +1,57 @@
 <template>
-  <nav class="navbar-area">
-    <div class="nav-logo">
-      <router-link to="/"
-        ><img class="logo" src="@/assets/company-logo.png"
-      /></router-link>
-    </div>
+  <div class="navbar-wrapper">
+    <nav class="navbar-area">
+      <!-- 1. LOGO -->
+      <div class="nav-logo">
+        <router-link to="/">
+          <img class="logo" src="@/assets/company-logo.png" alt="Logo" />
+        </router-link>
+      </div>
 
-    <div class="link-style" :class="{ 'show-menu': menuOpen }">
-      <router-link @click="closeMenu" to="/" class="text-navbar"
-        >Inicio</router-link
-      >
-      <router-link @click="closeMenu" to="/product-item" class="text-navbar"
-        >Servicios</router-link
-      >
-      <router-link @click="closeMenu" to="/Contact-item" class="text-navbar"
-        >Contacto</router-link
-      >
-      <router-link @click="closeMenu" to="/Cart" class="text-navbar cart-link">
-        <i class="pi pi-shopping-cart"></i>
-        <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
-      </router-link>
+      <!-- 2. LINKS (IZQUIERDA) -->
+      <div class="link-style" :class="{ 'show-menu': menuOpen }">
+        <router-link @click="closeMenu" to="/" class="text-navbar">Inicio</router-link>
+        <router-link @click="closeMenu" to="/product-item" class="text-navbar">Servicios</router-link>
+        <router-link @click="closeMenu" to="/Contact-item" class="text-navbar">Contacto</router-link>
 
-      <!-- Auth buttons -->
-      <router-link
-        v-if="!isAuthenticated"
-        @click="closeMenu"
-        to="/Sign-in"
-        class="text-navbar"
-        aria-label="Iniciar sesión"
-        title="Iniciar sesión"
-      >
-        <i class="pi pi-sign-in"></i>
-      </router-link>
+        <!-- CONTENEDOR DEL CARRITO -->
+        <router-link @click="closeMenu" to="/Cart" class="text-navbar cart-link">
+          <i class="pi pi-shopping-cart"></i>
+          <!-- El puntito de notificación -->
+          <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
+        </router-link>
 
-      <router-link
-        v-else
-        @click="closeMenu"
-        to="/Profile"
-        class="text-navbar"
-        aria-label="Perfil"
-        title="Perfil"
-      >
-        <i class="pi pi-user"></i>
-      </router-link>
-    </div>
+        <!-- BOTÓN PERFIL -->
+        <router-link
+          v-if="!isAuthenticated"
+          @click="closeMenu"
+          to="/Sign-in"
+          class="text-navbar btn-perfil"
+        >
+          <i class="pi pi-sign-in"></i> Iniciar sesión
+        </router-link>
 
-    <div class="hamburger" @click="toggleMenu">☰</div>
-  </nav>
+        <router-link
+          v-else
+          @click="closeMenu"
+          to="/Profile"
+          class="text-navbar btn-perfil"
+        >
+          <i class="pi pi-user"></i> Mi perfil
+        </router-link>
+      </div>
+
+      <!-- 3. REDES SOCIALES (DERECHA) -->
+      <div class="social-media">
+          <a href="https://www.facebook.com/people/Alquiler-de-Juegos-Infantiles-El-Patio-de-Ani/100093147260858/" target="_blank"><i class="pi pi-facebook"></i></a>
+          <a href="https://www.instagram.com/elpatiode.ani" target="_blank"><i class="pi pi-instagram"></i></a>
+          <a href="https://www.tiktok.com/@elpatiode.ani" target="_blank"><i class="pi pi-tiktok"></i></a>
+          <!-- <a href="https://wa.me/51975495623" target="_blank"><i class="pi pi-whatsapp"></i></a> -->
+      </div>
+
+      <div class="hamburger" @click="toggleMenu">☰</div>
+    </nav>
+  </div>
 </template>
 
 <script setup>
@@ -62,152 +67,102 @@ const { isAuthenticated } = useSession();
 const { cartCount } = useCart();
 </script>
 
-<style>
-/* ✅ NUEVO: Espaciado global para navbar sticky */
-html {
-  scroll-padding-top: 80px;
+<style scoped>
+.navbar-wrapper {
+  position: sticky;
+  top: 16px;
+  z-index: 1000;
+  padding: 0 24px;
+  margin-top: 16px;
 }
 
 .navbar-area {
-  background: linear-gradient(90deg, #2D3E94, #2D3E94);
+  background: #2D3E94;
+  border-radius: 999px;
   height: 70px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 0 30px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* LOGO */
 .nav-logo img.logo {
-  height: 45px;
-  width: auto;
-  border-radius: 6px;
+  height: 50px;
+  border-radius: 8px;
+  margin-right: 25px;
 }
 
-/* LINKS DESKTOP */
 .link-style {
   display: flex;
   align-items: center;
-  gap: 25px;
-}
-
-.pi {
-  font-size: 20px;
-  color: white;
-  transition: color 0.3s ease;
+  gap: 22px;
 }
 
 .text-navbar {
   color: white;
   text-decoration: none;
   font-size: 0.95rem;
-  position: relative;
-  transition: 0.3s ease;
+  font-weight: 500;
 }
 
-/* Línea animada hover */
-.text-navbar::after {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 0;
-  width: 0%;
-  height: 2px;
-  background: white;
-  transition: 0.3s ease;
-}
-
-.text-navbar:hover::after {
-  width: 100%;
-}
-
-/* Ruta activa automática de Vue */
-.router-link-active {
-  font-weight: 600;
-}
-
-.router-link-active::after {
-  width: 100%;
-}
-
-/* HAMBURGER */
-.hamburger {
-  display: none;
-  font-size: 26px;
-  color: white;
-  cursor: pointer;
-}
-
-/* MOBILE */
-@media (max-width: 900px) {
-  .link-style {
-    position: absolute;
-    top: 70px;
-    left: 0;
-    width: 100%;
-    flex-direction: column;
-    background: linear-gradient(180deg, #2D3E94, #2549ad);
-    padding: 25px 0;
-    gap: 20px;
-    display: none;
-    animation: fadeIn 0.3s ease;
-  }
-
-  .link-style.show-menu {
-    display: flex;
-  }
-
-  .hamburger {
-    display: block;
-  }
-
-  .text-navbar {
-    text-align: center;
-    padding: 10px 0;
-  }
-
-  .text-navbar::after {
-    display: none;
-  }
-
-  .router-link-active::after {
-    width: 0;
-  }
-}
-
+/* --- SOLUCIÓN AL CARRITO --- */
 .cart-link {
-  position: relative;
+  position: relative; /* ESTO ES LO MÁS IMPORTANTE: Ancla la notificación */
+  display: flex;
+  align-items: center;
+  padding: 5px;
 }
 
 .cart-badge {
   position: absolute;
-  top: -8px;
-  right: -10px;
-  background: #e53935;
+  top: -6px;      /* Ajusta hacia arriba */
+  right: -8px;    /* Ajusta hacia la derecha */
+  background: #ff4757; /* Rojo */
   color: white;
   border-radius: 50%;
-  width: 18px;
+  min-width: 18px;
   height: 18px;
   font-size: 0.65rem;
-  font-weight: 700;
+  font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
+  border: 2px solid #2D3E94; /* Borde del mismo color que la barra para que resalte */
+}
+/* --------------------------- */
+
+.btn-perfil {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.social-media {
+  margin-left: auto; /* Empuja redes a la derecha */
+  display: flex;
+  gap: 15px;
+}
+
+.social-media i {
+  color: white;
+  font-size: 24px;
+}
+
+.hamburger {
+  display: none;
+  color: white;
+  font-size: 24px;
+}
+
+@media (max-width: 950px) {
+  .link-style { display: none; }
+  .hamburger { display: block; margin-left: auto; }
+  .social-media { display: none; }
 }
 </style>

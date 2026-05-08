@@ -400,6 +400,7 @@ const tarifas = [
 .carousel-container {
   position: relative;
   width: 100%;
+  margin-top: -98px;
 }
 
 .carousel-container::after {
