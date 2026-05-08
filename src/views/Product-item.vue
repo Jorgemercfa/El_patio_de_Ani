@@ -1,12 +1,21 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
 import { getCompanyproducts } from '@/auth/companyproductsRepo'
 
 const router = useRouter()
-const products = computed(() => getCompanyproducts())
+const allProducts = computed(() => getCompanyproducts())
+
+const categories = ['Todas', 'Shows Infantiles', 'Juegos e Inflables', 'Carritos Snacks', 'Estética Infantil']
+const activeFilter = ref('Todas')
+
+const products = computed(() =>
+  activeFilter.value === 'Todas'
+    ? allProducts.value
+    : allProducts.value.filter((p) => p.category === activeFilter.value),
+)
 
 const getProductName = (product) => product.name || 'Producto sin nombre'
 const getButtonText = (product) => product.details_button || 'Ver detalles'
@@ -71,6 +80,18 @@ const formatPrice = (product) => {
 
   <div class="products-area">
     <h1 class="title-products">Nuestros Productos</h1>
+
+    <div class="filter-pills">
+      <button
+        v-for="cat in categories"
+        :key="cat"
+        class="filter-pill"
+        :class="{ active: activeFilter === cat }"
+        @click="activeFilter = cat"
+      >
+        {{ cat }}
+      </button>
+    </div>
 
     <div class="products-container">
       <div v-for="product in products" :key="product.id" class="product-card">
@@ -148,6 +169,42 @@ const formatPrice = (product) => {
   left: 0;
   border-radius: 5px;
 }
+
+/* filtros pills */
+.filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 36px;
+}
+
+.filter-pill {
+  padding: 8px 20px;
+  border-radius: 50px;
+  border: 2px solid #E91E81;
+  background: #FFFFFF;
+  color: #E91E81;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.filter-pill.active,
+.filter-pill:hover {
+  background: #E91E81;
+  color: #FFFFFF;
+}
+
+@media (max-width: 600px) {
+  .filter-pills {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+}
+
 
 .products-container {
   display: grid;
