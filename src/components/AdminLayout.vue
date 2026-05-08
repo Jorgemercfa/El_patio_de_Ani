@@ -5,8 +5,9 @@ import { useSessionCompany } from '@/auth/session_companies';
 
 const router = useRouter();
 const { state, logout } = useSessionCompany();
+const BUSINESS_NAME = 'El Patio de Ani';
 
-const companyName = computed(() => state.company?.name || 'El Patio de Ani');
+const companyName = computed(() => state.company?.name || BUSINESS_NAME);
 
 function closeSession() {
   logout();
@@ -17,7 +18,7 @@ function closeSession() {
 <template>
   <div class="admin-layout">
     <aside class="admin-sidebar">
-      <h2 class="brand-title">El Patio de Ani</h2>
+      <h2 class="brand-title">{{ BUSINESS_NAME }}</h2>
       <nav class="admin-nav">
         <router-link to="/Home-companies" class="admin-link">Inicio</router-link>
         <router-link to="/Company-products" class="admin-link"
@@ -27,7 +28,7 @@ function closeSession() {
         <router-link to="/Create-products" class="admin-link"
           >Crear producto</router-link
         >
-        <router-link to="/Company-products" class="admin-link">Perfil</router-link>
+        <router-link to="/Company-profile" class="admin-link">Perfil</router-link>
         <button class="logout-btn" type="button" @click="closeSession">
           Cerrar sesión
         </button>

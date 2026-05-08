@@ -23,7 +23,7 @@ import Footer from '@/components/Footer-item.vue';
             <router-link to="/">
               <button class="primary-btn">Volver al inicio</button>
             </router-link>
-            <router-link to="/Profile">
+            <router-link to="/product-item">
               <button class="secondary-btn">Seguir comprando</button>
             </router-link>
           </div>

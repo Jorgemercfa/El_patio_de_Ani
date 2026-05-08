@@ -90,8 +90,9 @@ export function useCart() {
 
   function checkout() {
     const userId = sessionState.user?.id ?? null;
-    const purchased = cartItems.value.map((item) => ({
+    const purchased = cartItems.value.map((item, index) => ({
       ...item,
+      orderId: `${Date.now()}-${index}-${item.id}-${Math.random().toString(36).slice(2, 8)}`,
       purchasedAt: new Date().toISOString(),
       userId,
     }));
@@ -101,12 +102,14 @@ export function useCart() {
   }
 
   function getPurchasedproducts(userId) {
+    // When userId is not provided, return all orders for admin views.
     if (userId === undefined || userId === null) return state.purchasedproducts;
     return state.purchasedproducts.filter((c) => c.userId === userId);
   }
 
-  function markPurchasedCompleted(index) {
-    const item = state.purchasedproducts[index];
+  function markPurchasedCompleted(orderId) {
+    if (!orderId) return;
+    const item = state.purchasedproducts.find((order) => order.orderId === orderId);
     if (!item) return;
     item.completedAt = new Date().toISOString();
     persist();

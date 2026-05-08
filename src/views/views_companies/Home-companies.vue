@@ -66,7 +66,9 @@ function deleteProduct(productId) {
             <span>{{ product.category }}</span>
           </div>
           <div class="product-actions">
-            <router-link to="/Company-products" class="edit-btn">Editar</router-link>
+            <router-link :to="`/Create-products?edit=${product.id}`" class="edit-btn"
+              >Editar</router-link
+            >
             <button class="delete-btn" type="button" @click="deleteProduct(product.id)">
               Eliminar
             </button>

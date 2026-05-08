@@ -1,13 +1,19 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import AdminLayout from '@/components/AdminLayout.vue';
 import { useSessionCompany } from '@/auth/session_companies';
-import { addCompanyproduct } from '@/auth/companyproductsRepo';
+import {
+  addCompanyproduct,
+  getCompanyproducts,
+  saveCompanyproducts,
+} from '@/auth/companyproductsRepo';
 
+const route = useRoute();
 const router = useRouter();
 const { state } = useSessionCompany();
+const editingId = computed(() => Number(route.query.edit));
 
 const name = ref('');
 const shortDescription = ref('');
@@ -72,7 +78,7 @@ const onCreateproduct = () => {
     generateproductCode();
   }
 
-  addCompanyproduct({
+  const payload = {
     name: name.value.trim(),
     shortDescription: shortDescription.value.trim(),
     longDescription: longDescription.value.trim(),
@@ -85,9 +91,21 @@ const onCreateproduct = () => {
     companyId: state.company.id,
     companyName: state.company.name,
     companyRuc: state.company.ruc,
-  });
+  };
 
-  success.value = 'Cupón creado correctamente.';
+  if (Number.isFinite(editingId.value) && editingId.value > 0) {
+    const allProducts = getCompanyproducts();
+    const updated = allProducts.map((product) =>
+      product.id === editingId.value ? { ...product, ...payload } : product,
+    );
+    saveCompanyproducts(updated);
+  } else {
+    addCompanyproduct(payload);
+  }
+
+  success.value = Number.isFinite(editingId.value) && editingId.value > 0
+    ? 'Producto actualizado correctamente.'
+    : 'Producto creado correctamente.';
 
   name.value = '';
   shortDescription.value = '';
@@ -103,12 +121,31 @@ const onCreateproduct = () => {
     router.push({ name: 'Companyproducts' });
   }, 500);
 };
+
+onMounted(() => {
+  if (!Number.isFinite(editingId.value) || editingId.value <= 0) return;
+  const existing = getCompanyproducts().find(
+    (product) => product.id === editingId.value,
+  );
+  if (!existing) return;
+  name.value = existing.name ?? '';
+  shortDescription.value = existing.shortDescription ?? '';
+  longDescription.value = existing.longDescription ?? '';
+  category.value = existing.category ?? 'Restaurantes';
+  percentage.value = existing.percentage ?? '';
+  originalPrice.value = existing.price ?? '';
+  expirationDate.value = existing.expiration_date ?? '';
+  termsOfUse.value = existing.Terms_of_use ?? '';
+  productCode.value = existing.product_code ?? '';
+});
 </script>
 
 <template>
   <AdminLayout>
     <section class="panel">
-      <h2 class="panel-title">Crear producto</h2>
+      <h2 class="panel-title">
+        {{ Number.isFinite(editingId) && editingId > 0 ? 'Editar producto' : 'Crear producto' }}
+      </h2>
       <form class="form-area" @submit.prevent="onCreateproduct" autocomplete="on">
         <div v-if="error" class="message error">{{ error }}</div>
         <div v-if="success" class="message success">{{ success }}</div>
@@ -151,7 +188,9 @@ const onCreateproduct = () => {
           <button type="button" class="secondary-btn" @click="generateproductCode">
             Generar código
           </button>
-          <button type="submit" class="submit-btn">Crear producto</button>
+          <button type="submit" class="submit-btn">
+            {{ Number.isFinite(editingId) && editingId > 0 ? 'Guardar cambios' : 'Crear producto' }}
+          </button>
         </div>
       </form>
     </section>

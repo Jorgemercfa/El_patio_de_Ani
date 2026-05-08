@@ -1,11 +1,12 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import AdminLayout from '@/components/AdminLayout.vue';
 import { useCart } from '@/store/cart';
 
 const { getPurchasedproducts, markPurchasedCompleted } = useCart();
 
 const orders = computed(() => getPurchasedproducts());
+const selectedOrder = ref(null);
 
 function formatDate(iso) {
   if (!iso) return '-';
@@ -14,6 +15,15 @@ function formatDate(iso) {
 
 function orderPrice(item) {
   return Number(item.discount_price ?? item.price ?? 0) * Number(item.quantity ?? 1);
+}
+
+function showDetail(order) {
+  selectedOrder.value = order;
+}
+
+function completeOrder(order) {
+  if (order.completedAt || !order.orderId) return;
+  markPurchasedCompleted(order.orderId);
 }
 </script>
 
@@ -38,7 +48,7 @@ function orderPrice(item) {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(order, index) in orders" :key="`${order.id}-${index}`">
+            <tr v-for="order in orders" :key="order.orderId || `${order.id}-${order.purchasedAt}`">
               <td>{{ order.userId ?? 'Cliente invitado' }}</td>
               <td>{{ order.name }}</td>
               <td>{{ formatDate(order.purchasedAt) }}</td>
@@ -53,11 +63,11 @@ function orderPrice(item) {
                   type="button"
                   class="complete-btn"
                   :disabled="!!order.completedAt"
-                  @click="markPurchasedCompleted(index)"
+                  @click="completeOrder(order)"
                 >
                   Marcar completado
                 </button>
-                <button type="button" class="detail-btn">
+                <button type="button" class="detail-btn" @click="showDetail(order)">
                   Ver detalle
                 </button>
               </td>
@@ -65,6 +75,14 @@ function orderPrice(item) {
           </tbody>
         </table>
       </div>
+
+      <article v-if="selectedOrder" class="detail-panel">
+        <h3>Detalle del pedido</h3>
+        <p><strong>Cliente:</strong> {{ selectedOrder.userId ?? 'Cliente invitado' }}</p>
+        <p><strong>Producto:</strong> {{ selectedOrder.name }}</p>
+        <p><strong>Fecha:</strong> {{ formatDate(selectedOrder.purchasedAt) }}</p>
+        <p><strong>Total:</strong> S/ {{ orderPrice(selectedOrder).toFixed(2) }}</p>
+      </article>
     </section>
   </AdminLayout>
 </template>
@@ -129,6 +147,23 @@ function orderPrice(item) {
 .actions {
   display: flex;
   gap: 6px;
+}
+
+.detail-panel {
+  margin-top: 14px;
+  background: #fdf1f8;
+  border: 1px solid #f4c5df;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.detail-panel h3 {
+  margin: 0 0 8px;
+  color: #2D3E94;
+}
+
+.detail-panel p {
+  margin: 4px 0;
 }
 
 .complete-btn,
