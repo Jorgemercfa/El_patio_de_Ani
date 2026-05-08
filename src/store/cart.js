@@ -79,7 +79,7 @@ export function useCart() {
 
   const cartTotal = computed(() =>
     cartItems.value.reduce(
-      (sum, item) => sum + item.discount_price * item.quantity,
+      (sum, item) => sum + Number(item.discount_price ?? item.price ?? 0) * item.quantity,
       0,
     ),
   );

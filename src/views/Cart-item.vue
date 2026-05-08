@@ -70,12 +70,12 @@ function getItemPrice(item) {
 
           <div class="cart-summary">
             <h2 class="summary-title">Resumen</h2>
-            <div class="summary-row">
+            <!-- <div class="summary-row">
               <span>
                 Subtotal ({{ cartCount }} item{{ cartCount !== 1 ? 's' : '' }})
               </span>
               <span>S/ {{ cartTotal.toFixed(2) }}</span>
-            </div>
+            </div> -->
             <div class="summary-total">
               <span>Total</span>
               <span>S/ {{ cartTotal.toFixed(2) }}</span>
@@ -125,7 +125,7 @@ function getItemPrice(item) {
   font-size: 2.2rem;
   font-weight: 700;
   margin-bottom: 40px;
-  color: #111;
+  color: #2D3E94;
   position: relative;
 }
 
@@ -133,7 +133,7 @@ function getItemPrice(item) {
   content: '';
   width: 80px;
   height: 4px;
-  background-color: #325bcd;
+  background-color: #E91E81;
   display: block;
   margin-top: 10px;
   border-radius: 2px;
@@ -181,13 +181,13 @@ function getItemPrice(item) {
 .item-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #222;
+  color: #2D3E94;
   margin: 0 0 4px;
 }
 
 .item-price {
   font-size: 0.9rem;
-  color: #555;
+  color: #E91E81;
   margin: 0;
 }
 
@@ -200,10 +200,10 @@ function getItemPrice(item) {
 .qty-btn {
   width: 30px;
   height: 30px;
-  border: 2px solid #325bcd;
+  border: 2px solid #E91E81;
   border-radius: 6px;
   background: white;
-  color: #325bcd;
+  color: #E91E81;
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
@@ -212,7 +212,7 @@ function getItemPrice(item) {
 }
 
 .qty-btn:hover {
-  background: #325bcd;
+  background: #E91E81;
   color: white;
 }
 
@@ -220,6 +220,7 @@ function getItemPrice(item) {
   min-width: 24px;
   text-align: center;
   font-weight: 600;
+  color: #2D3E94;
 }
 
 .item-subtotal {
@@ -256,14 +257,14 @@ function getItemPrice(item) {
   font-size: 1.2rem;
   font-weight: 700;
   margin-bottom: 20px;
-  color: #111;
+  color: #2D3E94;
 }
 
 .summary-row {
   display: flex;
   justify-content: space-between;
   font-size: 0.95rem;
-  color: #555;
+  color: #2D3E94;
   margin-bottom: 12px;
 }
 
@@ -272,7 +273,7 @@ function getItemPrice(item) {
   justify-content: space-between;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #111;
+  color: #E91E81;
   border-top: 1px solid #eee;
   padding-top: 14px;
   margin-bottom: 22px;
@@ -281,8 +282,8 @@ function getItemPrice(item) {
 .checkout-btn {
   width: 100%;
   padding: 14px;
-  background: #325bcd;
-  color: white;
+  background: #FFD200;
+  color: #2D3E94;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
@@ -308,14 +309,14 @@ function getItemPrice(item) {
 
 .empty-msg {
   font-size: 1.2rem;
-  color: #666;
+  color: #2D3E94;
   margin-bottom: 28px;
 }
 
 .browse-btn {
   padding: 12px 30px;
-  background: #325bcd;
-  color: white;
+  background: #FFD200;
+  color: #2D3E94;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
@@ -325,7 +326,7 @@ function getItemPrice(item) {
 }
 
 .browse-btn:hover {
-  background: #2549ad;
+  background: #2D3E94;
   transform: translateY(-2px);
 }
 
