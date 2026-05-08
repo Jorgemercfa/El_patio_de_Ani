@@ -143,6 +143,56 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
       Encuentra todo lo que necesitas para una celebración inolvidable: desde shows mágicos y juegos inflables hasta deliciosos carritos de snacks. Nos encargamos de la diversión para que tú solo te preocupes por disfrutar
     </div>
 
+    <!-- ===== HERO SECTION ===== -->
+    <section class="hero-section">
+      <h1 class="hero-title">Tu aliada perfecta para celebrar 🎉</h1>
+      <p class="hero-subtitle">Animación, juegos, snacks y estética infantil para que cada fiesta sea única e inolvidable en Lima</p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-number">500+</span>
+          <span class="hero-stat-label">🎉 Eventos realizados</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-number">20+</span>
+          <span class="hero-stat-label">🎨 Artistas creativos</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-number">0-12</span>
+          <span class="hero-stat-label">👶 Edades atendidas</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-number">Lima</span>
+          <span class="hero-stat-label">📍 Cobertura</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== NUESTROS SERVICIOS ===== -->
+    <h1 class="title-home">Nuestros Servicios</h1>
+
+    <div class="services-grid">
+      <router-link to="/Product-item" class="service-card service-card-shows">
+        <span class="service-icon">🎭</span>
+        <h3 class="service-name">Shows Infantiles</h3>
+        <p class="service-desc">Animación, magia y mucha diversión</p>
+      </router-link>
+      <router-link to="/Product-item" class="service-card service-card-games">
+        <span class="service-icon">🎪</span>
+        <h3 class="service-name">Juegos e Inflables</h3>
+        <p class="service-desc">Inflables, trampolines y juegos para todos</p>
+      </router-link>
+      <router-link to="/Product-item" class="service-card service-card-snacks">
+        <span class="service-icon">🍿</span>
+        <h3 class="service-name">Carritos Snacks</h3>
+        <p class="service-desc">Delicias saladas, dulces y combos</p>
+      </router-link>
+      <router-link to="/Product-item" class="service-card service-card-estetica">
+        <span class="service-icon">🎨</span>
+        <h3 class="service-name">Estética Infantil</h3>
+        <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
+      </router-link>
+    </div>
+
     <h1 class="title-home">Más populares</h1>
 
     <div class="our-products-wrapper">
@@ -162,6 +212,10 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
           :to="{ name: 'productsDetails', params: { id: product.id } }"
           class="logs-item"
         >
+          <span v-if="product.age_range" class="product-mini-badge">
+            {{ product.age_range }}
+          </span>
+
           <img
             class="card-icons"
             :src="getProductImage(product)"
@@ -211,6 +265,10 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
           :to="{ name: 'productsDetails', params: { id: product.id } }"
           class="logs-item"
         >
+          <span v-if="product.age_range" class="product-mini-badge">
+            {{ product.age_range }}
+          </span>
+
           <img
             class="card-icons"
             :src="getProductImage(product)"
@@ -259,6 +317,10 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
           :to="{ name: 'productsDetails', params: { id: product.id } }"
           class="logs-item"
         >
+          <span v-if="product.age_range" class="product-mini-badge">
+            {{ product.age_range }}
+          </span>
+
           <img
             class="card-icons"
             :src="getProductImage(product)"
@@ -496,6 +558,136 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: bold;
+}
+
+/* ===== HERO SECTION ===== */
+.hero-section {
+  background: linear-gradient(135deg, #E91E81 0%, #7B2D8B 50%, #2D3E94 100%);
+  padding: 60px 20px;
+  text-align: center;
+  color: #FFFFFF;
+}
+
+.hero-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin: 0 0 16px;
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  margin: 0 auto 40px;
+  max-width: 620px;
+  opacity: 0.92;
+  line-height: 1.6;
+}
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero-stat-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #FFD200;
+  line-height: 1;
+}
+
+.hero-stat-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* ===== NUESTROS SERVICIOS ===== */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  padding: 0 60px 40px;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 16px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #2D3E94;
+  border: 2px solid transparent;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+}
+
+.service-card-shows   { background: #FFF9C4; }
+.service-card-games   { background: #E8F5E9; }
+.service-card-snacks  { background: #FFF3E0; }
+.service-card-estetica { background: #FCE4EC; }
+
+.service-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(45, 62, 148, 0.15);
+}
+
+.service-icon {
+  font-size: 2.8rem;
+  line-height: 1;
+}
+
+.service-name {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  text-align: center;
+}
+
+.service-desc {
+  font-size: 0.82rem;
+  margin: 0;
+  text-align: center;
+  opacity: 0.75;
+}
+
+@media (max-width: 900px) {
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 0 30px 40px;
+  }
+
+  .hero-title {
+    font-size: 1.8rem;
+  }
+
+  .hero-stats {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .services-grid {
+    grid-template-columns: 1fr;
+    padding: 0 20px 40px;
+  }
+
+  .hero-title {
+    font-size: 1.5rem;
+  }
+
+  .hero-stat-number {
+    font-size: 1.6rem;
+  }
 }
 
 .empty-carousel {
