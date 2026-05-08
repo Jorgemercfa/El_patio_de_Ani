@@ -12,18 +12,18 @@ import Footer from '@/components/Footer-item.vue';
     <section class="confirmation-section">
       <div class="confirmation-container">
         <div class="success-card">
-          <div class="success-icon">✓</div>
-          <h1 class="success-title">¡Compra exitosa!</h1>
+          <div class="success-icon">✔</div>
+          <h1 class="success-title">¡Reserva confirmada!</h1>
           <p class="success-msg">
-            Tu pedido fue procesado correctamente. Puedes ver tus productos
-            adquiridos en tu perfil.
+            Gracias por confiar en El Patio de Ani. Tu pedido fue registrado y
+            pronto nos pondremos en contacto contigo.
           </p>
 
           <div class="action-buttons">
-            <router-link to="/Profile">
-              <button class="primary-btn">Ver mis productos</button>
+            <router-link to="/">
+              <button class="primary-btn">Volver al inicio</button>
             </router-link>
-            <router-link to="/product-item">
+            <router-link to="/Profile">
               <button class="secondary-btn">Seguir comprando</button>
             </router-link>
           </div>
@@ -62,14 +62,15 @@ import Footer from '@/components/Footer-item.vue';
 .success-card {
   background: white;
   padding: 60px 40px;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  border: 2px solid #E91E81;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
 }
 
 .success-icon {
   width: 80px;
   height: 80px;
-  background: #325bcd;
+  background: linear-gradient(135deg, #34c759, #E91E81);
   color: white;
   border-radius: 50%;
   font-size: 2.5rem;
@@ -82,7 +83,7 @@ import Footer from '@/components/Footer-item.vue';
 .success-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #111;
+  color: #2D3E94;
   margin-bottom: 14px;
 }
 
@@ -102,8 +103,8 @@ import Footer from '@/components/Footer-item.vue';
 
 .primary-btn {
   padding: 13px 28px;
-  background: #325bcd;
-  color: white;
+  background: #FFD200;
+  color: #2D3E94;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
@@ -113,15 +114,15 @@ import Footer from '@/components/Footer-item.vue';
 }
 
 .primary-btn:hover {
-  background: #2549ad;
+  background: #f2c500;
   transform: translateY(-2px);
 }
 
 .secondary-btn {
   padding: 13px 28px;
-  background: white;
-  color: #325bcd;
-  border: 2px solid #325bcd;
+  background: #E91E81;
+  color: #fff;
+  border: 2px solid #E91E81;
   border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
@@ -130,8 +131,8 @@ import Footer from '@/components/Footer-item.vue';
 }
 
 .secondary-btn:hover {
-  background: #325bcd;
-  color: white;
+  background: #d81b76;
+  color: #fff;
   transform: translateY(-2px);
 }
 </style>

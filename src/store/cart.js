@@ -101,7 +101,15 @@ export function useCart() {
   }
 
   function getPurchasedproducts(userId) {
+    if (userId === undefined || userId === null) return state.purchasedproducts;
     return state.purchasedproducts.filter((c) => c.userId === userId);
+  }
+
+  function markPurchasedCompleted(index) {
+    const item = state.purchasedproducts[index];
+    if (!item) return;
+    item.completedAt = new Date().toISOString();
+    persist();
   }
 
   return {
@@ -114,5 +122,6 @@ export function useCart() {
     clearCart,
     checkout,
     getPurchasedproducts,
+    markPurchasedCompleted,
   };
 }

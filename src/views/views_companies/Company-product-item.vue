@@ -1,8 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-
-import NavbarCompanies from '@/components/Navbar-company-item.vue';
-import Footer from '@/components/Footer-item.vue';
+import AdminLayout from '@/components/AdminLayout.vue';
 import { useSessionCompany } from '@/auth/session_companies';
 import { getproductsByCompany } from '@/auth/companyproductsRepo';
 
@@ -12,136 +10,103 @@ const products = computed(() => getproductsByCompany(state.company));
 
 const formatDate = (isoOrDate) => {
   if (!isoOrDate) return '-';
-
   const date = new Date(isoOrDate);
   if (Number.isNaN(date.getTime())) return isoOrDate;
-
   return date.toLocaleDateString('es-PE');
 };
 </script>
 
 <template>
-  <div class="page-wrapper-company">
-    <header>
-      <NavbarCompanies />
-    </header>
-
-    <main class="dashboard-section">
-      <div class="dashboard-container">
-        <h1 class="page-title">Productos subidos</h1>
-
-        <div v-if="products.length === 0" class="empty-state">
-          <p>Aún no has creado productos.</p>
-          <router-link to="/Create-products" class="create-link">
-            Crear mi primer producto
-          </router-link>
-        </div>
-
-        <div v-else class="products-grid">
-          <article
-            v-for="product in products"
-            :key="product.id"
-            class="product-card"
-          >
-            <div class="badge">{{ product.percentage || 'Oferta' }}</div>
-            <h3>{{ product.name }}</h3>
-            <p class="short">{{ product.shortDescription }}</p>
-            <div class="meta-row">
-              <strong>Categoría:</strong>
-              <span>{{ product.category }}</span>
-            </div>
-            <div class="meta-row">
-              <strong>Precio:</strong>
-              <span>S/ {{ product.price }}</span>
-            </div>
-            <div class="meta-row">
-              <strong>Creado:</strong>
-              <span>{{ formatDate(product.createdAt) }}</span>
-            </div>
-          </article>
-        </div>
+  <AdminLayout>
+    <section class="panel">
+      <h2 class="panel-title">Detalle de productos</h2>
+      <div v-if="products.length === 0" class="empty-state">
+        <p>Aún no has creado productos.</p>
+        <router-link to="/Create-products" class="create-link">
+          Crear mi primer producto
+        </router-link>
       </div>
-    </main>
 
-    <footer>
-      <Footer />
-    </footer>
-  </div>
+      <div v-else class="products-grid">
+        <article v-for="product in products" :key="product.id" class="product-card">
+          <h3>{{ product.name }}</h3>
+          <p class="short">{{ product.shortDescription }}</p>
+          <div class="meta-row">
+            <strong>Categoría:</strong>
+            <span>{{ product.category }}</span>
+          </div>
+          <div class="meta-row">
+            <strong>Precio:</strong>
+            <span>S/ {{ Number(product.price ?? 0).toFixed(2) }}</span>
+          </div>
+          <div class="meta-row">
+            <strong>Creado:</strong>
+            <span>{{ formatDate(product.createdAt) }}</span>
+          </div>
+        </article>
+      </div>
+    </section>
+  </AdminLayout>
 </template>
 
 <style scoped>
-.page-wrapper-company {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #f4f6f3;
+.panel {
+  background: white;
+  border: 2px solid #E91E81;
+  border-radius: 14px;
+  padding: 18px;
 }
 
-.dashboard-section {
-  flex: 1;
-  padding: 100px 0 60px 0;
-}
-
-.dashboard-container {
-  width: 90%;
-  max-width: 1100px;
-  margin: auto;
-}
-
-.page-title {
-  font-size: 2rem;
-  margin-bottom: 26px;
+.panel-title {
+  margin: 0 0 16px;
+  color: #2D3E94;
 }
 
 .empty-state {
-  background: #fff;
-  border-radius: 16px;
-  padding: 28px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+  background: #f4f6f3;
+  border-radius: 12px;
+  padding: 18px;
 }
 
 .create-link {
   display: inline-block;
   margin-top: 8px;
-  color: #325bcd;
-  font-weight: 600;
+  color: #E91E81;
+  font-weight: 700;
 }
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
 }
 
 .product-card {
-  position: relative;
   background: #fff;
+  border: 2px solid #E91E81;
   border-radius: 14px;
-  padding: 18px;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.07);
+  padding: 14px;
+  box-shadow: 0 8px 22px rgba(45, 62, 148, 0.08);
 }
 
-.badge {
-  position: absolute;
-  right: 12px;
-  top: 12px;
-  background: #325bcd;
-  color: #fff;
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 0.8rem;
+.product-card h3 {
+  margin: 0 0 8px;
+  color: #2D3E94;
 }
 
 .short {
-  color: #555;
-  margin-bottom: 10px;
+  color: #666;
+  margin: 0 0 8px;
 }
 
 .meta-row {
   font-size: 0.9rem;
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 5px;
+  margin-top: 6px;
+}
+
+.meta-row strong {
+  color: #E91E81;
 }
 </style>

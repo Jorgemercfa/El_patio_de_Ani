@@ -2,8 +2,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import NavbarCompanies from '@/components/Navbar-company-item.vue';
-import Footer from '@/components/Footer-item.vue';
+import AdminLayout from '@/components/AdminLayout.vue';
 import { useSessionCompany } from '@/auth/session_companies';
 import { addCompanyproduct } from '@/auth/companyproductsRepo';
 
@@ -107,164 +106,74 @@ const onCreateproduct = () => {
 </script>
 
 <template>
-  <div class="page-wrapper">
-    <header>
-      <NavbarCompanies />
-    </header>
+  <AdminLayout>
+    <section class="panel">
+      <h2 class="panel-title">Crear producto</h2>
+      <form class="form-area" @submit.prevent="onCreateproduct" autocomplete="on">
+        <div v-if="error" class="message error">{{ error }}</div>
+        <div v-if="success" class="message success">{{ success }}</div>
 
-    <section class="contact-section">
-      <div class="contact-container">
-        <h1 class="main-title">Crear Productos</h1>
-
-        <div class="contact-card">
-          <form
-            class="form-area"
-            @submit.prevent="onCreateproduct"
-            autocomplete="on"
-          >
-            <div v-if="error" class="message error">{{ error }}</div>
-            <div v-if="success" class="message success">{{ success }}</div>
-
-            <div class="form-group">
-              <label>Nombre del producto</label>
-              <input
-                v-model="name"
-                type="text"
-                required
-                placeholder="Ej: Combo parrillero"
-              />
-            </div>
-
-            <div class="form-group">
-              <label>Descripción corta</label>
-              <input v-model="shortDescription" type="text" required />
-            </div>
-
-            <div class="form-group">
-              <label>Descripción larga</label>
-              <textarea v-model="longDescription" rows="3" />
-            </div>
-
-            <div class="form-group">
-              <label>Categoría</label>
-              <select v-model="category">
-                <option
-                  v-for="option in categories"
-                  :key="option"
-                  :value="option"
-                >
-                  {{ option }}
-                </option>
-              </select>
-            </div>
-
-            <!-- <div class="form-group">
-              <label>Porcentaje / Beneficio</label>
-              <input
-                v-model="percentage"
-                type="text"
-                placeholder="Ej: 20% o 2x1"
-                required
-              />
-            </div> -->
-
-            <div class="form-group">
-              <label>Precio Original</label>
-              <input v-model="originalPrice" type="number" min="1" required />
-            </div>
-
-            <!-- <div class="form-group">
-              <label>Fecha de vencimiento</label>
-              <input v-model="expirationDate" type="date" required />
-            </div> -->
-
-            <!-- <div class="form-group">
-              <label>Términos de uso</label>
-              <textarea v-model="termsOfUse" rows="2" />
-            </div> -->
-
-            <div class="code-row">
-              <div class="form-group code-input">
-                <!-- <label>Código del cupón</label>
-                <input
-                  v-model="productCode"
-                  type="text"
-                  placeholder="Se puede autogenerar"
-                /> -->
-              </div>
-              <button
-                type="button"
-                class="secondary-btn"
-                @click="generateproductCode"
-              >
-                Generar código
-              </button>
-            </div>
-
-            <button type="submit" class="submit-btn">Crear Cupón</button>
-          </form>
+        <div class="form-group">
+          <label>Nombre del producto</label>
+          <input
+            v-model="name"
+            type="text"
+            required
+            placeholder="Ej: Combo parrillero"
+          />
         </div>
-      </div>
-    </section>
 
-    <footer>
-      <Footer />
-    </footer>
-  </div>
+        <div class="form-group">
+          <label>Descripción corta</label>
+          <input v-model="shortDescription" type="text" required />
+        </div>
+
+        <div class="form-group">
+          <label>Descripción larga</label>
+          <textarea v-model="longDescription" rows="3" />
+        </div>
+
+        <div class="form-group">
+          <label>Categoría</label>
+          <select v-model="category">
+            <option v-for="option in categories" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Precio Original</label>
+          <input v-model="originalPrice" type="number" min="1" required />
+        </div>
+
+        <div class="actions">
+          <button type="button" class="secondary-btn" @click="generateproductCode">
+            Generar código
+          </button>
+          <button type="submit" class="submit-btn">Crear producto</button>
+        </div>
+      </form>
+    </section>
+  </AdminLayout>
 </template>
 
 <style scoped>
-.page-wrapper {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #f4f6f3;
-}
-
-.contact-section {
-  flex: 1;
-  padding: 120px 0 80px 0;
-}
-
-.contact-container {
-  width: 90%;
-  max-width: 1100px;
-  margin: auto;
-}
-
-.main-title {
-  font-size: 42px;
-  font-weight: 700;
-  margin-bottom: 50px;
-  position: relative;
-}
-
-.main-title::after {
-  content: '';
-  width: 80px;
-  height: 4px;
-  background-color: #325bcd;
-  display: block;
-  margin-top: 10px;
-  border-radius: 2px;
-}
-
-.contact-card {
-  display: flex;
-  gap: 60px;
+.panel {
   background: white;
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-  flex-wrap: wrap;
+  border: 2px solid #E91E81;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.panel-title {
+  margin: 0 0 14px;
+  color: #2D3E94;
 }
 
 .form-area {
-  flex: 1;
-  min-width: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  gap: 12px;
 }
 
 .form-group {
@@ -273,65 +182,50 @@ const onCreateproduct = () => {
 }
 
 .form-group label {
-  font-weight: 500;
-  margin-bottom: 6px;
-  color: #333;
+  color: #E91E81;
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 
 .form-group input,
 .form-group textarea,
 .form-group select {
-  padding: 12px 16px;
+  border: 1.5px solid #ddd;
   border-radius: 12px;
-  border: 1px solid #ddd;
-  font-size: 14px;
-  transition: 0.3s ease;
-  font-family: inherit;
+  padding: 12px;
 }
 
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #325bcd;
+  border-color: #E91E81;
+  box-shadow: 0 0 0 3px rgba(233, 30, 129, 0.12);
 }
 
-.code-row {
+.actions {
   display: flex;
-  gap: 12px;
-  align-items: end;
-}
-
-.code-input {
-  flex: 1;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .submit-btn,
 .secondary-btn {
   border: none;
-  padding: 12px 24px;
-  font-size: 0.95rem;
-  border-radius: 8px;
+  border-radius: 10px;
+  padding: 10px 12px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  font-weight: 700;
 }
 
 .submit-btn {
-  background-color: #325bcd;
-  color: white;
-}
-
-.submit-btn:hover {
-  background-color: #2549ad;
+  background: #FFD200;
+  color: #2D3E94;
 }
 
 .secondary-btn {
-  background-color: #e8ecff;
-  color: #325bcd;
-}
-
-.secondary-btn:hover {
-  background-color: #d8e0ff;
+  background: #E91E81;
+  color: white;
 }
 
 .message {
@@ -347,9 +241,8 @@ const onCreateproduct = () => {
 }
 
 @media (max-width: 700px) {
-  .code-row {
+  .actions {
     flex-direction: column;
-    align-items: stretch;
   }
 }
 </style>
