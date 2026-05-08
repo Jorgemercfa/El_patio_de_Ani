@@ -27,10 +27,10 @@ import { useSession } from './auth/session';
 import { useSessionCompany } from './auth/session_companies';
 
 const routes = [
-  { path: '/', name: 'Home', component: Home },
-  { path: '/Product-item', name: 'product', component: products },
-  { path: '/Contact-item', name: 'Contact', component: Contact },
-  { path: '/product/:id', name: 'productsDetails', component: productsDetails },
+  { path: '/', name: 'Home', component: Home, meta: { title: 'Inicio | El patio de Ani' }, },
+  { path: '/Product-item', name: 'product', component: products, meta: { title: 'Servicios | El patio de Ani' }, },
+  { path: '/Contact-item', name: 'Contact', component: Contact, meta: { title: 'Contacto | El patio de Ani' }, },
+  { path: '/product/:id', name: 'productsDetails', component: productsDetails, meta: { title: 'Detalles del Servicio | El patio de Ani' } },
 
   // USUARIO
   { path: '/Sign-in', name: 'SignIn', component: SignIn },
