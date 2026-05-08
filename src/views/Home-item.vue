@@ -119,6 +119,21 @@ const scrollRestaurantsBy2 = (direction) => {
 
 const scrollRestaurantsLeft2 = () => scrollRestaurantsBy2(-1);
 const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
+
+/* =============================
+   TARIFAS DE MOVILIDAD
+============================= */
+const tarifas = [
+  { distrito: 'Miraflores / San Isidro', precio: 35 },
+  { distrito: 'Surco / Barranco', precio: 35 },
+  { distrito: 'San Borja / Surquillo', precio: 35 },
+  { distrito: 'Jesús María / San Miguel / Pueblo Libre', precio: 35 },
+  { distrito: 'La Molina / Santa Anita', precio: 40 },
+  { distrito: 'Ate / Chaclacayo / La Victoria', precio: 50 },
+  { distrito: 'Chorrillos / Pachacamac', precio: 50 },
+  { distrito: 'Centro de Lima', precio: 120 },
+  { distrito: 'Callao / Los Olivos', precio: 150 },
+];
 </script>
 
 <template>
@@ -140,7 +155,7 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
     </div>
 
     <div class="text-home">
-      Encuentra todo lo que necesitas para una celebración inolvidable: desde shows mágicos y juegos inflables hasta deliciosos carritos de snacks. Nos encargamos de la diversión para que tú solo te preocupes por disfrutar
+      Encuentra todo lo que necesitas para una celebración inolvidable: desde shows mágicos y juegos inflables hasta deliciosos carritos de snacks. Nos encargamos de la diversión para que tú disfrutes cada momento especial.
     </div>
 
     <!-- ===== HERO SECTION ===== -->
@@ -349,6 +364,22 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
         ›
       </button>
     </div>
+
+    <!-- ===== TARIFAS DE MOVILIDAD ===== -->
+    <section class="movilidad-section">
+      <div class="movilidad-badge">COBERTURA EN LIMA</div>
+      <h2 class="title-home">Tarifas de Movilidad 🚚</h2>
+      <p class="movilidad-subtitle">Costo de traslado según distrito en Lima</p>
+
+      <div class="movilidad-grid">
+        <div v-for="tarifa in tarifas" :key="tarifa.distrito" class="movilidad-card">
+          <p class="movilidad-distrito">{{ tarifa.distrito }}</p>
+          <p class="movilidad-precio">S/ {{ tarifa.precio }}</p>
+        </div>
+      </div>
+
+      <p class="movilidad-nota">* Los precios pueden variar según disponibilidad y tipo de evento.</p>
+    </section>
   </div>
 
   <footer>
@@ -415,17 +446,20 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 .title-home {
   text-align: center;
   font-size: 32px;
-  font-weight: 700;
+  font-weight: 800;
   margin: 80px 0 40px 0;
   position: relative;
-  color: #2D3E94;
+  background: linear-gradient(135deg, #E91E81, #2D3E94);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .title-home::after {
   content: '';
   width: 60px;
   height: 4px;
-  background-color: #E91E81;
+  background: linear-gradient(135deg, #E91E81, #2D3E94);
   position: absolute;
   bottom: -12px;
   left: 50%;
@@ -477,8 +511,9 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 }
 
 .products-nav:hover {
-  background: #E91E81;
+  background: linear-gradient(135deg, #E91E81, #C2185B);
   color: #FFFFFF;
+  border-color: transparent;
 }
 
 .products-nav-left  { left: 14px; }
@@ -490,19 +525,19 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
   min-height: 300px;
   position: relative;
   background: #FFFFFF;
-  border: 2px solid #E91E81;
+  border: none;
   border-radius: 12px;
   padding: 15px;
   text-align: center;
   text-decoration: none;
   color: #2D3E94;
-  box-shadow: 0 6px 20px rgba(233, 30, 129, 0.1);
+  box-shadow: 0 6px 20px rgba(233, 30, 129, 0.12);
   transition: 0.25s;
 }
 
 .logs-item:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(233, 30, 129, 0.2);
+  box-shadow: 0 12px 28px rgba(233, 30, 129, 0.22);
 }
 
 .card-icons {
@@ -529,8 +564,8 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 .product-mini-category {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #E91E81;
-  background: rgba(233, 30, 129, 0.08);
+  color: white;
+  background: linear-gradient(135deg, #E91E81, #C2185B);
   padding: 2px 8px;
   border-radius: 20px;
   display: inline-block;
@@ -552,7 +587,7 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
   position: absolute;
   top: 10px;
   right: 10px;
-  background: #FFD200;
+  background: linear-gradient(135deg, #FFD200, #FF9800);
   color: #2D3E94;
   padding: 4px 8px;
   border-radius: 6px;
@@ -660,6 +695,80 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
   opacity: 0.75;
 }
 
+/* ===== TARIFAS DE MOVILIDAD ===== */
+.movilidad-section {
+  padding: 20px 60px 80px;
+  text-align: center;
+}
+
+.movilidad-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #2D3E94, #5C6BC0);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 16px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+}
+
+.movilidad-subtitle {
+  font-size: 0.95rem;
+  color: #888;
+  margin: 14px 0 36px;
+}
+
+.movilidad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.movilidad-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px 20px 20px 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  border-left: 4px solid #FFD200;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.movilidad-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(45, 62, 148, 0.12);
+}
+
+.movilidad-distrito {
+  font-weight: 600;
+  color: #2D3E94;
+  font-size: 0.9rem;
+  margin: 0;
+  flex: 1;
+}
+
+.movilidad-precio {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #E91E81;
+  margin: 0;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+
+.movilidad-nota {
+  margin-top: 24px;
+  font-size: 0.82rem;
+  color: #aaa;
+}
+
 @media (max-width: 900px) {
   .services-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -672,6 +781,14 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 
   .hero-stats {
     gap: 24px;
+  }
+
+  .movilidad-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .movilidad-section {
+    padding: 20px 30px 60px;
   }
 }
 
@@ -688,6 +805,14 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
   .hero-stat-number {
     font-size: 1.6rem;
   }
+
+  .movilidad-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .movilidad-section {
+    padding: 20px 20px 50px;
+  }
 }
 
 .empty-carousel {
@@ -695,53 +820,6 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
   color: #2D3E94;
   opacity: 0.5;
   font-size: 0.95rem;
-}
-
-.our-customers {
-  overflow: hidden;
-  background: #E91E81;
-  padding: 50px 0;
-  position: relative;
-}
-
-.customers-track {
-  display: flex;
-  width: max-content;
-  animation: scrollCustomers 25s linear infinite;
-}
-
-.customer-slide {
-  flex: 0 0 auto;
-  padding: 0 40px;
-}
-
-.customer-icons {
-  height: 60px;
-  width: auto;
-  opacity: 0.85;
-  transition: all 0.3s ease;
-  filter: brightness(0) invert(1);
-}
-
-.customer-icons:hover {
-  transform: scale(1.1);
-  opacity: 1;
-}
-
-@keyframes scrollCustomers {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.our-sector {
-  width: 100%;
-  height: 300px;
-  background: #2D3E94;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
 }
 
 @media (max-width: 768px) {
@@ -769,13 +847,6 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
     flex-basis: 180px;
     min-height: 220px;
   }
-
-  .our-sector {
-    height: auto;
-    flex-wrap: wrap;
-    padding: 50px 20px;
-    gap: 20px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -789,10 +860,6 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 
   .logs-item {
     flex-basis: 160px;
-  }
-
-  .customer-icons {
-    height: 45px;
   }
 }
 </style>
