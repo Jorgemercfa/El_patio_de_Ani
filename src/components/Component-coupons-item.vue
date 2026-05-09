@@ -269,7 +269,6 @@ watch(
   margin: 0 auto;
   padding: 40px 20px;
   font-family: Outfit, Inter, Avenir, Helvetica, Arial, sans-serif;
-  background: #f4f6f3;
 }
 
 .product-wrapper {
@@ -279,8 +278,6 @@ watch(
   text-align: center;
   background: #fff;
   border-radius: 16px;
-  border: 2px solid #E91E81;
-  box-shadow: 0 10px 32px rgba(233, 30, 129, 0.12);
   padding: 24px;
 }
 

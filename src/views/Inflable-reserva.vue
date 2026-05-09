@@ -475,7 +475,7 @@ function submitReservation() {
 
 <style scoped>
 .page {
-  background: #f4f6f3;
+  background: #ffffff;
   min-height: calc(100vh - 130px);
   padding: 24px 14px 42px;
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
@@ -491,8 +491,6 @@ function submitReservation() {
   max-width: 800px;
   background: #fff;
   border-radius: 16px;
-  border: 2px solid #E91E81;
-  box-shadow: 0 8px 30px rgba(45, 62, 148, 0.12);
   padding: 24px 16px;
 }
 
