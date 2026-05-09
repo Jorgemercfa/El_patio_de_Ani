@@ -77,7 +77,7 @@ const { cartCount } = useCart();
 }
 
 .navbar-area {
-  background: #2D3E94;
+  background: #E91E81;
   border-radius: 999px;
   height: 70px;
   display: flex;
@@ -129,7 +129,7 @@ const { cartCount } = useCart();
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #2D3E94; /* Borde del mismo color que la barra para que resalte */
+  /* border: 2px solid #2D3E94; */
 }
 /* --------------------------- */
 
