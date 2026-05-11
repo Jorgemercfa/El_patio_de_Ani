@@ -15,7 +15,7 @@ import product7 from '@/assets/inflatable2.png';
 import product8 from '@/assets/inflatable3.png';
 import product9 from '@/assets/inflatable4.png';
 import product10 from '@/assets/inflatable5.png';
-import product11 from '@/assets/inflatable6.png';
+import product11 from '@/assets/inflatable6.jpeg';
 import product12 from '@/assets/inflatable7.png';
 import product13 from '@/assets/inflatable8.png';
 import product14 from '@/assets/inflatable9.png';
