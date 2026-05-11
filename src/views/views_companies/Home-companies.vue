@@ -13,7 +13,10 @@ const { state } = useSessionCompany();
 const { getPurchasedproducts } = useCart();
 
 const products = computed(() => getproductsByCompany(state.company));
-const totalProducts = computed(() => products.value.length);
+const totalProducts = computed(() => getCompanyproducts().length);
+const modifiedServices = computed(
+  () => getCompanyproducts().filter((product) => product._modified).length,
+);
 const totalOrders = computed(() => getPurchasedproducts().length);
 const activeOrders = computed(() =>
   getPurchasedproducts().filter((item) => !item.completedAt).length,
@@ -30,7 +33,7 @@ function deleteProduct(productId) {
   <AdminLayout>
     <section class="stats-grid">
       <article class="stat-card">
-        <p>Total de productos</p>
+        <p>Total de servicios</p>
         <h3>{{ totalProducts }}</h3>
       </article>
       <article class="stat-card">
@@ -40,6 +43,10 @@ function deleteProduct(productId) {
       <article class="stat-card">
         <p>Pedidos activos</p>
         <h3>{{ activeOrders }}</h3>
+      </article>
+      <article class="stat-card">
+        <p>Servicios modificados</p>
+        <h3>{{ modifiedServices }}</h3>
       </article>
     </section>
 

@@ -21,6 +21,7 @@ function closeSession() {
       <h2 class="brand-title">{{ BUSINESS_NAME }}</h2>
       <nav class="admin-nav">
         <router-link to="/Home-companies" class="admin-link">Inicio</router-link>
+        <router-link to="/Services-admin" class="admin-link">Servicios</router-link>
         <router-link to="/Company-products" class="admin-link"
           >Productos</router-link
         >
