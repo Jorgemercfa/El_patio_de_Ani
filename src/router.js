@@ -23,6 +23,8 @@ import ForgetPasswordCompany from './views/views_companies/Forget-password-compa
 import HomeCompanies from './views/views_companies/Home-companies.vue';
 import Createproducts from './views/views_companies/Create-product-item.vue';
 import Companyproducts from './views/views_companies/Company-product-item.vue';
+import ServicesAdmin from './views/views_companies/Services-admin.vue';
+import EditServiceItem from './views/views_companies/Edit-service-item.vue';
 import OrdersCompanies from './views/views_companies/Orders-companies.vue';
 import CompanyProfile from './views/views_companies/Company-profile-companies.vue';
 
@@ -110,6 +112,18 @@ const routes = [
     path: '/Company-products',
     name: 'Companyproducts',
     component: Companyproducts,
+    meta: { requiresCompanyAuth: true },
+  },
+  {
+    path: '/Services-admin',
+    name: 'ServicesAdmin',
+    component: ServicesAdmin,
+    meta: { requiresCompanyAuth: true },
+  },
+  {
+    path: '/Edit-service/:id',
+    name: 'EditService',
+    component: EditServiceItem,
     meta: { requiresCompanyAuth: true },
   },
   {

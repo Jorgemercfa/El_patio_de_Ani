@@ -30,6 +30,14 @@ export function getCompanyproducts() {
   }
 
   const seedIds = new Set(normalizedSeed.map((product) => product.id));
+  const storedById = Object.fromEntries(
+    stored
+      .filter((product) => product && product.id !== null && product.id !== undefined)
+      .map((product) => [product.id, product]),
+  );
+  const mergedSeed = normalizedSeed.map(
+    (product) => storedById[product.id] ?? product,
+  );
   const extraStored = stored.filter(
     (product) =>
       product &&
@@ -37,7 +45,7 @@ export function getCompanyproducts() {
       product.id !== undefined &&
       !seedIds.has(product.id),
   );
-  const merged = [...normalizedSeed, ...extraStored];
+  const merged = [...mergedSeed, ...extraStored];
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
 
@@ -72,6 +80,25 @@ export function addCompanyproduct(productInput) {
   saveCompanyproducts(products);
 
   return product;
+}
+
+export function updateCompanyproduct(id, data) {
+  const products = getCompanyproducts();
+  const updated = products.map((product) =>
+    product.id === id ? { ...product, ...data, id } : product,
+  );
+  saveCompanyproducts(updated);
+}
+
+export function resetCompanyproductToSeed(id) {
+  const stored = safeParse(localStorage.getItem(STORAGE_KEY));
+  const withoutOverride = stored.filter((product) => product.id !== id);
+
+  if (withoutOverride.length === 0) {
+    localStorage.removeItem(STORAGE_KEY);
+  } else {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(withoutOverride));
+  }
 }
 
 export function getproductsByCompany(company) {
