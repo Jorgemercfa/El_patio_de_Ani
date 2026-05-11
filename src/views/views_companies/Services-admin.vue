@@ -212,6 +212,7 @@ onMounted(loadServices);
 
 .services-grid {
   display: grid;
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
@@ -219,21 +220,25 @@ onMounted(loadServices);
   border: 1px solid #f0d3e6;
   border-radius: 12px;
   background: #fff;
-  display: grid;
-  grid-template-columns: 170px 1fr;
-  gap: 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   overflow: hidden;
 }
 
 .service-image {
-  width: 100%;
-  height: 100%;
-  max-height: 170px;
+  width: 160px;
+  height: 160px;
+  min-width: 160px;
   object-fit: cover;
+  flex-shrink: 0;
+  border-radius: 10px 0 0 10px;
 }
 
 .service-body {
-  padding: 12px 12px 12px 0;
+  flex: 1;
+  min-width: 0;
+  padding: 14px;
 }
 
 .title-row {
@@ -246,6 +251,8 @@ onMounted(loadServices);
 .title-row h3 {
   margin: 0;
   color: #2d3e94;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .badge-modified {
@@ -298,13 +305,16 @@ onMounted(loadServices);
   color: #fff;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 600px) {
   .service-card {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .service-image {
-    max-height: 220px;
+    width: 100%;
+    height: 200px;
+    min-width: 0;
+    border-radius: 10px 10px 0 0;
   }
 
   .service-body {
