@@ -1,18 +1,11 @@
 <script setup>
 import { computed } from 'vue';
 import AdminLayout from '@/components/AdminLayout.vue';
-import { useSessionCompany } from '@/auth/session_companies';
-import {
-  getproductsByCompany,
-  getCompanyproducts,
-  saveCompanyproducts,
-} from '@/auth/companyproductsRepo';
+import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart';
 
-const { state } = useSessionCompany();
 const { getPurchasedproducts } = useCart();
 
-const products = computed(() => getproductsByCompany(state.company));
 const totalProducts = computed(() => getCompanyproducts().length);
 const modifiedServices = computed(
   () => getCompanyproducts().filter((product) => product._modified).length,
@@ -22,11 +15,7 @@ const activeOrders = computed(() =>
   getPurchasedproducts().filter((item) => !item.completedAt).length,
 );
 
-function deleteProduct(productId) {
-  const allProducts = getCompanyproducts();
-  const filtered = allProducts.filter((product) => product.id !== productId);
-  saveCompanyproducts(filtered);
-}
+const catalogServices = computed(() => getCompanyproducts().slice(0, 6));
 </script>
 
 <template>
@@ -52,33 +41,27 @@ function deleteProduct(productId) {
 
     <section class="products-panel">
       <div class="panel-header">
-        <h2>Productos registrados</h2>
-        <router-link to="/Create-products" class="create-btn"
-          >+ Nuevo producto</router-link
-        >
+        <h2>Servicios del catálogo</h2>
+        <router-link to="/Services-admin" class="create-btn">Ver todos →</router-link>
       </div>
 
-      <div v-if="products.length === 0" class="empty-card">
-        Aún no hay productos registrados.
+      <div v-if="catalogServices.length === 0" class="empty-card">
+        Aún no hay servicios en el catálogo.
       </div>
 
       <div v-else class="products-list">
-        <article v-for="product in products" :key="product.id" class="product-row">
+        <article v-for="service in catalogServices" :key="service.id" class="product-row">
           <div>
-            <h3>{{ product.name }}</h3>
-            <p>{{ product.shortDescription }}</p>
+            <h3>{{ service.name }}</h3>
+            <p>{{ service.category }}</p>
           </div>
           <div class="product-meta">
-            <span>S/ {{ Number(product.price ?? 0).toFixed(2) }}</span>
-            <span>{{ product.category }}</span>
+            <span>S/ {{ Number(service.price ?? 0).toFixed(2) }}</span>
           </div>
           <div class="product-actions">
-            <router-link :to="`/Create-products?edit=${product.id}`" class="edit-btn"
+            <router-link :to="`/Edit-service/${service.id}`" class="edit-btn"
               >Editar</router-link
             >
-            <button class="delete-btn" type="button" @click="deleteProduct(product.id)">
-              Eliminar
-            </button>
           </div>
         </article>
       </div>
@@ -186,24 +169,15 @@ function deleteProduct(productId) {
   gap: 8px;
 }
 
-.edit-btn,
-.delete-btn {
+.edit-btn {
   border: none;
   border-radius: 8px;
   padding: 8px 10px;
   cursor: pointer;
   text-decoration: none;
   font-weight: 600;
-}
-
-.edit-btn {
   background: #FFD200;
   color: #2D3E94;
-}
-
-.delete-btn {
-  background: #E91E81;
-  color: white;
 }
 
 @media (max-width: 900px) {
