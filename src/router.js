@@ -1,20 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router';
-
+// Usuarios
 import Home from './views/Home-item.vue';
 import products from './views/Product-item.vue';
 import Contact from './views/Contact-item.vue';
 import productsDetails from './components/Component-coupons-item.vue';
-
-// NUEVO
 import SignIn from './views/Sign-in.vue';
 import SignUp from './views/Sign-up.vue';
 import ForgetPassword from './views/Forget-Password.vue';
 import Profile from './views/Profile-item.vue';
 import InflableReserva from './views/Inflable-reserva.vue';
-
 import Cart from './views/Cart-item.vue';
 import Checkout from './views/Checkout-item.vue';
 import OrderConfirmation from './views/OrderConfirmation-item.vue';
+import PrivacyPolicy from './views/Privacy-Policy.vue';
 
 // EMPRESA
 import SignInCompany from './views/views_companies/Sign-in-companies.vue';
@@ -22,7 +20,6 @@ import SignUpCompany from './views/views_companies/Sign-up-companies.vue';
 import ForgetPasswordCompany from './views/views_companies/Forget-password-companies.vue';
 import HomeCompanies from './views/views_companies/Home-companies.vue';
 import Createproducts from './views/views_companies/Create-product-item.vue';
-// import Companyproducts from './views/views_companies/Company-product-item.vue';
 import ServicesAdmin from './views/views_companies/Services-admin.vue';
 import EditServiceItem from './views/views_companies/Edit-service-item.vue';
 import OrdersCompanies from './views/views_companies/Orders-companies.vue';
@@ -78,6 +75,12 @@ const routes = [
       authOptional: true,
       title: 'Reservar Inflable | El Patio de Ani',
     },
+  },
+  {
+    path: '/Privacy-Policy',
+    name: 'PrivacyPolicy',
+    component: PrivacyPolicy,
+    meta: { title: 'Política de Privacidad | El patio de Ani' },
   },
 
   // EMPRESA

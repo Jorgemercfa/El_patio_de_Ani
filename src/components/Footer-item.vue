@@ -13,6 +13,13 @@ const year = new Date().getFullYear();
           <div>+51 975 495 623</div>
         </div>
       </div>
+      <div class="links-footer">
+        <h4 class="titile-footer">Enlaces</h4>
+        <div class="footer-text">
+          <div><a href="/Privacy-Policy" class="footer-text-2">Política de Privacidad</a></div>
+  
+        </div>
+      </div>
     </div>
     <div class="footer-bottom">
       © {{ year }} El Patio de Ani. Todos los derechos reservados.
@@ -63,6 +70,11 @@ const year = new Date().getFullYear();
   font-size: 0.95rem;
   color: #e6e6e6;
   line-height: 1.6;
+}
+
+.footer-text-2 {
+  color: #ffffff;
+  text-decoration: none;
 }
 
 /* BARRA INFERIOR */
