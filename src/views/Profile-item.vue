@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
@@ -8,6 +8,9 @@ import { useSession } from '@/auth/session';
 
 const router = useRouter();
 const { state, logout } = useSession();
+const children = ref([]);
+const showChildrenSavedMessage = ref(false);
+const childrenStorageTimer = ref(null);
 // const { getPurchasedproducts } = useCart();
 
 // const purchasedproducts = computed(() =>
@@ -36,6 +39,75 @@ const onLogout = () => {
   logout();
   router.push({ name: 'Home' });
 };
+
+const childrenStorageKey = computed(() =>
+  state.user?.id ? `patio-hijos-${state.user.id}` : '',
+);
+
+const createEmptyChild = () => ({
+  name: '',
+  birthday: '',
+});
+
+const addChild = () => {
+  children.value.push(createEmptyChild());
+};
+
+const removeChild = (index) => {
+  children.value.splice(index, 1);
+};
+
+const loadChildren = () => {
+  if (!childrenStorageKey.value) {
+    children.value = [];
+    return;
+  }
+
+  try {
+    const storedChildren = localStorage.getItem(childrenStorageKey.value);
+    if (!storedChildren) {
+      children.value = [];
+      return;
+    }
+
+    const parsedChildren = JSON.parse(storedChildren);
+    children.value = Array.isArray(parsedChildren)
+      ? parsedChildren.map((child) => ({
+          name: typeof child?.name === 'string' ? child.name : '',
+          birthday: typeof child?.birthday === 'string' ? child.birthday : '',
+        }))
+      : [];
+  } catch {
+    children.value = [];
+  }
+};
+
+const saveChildren = () => {
+  if (!childrenStorageKey.value) return;
+
+  const sanitizedChildren = children.value.map((child) => ({
+    name: (child.name || '').trim(),
+    birthday: child.birthday || '',
+  }));
+
+  localStorage.setItem(childrenStorageKey.value, JSON.stringify(sanitizedChildren));
+  showChildrenSavedMessage.value = true;
+
+  if (childrenStorageTimer.value) {
+    clearTimeout(childrenStorageTimer.value);
+  }
+  childrenStorageTimer.value = setTimeout(() => {
+    showChildrenSavedMessage.value = false;
+  }, 3000);
+};
+
+onMounted(loadChildren);
+
+onBeforeUnmount(() => {
+  if (childrenStorageTimer.value) {
+    clearTimeout(childrenStorageTimer.value);
+  }
+});
 </script>
 
 <template>
@@ -71,6 +143,59 @@ const onLogout = () => {
               Cerrar sesión
             </button>
           </div>
+        </div>
+
+        <div class="kids-section">
+          <h2 class="kids-title">🎂 Mis hijos</h2>
+
+          <div v-if="children.length === 0" class="kids-empty">
+            <p>Aún no has agregado ningún hijo. ¡Agrega uno!</p>
+            <button class="add-child-btn" type="button" @click="addChild">
+              + Agregar hijo
+            </button>
+          </div>
+
+          <div v-else class="kids-list">
+            <div
+              v-for="(child, index) in children"
+              :key="`child-${index}`"
+              class="child-item"
+            >
+              <div class="child-fields">
+                <div class="form-group">
+                  <label :for="`child-name-${index}`">Nombre del hijo</label>
+                  <input
+                    :id="`child-name-${index}`"
+                    v-model="child.name"
+                    type="text"
+                    placeholder="Ej: Lucía"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label :for="`child-birthday-${index}`">Fecha de cumpleaños</label>
+                  <input :id="`child-birthday-${index}`" v-model="child.birthday" type="date" />
+                </div>
+              </div>
+
+              <button class="remove-child-btn" type="button" @click="removeChild(index)">
+                ✕
+              </button>
+            </div>
+
+            <div class="kids-actions">
+              <button class="add-child-btn" type="button" @click="addChild">
+                + Agregar hijo
+              </button>
+              <button class="save-children-btn" type="button" @click="saveChildren">
+                Guardar hijos
+              </button>
+            </div>
+          </div>
+
+          <p v-if="showChildrenSavedMessage" class="save-children-message">
+            ¡Hijos guardados correctamente! 🎉
+          </p>
         </div>
 
         <!-- Purchased products -->
@@ -212,6 +337,102 @@ const onLogout = () => {
 .submit-btn:hover {
   background-color: #d81b76;
   transform: translateY(-2px);
+}
+
+.kids-section {
+  margin-top: 24px;
+  background: #fff;
+  border: 2px solid #E91E81;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+}
+
+.kids-title {
+  margin: 0 0 16px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #E91E81, #2D3E94);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.kids-empty {
+  background: #fff9fc;
+  border: 2px dashed #E91E81;
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+}
+
+.kids-empty p {
+  margin: 0 0 12px;
+  color: #2D3E94;
+  font-weight: 600;
+}
+
+.kids-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.child-item {
+  border: 2px solid #f8d3e9;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.child-fields {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.remove-child-btn {
+  border: 2px solid #E91E81;
+  background: #fff;
+  color: #E91E81;
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.kids-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.add-child-btn,
+.save-children-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.add-child-btn {
+  background: #2D3E94;
+  color: #fff;
+}
+
+.save-children-btn {
+  background: #FFD200;
+  color: #2D3E94;
+}
+
+.save-children-message {
+  margin: 14px 0 0;
+  color: #1c8c46;
+  font-weight: 700;
 }
 
 /* Purchased products section */

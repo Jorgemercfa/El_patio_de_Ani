@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
@@ -14,6 +14,8 @@ import {
 const route = useRoute();
 const { state, isAuthenticated } = useSession();
 const CURRENCY_PREFIX = 'S/';
+const RESERVATIONS_STORAGE_KEY = 'patio-reservas';
+const CALENDAR_WEEK_DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
 const allProducts = computed(() => getCompanyproducts());
 const selectedProduct = computed(() =>
@@ -94,6 +96,11 @@ const getLocalDate = () => {
   return new Date(now.getTime() - timezoneOffset).toISOString().split('T')[0];
 };
 const today = getLocalDate();
+const reservedDates = ref([]);
+const initialCalendarDate = new Date();
+const currentCalendarDate = ref(
+  new Date(initialCalendarDate.getFullYear(), initialCalendarDate.getMonth(), 1),
+);
 
 const form = ref({
   responsibleName: state.user?.name || '',
@@ -163,6 +170,110 @@ const formErrors = ref({});
 const showConfirmationModal = ref(false);
 const premiumPriceLabel = `${CURRENCY_PREFIX} ${PREMIUM_INFLABLE_PRICE}+`;
 const firstContactWhatsappUrl = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=Hola!%20Quiero%20reservar%20un%20inflable%20para%20mi%20evento`;
+const calendarMonthLabel = computed(() => {
+  const label = currentCalendarDate.value.toLocaleDateString('es-PE', {
+    month: 'long',
+    year: 'numeric',
+  });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+});
+const reservedDatesSet = computed(() => new Set(reservedDates.value));
+const calendarDays = computed(() => {
+  const year = currentCalendarDate.value.getFullYear();
+  const month = currentCalendarDate.value.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
+  const totalCells = Math.ceil((firstDayOffset + daysInMonth) / 7) * 7;
+  const days = [];
+
+  for (let index = 0; index < totalCells; index += 1) {
+    const dayNumber = index - firstDayOffset + 1;
+    if (dayNumber < 1 || dayNumber > daysInMonth) {
+      days.push(null);
+      continue;
+    }
+
+    const dateString = formatDateForStorage(new Date(year, month, dayNumber));
+    const isPast = dateString < today;
+    const isReserved = reservedDatesSet.value.has(dateString);
+    const isSelected = form.value.eventDate === dateString;
+    days.push({
+      dayNumber,
+      dateString,
+      isPast,
+      isReserved,
+      isSelected,
+      isAvailable: !isPast && !isReserved,
+    });
+  }
+
+  return days;
+});
+
+const formatDateForStorage = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const loadReservedDates = () => {
+  try {
+    const raw = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
+    if (!raw) {
+      reservedDates.value = [];
+      return;
+    }
+
+    const parsed = JSON.parse(raw);
+    reservedDates.value = Array.isArray(parsed)
+      ? parsed.filter((date) => typeof date === 'string')
+      : [];
+  } catch {
+    reservedDates.value = [];
+  }
+};
+
+const saveReservationDate = (date) => {
+  if (!date) return;
+
+  let storageDates = [];
+  try {
+    const raw = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    storageDates = Array.isArray(parsed)
+      ? parsed.filter((item) => typeof item === 'string')
+      : [];
+  } catch {
+    storageDates = [];
+  }
+
+  const updatedDates = Array.from(new Set([...storageDates, date])).sort();
+  reservedDates.value = updatedDates;
+  localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedDates));
+};
+
+const goToPreviousMonth = () => {
+  currentCalendarDate.value = new Date(
+    currentCalendarDate.value.getFullYear(),
+    currentCalendarDate.value.getMonth() - 1,
+    1,
+  );
+};
+
+const goToNextMonth = () => {
+  currentCalendarDate.value = new Date(
+    currentCalendarDate.value.getFullYear(),
+    currentCalendarDate.value.getMonth() + 1,
+    1,
+  );
+};
+
+const selectCalendarDate = (day) => {
+  if (!day?.isAvailable) return;
+  form.value.eventDate = day.dateString;
+  formErrors.value.eventDate = '';
+};
 
 const reservationSummary = computed(() => ({
   producto: selectedProduct.value?.name || 'Inflable',
@@ -274,8 +385,13 @@ function validateForm() {
 
 function submitReservation() {
   if (!validateForm()) return;
+  saveReservationDate(form.value.eventDate);
   showConfirmationModal.value = true;
 }
+
+onMounted(() => {
+  loadReservedDates();
+});
 </script>
 
 <template>
@@ -311,6 +427,50 @@ function submitReservation() {
         </template>
 
         <form v-else class="reservation-form" @submit.prevent="submitReservation">
+          <section class="form-section availability-section">
+            <h2>📅 Disponibilidad</h2>
+
+            <div class="calendar-card">
+              <div class="calendar-header">
+                <button type="button" class="calendar-nav-btn" @click="goToPreviousMonth">◀</button>
+                <p class="calendar-month">{{ calendarMonthLabel }}</p>
+                <button type="button" class="calendar-nav-btn" @click="goToNextMonth">▶</button>
+              </div>
+
+              <div class="calendar-weekdays">
+                <span v-for="weekDay in CALENDAR_WEEK_DAYS" :key="weekDay">{{ weekDay }}</span>
+              </div>
+
+              <div class="calendar-grid">
+                <template v-for="(day, index) in calendarDays" :key="day?.dateString || `empty-${index}`">
+                  <button
+                    v-if="day"
+                    type="button"
+                    class="calendar-day"
+                    :class="{
+                      'is-past': day.isPast,
+                      'is-reserved': day.isReserved,
+                      'is-selected': day.isSelected,
+                    }"
+                    :disabled="!day.isAvailable"
+                    @click="selectCalendarDate(day)"
+                  >
+                    <span>{{ day.dayNumber }}</span>
+                    <small v-if="day.isReserved">Reservado</small>
+                  </button>
+                  <div v-else class="calendar-day is-empty"></div>
+                </template>
+              </div>
+
+              <div class="calendar-legend">
+                <span>⚪ Disponible</span>
+                <span>🔴 Reservado</span>
+                <span>🟡 Seleccionado</span>
+                <span>⬛ Pasado</span>
+              </div>
+            </div>
+          </section>
+
           <section class="form-section">
             <h2>1️⃣ 🎉 Datos del evento</h2>
             <div class="section-grid">
@@ -542,6 +702,13 @@ function submitReservation() {
   padding-bottom: 14px;
 }
 
+.availability-section {
+  border: 2px solid #E91E81;
+  border-radius: 16px;
+  padding: 16px;
+  background: #fff9fc;
+}
+
 .form-section h2 {
   color: #2D3E94;
   margin: 0 0 14px;
@@ -637,6 +804,113 @@ select:focus {
   margin: 2px 0 0;
   color: #c0144e;
   font-size: 0.83rem;
+  font-weight: 600;
+}
+
+.calendar-card {
+  border: 2px solid #2D3E94;
+  border-radius: 14px;
+  background: #fff;
+  padding: 14px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.calendar-month {
+  margin: 0;
+  font-weight: 800;
+  color: #2D3E94;
+  text-transform: capitalize;
+}
+
+.calendar-nav-btn {
+  border: 2px solid #E91E81;
+  background: #fff;
+  color: #E91E81;
+  border-radius: 12px;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendar-weekdays {
+  margin-bottom: 8px;
+}
+
+.calendar-weekdays span {
+  text-align: center;
+  font-weight: 700;
+  color: #2D3E94;
+  font-size: 0.82rem;
+}
+
+.calendar-day {
+  min-height: 64px;
+  border: 1px solid #d6d6d6;
+  border-radius: 12px;
+  background: #fff;
+  color: #2D3E94;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-day small {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #b30f45;
+}
+
+.calendar-day:hover:not(:disabled):not(.is-selected) {
+  background: #ebffe8;
+}
+
+.calendar-day.is-past {
+  background: #ececec;
+  color: #878787;
+  cursor: not-allowed;
+}
+
+.calendar-day.is-reserved {
+  background: #ffe3ef;
+  border-color: #E91E81;
+  cursor: not-allowed;
+}
+
+.calendar-day.is-selected {
+  border: 2px solid #FFD200;
+  box-shadow: 0 0 0 2px rgba(255, 210, 0, 0.24);
+}
+
+.calendar-day.is-empty {
+  border: none;
+  background: transparent;
+}
+
+.calendar-legend {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #2D3E94;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
