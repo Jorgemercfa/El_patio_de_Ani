@@ -97,7 +97,10 @@ const getLocalDate = () => {
 };
 const today = getLocalDate();
 const reservedDates = ref([]);
-const currentCalendarDate = ref(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+const initialCalendarDate = new Date();
+const currentCalendarDate = ref(
+  new Date(initialCalendarDate.getFullYear(), initialCalendarDate.getMonth(), 1),
+);
 
 const form = ref({
   responsibleName: state.user?.name || '',
@@ -233,7 +236,19 @@ const loadReservedDates = () => {
 
 const saveReservationDate = (date) => {
   if (!date) return;
-  const updatedDates = Array.from(new Set([...reservedDates.value, date])).sort();
+
+  let storageDates = [];
+  try {
+    const raw = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    storageDates = Array.isArray(parsed)
+      ? parsed.filter((item) => typeof item === 'string')
+      : [];
+  } catch {
+    storageDates = [];
+  }
+
+  const updatedDates = Array.from(new Set([...storageDates, date])).sort();
   reservedDates.value = updatedDates;
   localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedDates));
 };
@@ -257,7 +272,7 @@ const goToNextMonth = () => {
 const selectCalendarDate = (day) => {
   if (!day?.isAvailable) return;
   form.value.eventDate = day.dateString;
-  delete formErrors.value.eventDate;
+  formErrors.value.eventDate = '';
 };
 
 const reservationSummary = computed(() => ({
