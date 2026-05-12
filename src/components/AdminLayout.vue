@@ -22,12 +22,9 @@ function closeSession() {
       <nav class="admin-nav">
         <router-link to="/Home-companies" class="admin-link">Inicio</router-link>
         <router-link to="/Services-admin" class="admin-link">Servicios</router-link>
-        <router-link to="/Company-products" class="admin-link"
-          >Productos</router-link
-        >
         <router-link to="/Orders-companies" class="admin-link">Pedidos</router-link>
         <router-link to="/Create-products" class="admin-link"
-          >Crear producto</router-link
+          >Crear servicio</router-link
         >
         <router-link to="/Company-profile" class="admin-link">Perfil</router-link>
         <button class="logout-btn" type="button" @click="closeSession">
