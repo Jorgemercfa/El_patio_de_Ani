@@ -4,18 +4,23 @@ import { useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
-// import { useCart } from '@/store/cart.js';
+import { useCart } from '@/store/cart.js';
 
 const router = useRouter();
 const { state, logout } = useSession();
 const children = ref([]);
 const showChildrenSavedMessage = ref(false);
 const childrenStorageTimer = ref(null);
-// const { getPurchasedproducts } = useCart();
+const { getPurchasedproducts } = useCart();
 
-// const purchasedproducts = computed(() =>
-//   state.user ? getPurchasedproducts(state.user.id) : [],
-// );
+const purchasedproducts = computed(() =>
+  state.user ? getPurchasedproducts(state.user.id) : [],
+);
+const sortedOrders = computed(() =>
+  [...purchasedproducts.value].sort(
+    (a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime(),
+  ),
+);
 const initials = computed(() => {
   const name = state.user?.name || '';
   return name
@@ -26,14 +31,14 @@ const initials = computed(() => {
     .join('') || 'UA';
 });
 
-// function formatDate(iso) {
-//   if (!iso) return '';
-//   return new Date(iso).toLocaleDateString('es-PE', {
-//     year: 'numeric',
-//     month: 'long',
-//     day: 'numeric',
-//   });
-// }
+function formatDate(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('es-PE', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
 
 const onLogout = () => {
   logout();
@@ -198,35 +203,49 @@ onBeforeUnmount(() => {
           </p>
         </div>
 
-        <!-- Purchased products -->
-        <!-- <div class="products-section">
-          <h2 class="section-title">Mis cupones adquiridos</h2>
-          <div v-if="purchasedproducts.length > 0" class="products-grid">
-            <div
-              v-for="(c, i) in purchasedproducts"
-              :key="i"
-              class="product-card"
+        <div class="orders-section">
+          <h2 class="kids-title">📦 Mis Pedidos</h2>
+          <div v-if="sortedOrders.length > 0" class="orders-grid">
+            <article
+              v-for="order in sortedOrders"
+              :key="order.orderId"
+              class="order-card"
             >
-              <img :src="c.image" :alt="c.name" class="product-img" />
-              <div class="product-body">
-                <h3 class="product-name">{{ c.name }}</h3>
-                <div class="product-code-box">{{ c.product_code }}</div>
-                <p class="product-date">
-                  Comprado el {{ formatDate(c.purchasedAt) }}
+              <img
+                v-if="order.image"
+                :src="order.image"
+                :alt="order.name || 'Producto'"
+                class="order-image"
+              />
+              <div class="order-body">
+                <div class="order-top">
+                  <h3 class="order-name">{{ order.name || 'Producto sin nombre' }}</h3>
+                  <span class="order-category">{{ order.category || 'Sin categoría' }}</span>
+                </div>
+                <p class="order-price">
+                  💰 Precio pagado:
+                  <strong>S/ {{ Number(order.discount_price ?? order.price ?? 0).toFixed(2) }}</strong>
                 </p>
-                <p class="product-price">
-                  S/ {{ Number(c.discount_price ?? c.price ?? 0).toFixed(2) }}
-                </p>
+                <p class="order-date">📅 Fecha de compra: {{ formatDate(order.purchasedAt) }}</p>
+                <div class="order-meta">
+                  <span
+                    class="order-status"
+                    :class="order.completedAt ? 'status-completed' : 'status-pending'"
+                  >
+                    {{ order.completedAt ? 'Completado' : 'Pendiente' }}
+                  </span>
+                  <code class="order-code">🔑 {{ String(order.orderId || '').slice(0, 12) }}</code>
+                </div>
               </div>
-            </div>
+            </article>
           </div>
-          <div v-else class="no-products">
-            <p>Aún no tienes cupones adquiridos.</p>
-            <router-link to="/product-item">
-              <button class="browse-btn">Ver cupones disponibles</button>
+          <div v-else class="orders-empty">
+            <p>Aún no tienes pedidos. ¡Explora nuestros servicios!</p>
+            <router-link to="/Product-item">
+              <button class="browse-btn" type="button">Ver servicios</button>
             </router-link>
           </div>
-        </div> -->
+        </div>
       </div>
     </section>
 
@@ -435,103 +454,116 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 
-/* Purchased products section */
-.products-section {
-  margin-top: 50px;
+.orders-section {
+  margin-top: 24px;
+  background: #fff;
+  border: 2px solid #E91E81;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
 }
 
-.section-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: #2D3E94;
-  position: relative;
-}
-
-.section-title::after {
-  content: '';
-  width: 60px;
-  height: 3px;
-  background-color: #E91E81;
-  display: block;
-  margin-top: 8px;
-  border-radius: 2px;
-}
-
-.products-grid {
+.orders-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
+  grid-template-columns: 1fr;
+  gap: 16px;
 }
 
-.product-card {
-  background: white;
+.order-card {
+  background: #fff;
   border: 2px solid #E91E81;
   border-radius: 14px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   overflow: hidden;
-  transition: transform 0.2s;
 }
 
-.product-card:hover {
-  transform: translateY(-4px);
-}
-
-.product-img {
+.order-image {
   width: 100%;
-  height: 140px;
+  height: 150px;
   object-fit: cover;
 }
 
-.product-body {
-  padding: 16px;
+.order-body {
+  padding: 14px;
 }
 
-.product-name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #222;
-  margin: 0 0 10px;
-}
-
-.product-code-box {
-  background: #2D3E94;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: 1px;
+.order-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 10px;
-  cursor: default;
-  user-select: all;
 }
 
-.product-date {
-  font-size: 0.8rem;
-  color: #888;
-  margin: 0 0 4px;
-}
-
-.product-price {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #E91E81;
+.order-name {
   margin: 0;
+  color: #2D3E94;
+  font-size: 1rem;
 }
 
-.no-products {
+.order-category {
+  background: #ffe8f4;
+  color: #E91E81;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.order-price,
+.order-date {
+  margin: 0 0 8px;
+  color: #333;
+  font-size: 0.92rem;
+}
+
+.order-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.order-status {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.status-completed {
+  background: #e6f8e8;
+  color: #1b6b32;
+}
+
+.status-pending {
+  background: #fffbea;
+  color: #7a5f00;
+}
+
+.order-code {
+  background: #2D3E94;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-family: monospace;
+  font-size: 0.82rem;
+}
+
+.orders-empty {
   text-align: center;
-  padding: 50px 20px;
-  background: white;
+  padding: 24px;
+  background: #fff;
   border-radius: 14px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+  border: 2px dashed #E91E81;
 }
 
-.no-products p {
+.orders-empty p {
   font-size: 1.05rem;
-  color: #666;
-  margin-bottom: 20px;
+  color: #2D3E94;
+  margin: 0 0 16px;
+  font-weight: 600;
 }
 
 .browse-btn {
@@ -549,5 +581,17 @@ onBeforeUnmount(() => {
 .browse-btn:hover {
   background: #f2c500;
   transform: translateY(-2px);
+}
+
+@media (min-width: 768px) {
+  .orders-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1080px) {
+  .orders-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 </style>
