@@ -15,7 +15,11 @@ function formatDate(iso) {
 
 function formatReservationDate(date) {
   if (!date) return '-';
-  return new Date(`${date}T00:00:00`).toLocaleDateString('es-PE');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString('es-PE');
+  }
+  return new Date(date).toLocaleDateString('es-PE');
 }
 
 function orderPrice(item) {

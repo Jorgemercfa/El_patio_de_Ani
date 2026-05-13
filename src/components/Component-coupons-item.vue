@@ -266,8 +266,12 @@ watch(
               class="reservation-date-input"
               type="date"
               :min="todayDate"
+              required
+              aria-required="true"
             />
-            <p v-if="reservationError" class="reservation-error">{{ reservationError }}</p>
+            <p v-if="reservationError" class="reservation-error" aria-live="polite">
+              {{ reservationError }}
+            </p>
           </div>
 
           <button class="buy-button" @click="handleAddToCart">
