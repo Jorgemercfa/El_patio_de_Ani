@@ -11,6 +11,7 @@ const { state, logout } = useSession();
 const children = ref([]);
 const showChildrenSavedMessage = ref(false);
 const childrenStorageTimer = ref(null);
+const ORDER_ID_DISPLAY_LENGTH = 12;
 const { getPurchasedproducts } = useCart();
 
 const purchasedproducts = computed(() =>
@@ -210,6 +211,7 @@ onBeforeUnmount(() => {
               v-for="order in sortedOrders"
               :key="order.orderId"
               class="order-card"
+              :aria-label="`Pedido de ${order.name || 'producto'}`"
             >
               <img
                 v-if="order.image"
@@ -234,7 +236,9 @@ onBeforeUnmount(() => {
                   >
                     {{ order.completedAt ? 'Completado' : 'Pendiente' }}
                   </span>
-                  <code class="order-code">🔑 {{ String(order.orderId || '').slice(0, 12) }}</code>
+                  <code class="order-code" aria-label="Código de pedido">
+                    🔑 {{ String(order.orderId || '').slice(0, ORDER_ID_DISPLAY_LENGTH) }}
+                  </code>
                 </div>
               </div>
             </article>
