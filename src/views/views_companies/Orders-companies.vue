@@ -13,6 +13,11 @@ function formatDate(iso) {
   return new Date(iso).toLocaleString('es-PE');
 }
 
+function formatReservationDate(date) {
+  if (!date) return '-';
+  return new Date(`${date}T00:00:00`).toLocaleDateString('es-PE');
+}
+
 function orderPrice(item) {
   return Number(item.discount_price ?? item.price ?? 0) * Number(item.quantity ?? 1);
 }
@@ -42,6 +47,7 @@ function completeOrder(order) {
               <th>Cliente</th>
               <th>Producto</th>
               <th>Fecha</th>
+              <th>Fecha Reserva</th>
               <th>Total</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -52,6 +58,7 @@ function completeOrder(order) {
               <td>{{ order.userId ?? 'Cliente invitado' }}</td>
               <td>{{ order.name }}</td>
               <td>{{ formatDate(order.purchasedAt) }}</td>
+              <td>{{ formatReservationDate(order.reservationDate) }}</td>
               <td>S/ {{ orderPrice(order).toFixed(2) }}</td>
               <td>
                 <span :class="order.completedAt ? 'tag done' : 'tag pending'">
@@ -81,6 +88,7 @@ function completeOrder(order) {
         <p><strong>Cliente:</strong> {{ selectedOrder.userId ?? 'Cliente invitado' }}</p>
         <p><strong>Producto:</strong> {{ selectedOrder.name }}</p>
         <p><strong>Fecha:</strong> {{ formatDate(selectedOrder.purchasedAt) }}</p>
+        <p><strong>Fecha Reserva:</strong> {{ formatReservationDate(selectedOrder.reservationDate) }}</p>
         <p><strong>Total:</strong> S/ {{ orderPrice(selectedOrder).toFixed(2) }}</p>
       </article>
     </section>

@@ -1,21 +1,41 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
 import { getCompanyproducts } from '@/auth/companyproductsRepo'
-import { PREMIUM_INFLABLE_PRICE } from '@/constants/inflables'
 
 const router = useRouter()
 const allProducts = computed(() => getCompanyproducts())
 
-const categories = ['Todas', 'Shows Infantiles', 'Juegos e Inflables', 'Carritos Snacks', 'Estética Infantil']
+const categories = ['Todas', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', 'Estética Infantil']
 const activeFilter = ref('Todas')
+const activeSubcategory = ref('Todas')
+
+const subcategoryMap = {
+  'Shows Infantiles': ['Animación', 'Competencia', 'Magia'],
+  Inflables: ['Bebes', 'Mediano', 'Grande'],
+  Juegos: ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
+  'Carritos Snacks': ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
+  'Estética Infantil': ['Pintacaritas', 'Glitter Bar'],
+}
+
+const availableSubcategories = computed(() =>
+  activeFilter.value === 'Todas' ? [] : (subcategoryMap[activeFilter.value] || []),
+)
+
+watch(activeFilter, () => {
+  activeSubcategory.value = 'Todas'
+})
 
 const products = computed(() =>
-  activeFilter.value === 'Todas'
-    ? allProducts.value
-    : allProducts.value.filter((p) => p.category === activeFilter.value),
+  allProducts.value.filter((p) => {
+    const matchesCategory =
+      activeFilter.value === 'Todas' || p.category === activeFilter.value
+    const matchesSubcategory =
+      activeSubcategory.value === 'Todas' || p.subcategory === activeSubcategory.value
+    return matchesCategory && matchesSubcategory
+  }),
 )
 
 const getProductName = (product) => product.name || 'Producto sin nombre'
@@ -72,43 +92,6 @@ const formatPrice = (product) => {
   return `S/ ${price.toFixed(2)}`
 }
 
-const isInflable = (product) => {
-  const category = (product.category || '').toLowerCase()
-  const subcategory = (product.subcategory || '').toLowerCase()
-  const name = (product.name || '').toLowerCase()
-
-  return (
-    category.includes('juegos e inflables') &&
-    (subcategory.includes('inflable') || name.includes('inflable'))
-  )
-}
-
-const getInflableSize = (product) => {
-  const sub = (product.subcategory || '').toLowerCase()
-  const name = (product.name || '').toLowerCase()
-  const ageRange = (product.age_range || '').toLowerCase()
-  const price = getProductPrice(product) || 0
-
-  if (
-    sub.includes('bebé') ||
-    sub.includes('bebe') ||
-    sub.includes('baby') ||
-    name.includes('bebé') ||
-    name.includes('bebe') ||
-    name.includes('baby') ||
-    name.includes('cubito') ||
-    ageRange.includes('0-2') ||
-    ageRange.includes('0-3')
-  ) {
-    return 'Bebés 👶'
-  }
-
-  if (sub.includes('grande') || price > PREMIUM_INFLABLE_PRICE) {
-    return 'Grande 🏰'
-  }
-
-  return 'Mediano 🎪'
-}
 </script>
 
 <template>
@@ -131,6 +114,25 @@ const getInflableSize = (product) => {
       </button>
     </div>
 
+    <div v-if="availableSubcategories.length" class="filter-pills">
+      <button
+        class="filter-pill"
+        :class="{ active: activeSubcategory === 'Todas' }"
+        @click="activeSubcategory = 'Todas'"
+      >
+        Todas
+      </button>
+      <button
+        v-for="sub in availableSubcategories"
+        :key="sub"
+        class="filter-pill"
+        :class="{ active: activeSubcategory === sub }"
+        @click="activeSubcategory = sub"
+      >
+        {{ sub }}
+      </button>
+    </div>
+
     <div class="products-container">
       <div v-for="product in products" :key="product.id" class="product-card">
         <img
@@ -145,12 +147,6 @@ const getInflableSize = (product) => {
             <span class="badge-category">{{ getCategory(product) }}</span>
             <span class="badge-subcategory" v-if="getSubcategory(product)">
               {{ getSubcategory(product) }}
-            </span>
-            <span
-              v-if="isInflable(product)"
-              class="badge-inflable-size"
-            >
-              {{ getInflableSize(product) }}
             </span>
           </div>
 
@@ -276,8 +272,7 @@ const getInflableSize = (product) => {
 }
 
 .badge-category,
-.badge-subcategory,
-.badge-inflable-size {
+.badge-subcategory {
   font-size: 0.72rem;
   font-weight: 700;
   padding: 4px 10px;
@@ -293,12 +288,6 @@ const getInflableSize = (product) => {
 .badge-subcategory {
   background: #e7efff;
   color: #2D3E94;
-}
-
-.badge-inflable-size {
-  background: #fff0f7;
-  color: #c0144e;
-  border: 1px solid #f7b7d5;
 }
 
 .product-title {

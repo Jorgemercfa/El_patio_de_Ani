@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import AdminLayout from '@/components/AdminLayout.vue';
 import {
@@ -10,15 +10,33 @@ import {
 const router = useRouter();
 const search = ref('');
 const activeFilter = ref('Todas');
+const activeSubcategoryFilter = ref('Todas');
 const services = ref([]);
 
 const categories = [
   'Todas',
   'Shows Infantiles',
-  'Juegos e Inflables',
+  'Inflables',
+  'Juegos',
   'Carritos Snacks',
   'Estética Infantil',
 ];
+
+const subcategoryMap = {
+  'Shows Infantiles': ['Animación', 'Competencia', 'Magia'],
+  Inflables: ['Bebes', 'Mediano', 'Grande'],
+  Juegos: ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
+  'Carritos Snacks': ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
+  'Estética Infantil': ['Pintacaritas', 'Glitter Bar'],
+};
+
+const availableSubcategories = computed(() =>
+  activeFilter.value === 'Todas' ? [] : (subcategoryMap[activeFilter.value] || []),
+);
+
+watch(activeFilter, () => {
+  activeSubcategoryFilter.value = 'Todas';
+});
 
 function loadServices() {
   services.value = getCompanyproducts();
@@ -34,8 +52,11 @@ const filteredServices = computed(() => {
   return services.value.filter((service) => {
     const matchesCategory =
       activeFilter.value === 'Todas' || service.category === activeFilter.value;
+    const matchesSubcategory =
+      activeSubcategoryFilter.value === 'Todas' ||
+      service.subcategory === activeSubcategoryFilter.value;
     const matchesName = (service.name || '').toLowerCase().includes(term);
-    return matchesCategory && matchesName;
+    return matchesCategory && matchesSubcategory && matchesName;
   });
 });
 
@@ -75,6 +96,27 @@ onMounted(loadServices);
           @click="activeFilter = category"
         >
           {{ category }}
+        </button>
+      </div>
+
+      <div v-if="availableSubcategories.length" class="filters">
+        <button
+          type="button"
+          class="filter-pill"
+          :class="{ active: activeSubcategoryFilter === 'Todas' }"
+          @click="activeSubcategoryFilter = 'Todas'"
+        >
+          Todas
+        </button>
+        <button
+          v-for="subcategory in availableSubcategories"
+          :key="subcategory"
+          type="button"
+          class="filter-pill"
+          :class="{ active: activeSubcategoryFilter === subcategory }"
+          @click="activeSubcategoryFilter = subcategory"
+        >
+          {{ subcategory }}
         </button>
       </div>
 

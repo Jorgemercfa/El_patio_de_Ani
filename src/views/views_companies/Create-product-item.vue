@@ -46,10 +46,11 @@ const removeOption = (index) => {
 
 // ─── Catálogo de categorías y subcategorías ────────────────
 const categoryMap = {
-  'Shows Infantiles':   ['Animación', 'Competencia', 'Magia'],
-  'Juegos e Inflables': ['Inflables', 'Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
-  'Estética Infantil':  ['Pintacaritas', 'Glitter Bar'],
-  'Carritos Snacks':    ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
+  'Shows Infantiles': ['Animación', 'Competencia', 'Magia'],
+  Inflables: ['Bebes', 'Mediano', 'Grande'],
+  Juegos: ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
+  'Estética Infantil': ['Pintacaritas', 'Glitter Bar'],
+  'Carritos Snacks': ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
 };
 
 const categories    = Object.keys(categoryMap);
@@ -72,10 +73,11 @@ const TERMS_ESTETICA =
   'Contrato sujeto a disponibilidad. Reserva con el 50% del total. El personal se instala 15 minutos antes. No aplica movilidad (costo aparte según distrito). No se instala en vía pública.';
 
 const defaultTermsMap = {
-  'Shows Infantiles':   TERMS_SHOWS,
-  'Juegos e Inflables': TERMS_JUEGOS,
-  'Estética Infantil':  TERMS_ESTETICA,
-  'Carritos Snacks':    TERMS_SNACKS,
+  'Shows Infantiles': TERMS_SHOWS,
+  Inflables: TERMS_JUEGOS,
+  Juegos: TERMS_JUEGOS,
+  'Estética Infantil': TERMS_ESTETICA,
+  'Carritos Snacks': TERMS_SNACKS,
 };
 
 const applyDefaultTerms = () => {
@@ -87,10 +89,10 @@ const showDuration   = computed(() =>
   ['Shows Infantiles', 'Estética Infantil'].includes(category.value));
 
 const showAgeRange   = computed(() =>
-  ['Shows Infantiles', 'Juegos e Inflables'].includes(category.value));
+  ['Shows Infantiles', 'Inflables', 'Juegos'].includes(category.value));
 
 const showDimensions = computed(() =>
-  category.value === 'Juegos e Inflables');
+  ['Inflables', 'Juegos'].includes(category.value));
 
 // ─── Mensajes ──────────────────────────────────────────────
 const error   = ref('');
@@ -272,7 +274,7 @@ onMounted(() => {
           <input v-model="ageRange" type="text" placeholder="Ej: 2-6 años" />
         </div>
 
-        <!-- Dimensiones (solo Juegos e Inflables) -->
+        <!-- Dimensiones (solo Inflables y Juegos) -->
         <div v-if="showDimensions" class="form-group">
           <label>Dimensiones</label>
           <input v-model="dimensions" type="text" placeholder="Ej: Alto: 3m | Base: 4m x 4m" />
