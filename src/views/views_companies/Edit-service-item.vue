@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AdminLayout from '@/components/AdminLayout.vue';
 import {
@@ -33,10 +33,34 @@ const form = ref({
 
 const categories = [
   'Shows Infantiles',
-  'Juegos e Inflables',
+  'Inflables',
+  'Juegos',
   'Carritos Snacks',
   'Estética Infantil',
 ];
+
+const subcategoryMap = {
+  'Shows Infantiles': ['Animación', 'Competencia', 'Magia'],
+  Inflables: ['Bebes', 'Mediano', 'Grande'],
+  Juegos: ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
+  'Carritos Snacks': ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
+  'Estética Infantil': ['Pintacaritas', 'Glitter Bar'],
+};
+
+const availableSubcategories = computed(() => subcategoryMap[form.value.category] || []);
+const usesSubcategorySelect = computed(() => availableSubcategories.value.length > 0);
+
+watch(
+  () => form.value.category,
+  () => {
+    if (
+      usesSubcategorySelect.value &&
+      !availableSubcategories.value.includes(form.value.subcategory)
+    ) {
+      form.value.subcategory = '';
+    }
+  },
+);
 
 onMounted(() => {
   const service = getCompanyproducts().find((item) => item.id === serviceId);
@@ -152,7 +176,13 @@ function onSave() {
 
         <div class="form-group">
           <label>Subcategoría</label>
-          <input v-model="form.subcategory" type="text" />
+          <select v-if="usesSubcategorySelect" v-model="form.subcategory">
+            <option value="">— Seleccionar —</option>
+            <option v-for="option in availableSubcategories" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+          <input v-else v-model="form.subcategory" type="text" />
         </div>
 
         <div class="form-group">

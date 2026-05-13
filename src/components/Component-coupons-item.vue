@@ -56,7 +56,7 @@ const displayPrice = computed(() => {
 });
 
 const isInflable = computed(() =>
-  (product.value?.category || '').toLowerCase().includes('juegos e inflables'),
+  product.value?.category === 'Inflables',
 );
 
 const inflableSubcategory = computed(() => {
@@ -84,13 +84,21 @@ const inflableBadgeLabel = computed(() => {
 });
 
 const addedFeedback = ref(false);
+const reservationDate = ref('');
+const reservationError = ref('');
+const todayDate = computed(() => new Date().toISOString().split('T')[0]);
 
 function handleAddToCart() {
   if (!isAuthenticated.value) {
     router.push({ name: 'SignIn' });
     return;
   }
-  addToCart(product.value.id);
+  if (!reservationDate.value) {
+    reservationError.value = 'Selecciona la fecha del evento para continuar.';
+    return;
+  }
+  reservationError.value = '';
+  addToCart(product.value.id, reservationDate.value);
   addedFeedback.value = true;
   setTimeout(() => {
     addedFeedback.value = false;
@@ -147,6 +155,8 @@ watch(
   () => route.params.id,
   () => {
     forceScrollTop();
+    reservationDate.value = '';
+    reservationError.value = '';
   },
 );
 </script>
@@ -247,9 +257,27 @@ watch(
           </template>
         </div>
 
-        <button v-else class="buy-button" @click="handleAddToCart">
-          {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
-        </button>
+        <template v-else>
+          <div class="reservation-date-section">
+            <label class="label" for="reservation-date">📅 Fecha del evento</label>
+            <input
+              id="reservation-date"
+              v-model="reservationDate"
+              class="reservation-date-input"
+              type="date"
+              :min="todayDate"
+              required
+              aria-required="true"
+            />
+            <p v-if="reservationError" class="reservation-error" aria-live="polite">
+              {{ reservationError }}
+            </p>
+          </div>
+
+          <button class="buy-button" @click="handleAddToCart">
+            {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
+          </button>
+        </template>
       </div>
     </div>
 
@@ -451,6 +479,31 @@ watch(
   opacity: 0.85;
   margin: 4px 0 0;
   line-height: 1.6;
+}
+
+.reservation-date-section {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.reservation-date-input {
+  width: 100%;
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.reservation-date-input:focus {
+  outline: none;
+  border-color: #E91E81;
+  box-shadow: 0 0 0 3px rgba(233, 30, 129, 0.12);
+}
+
+.reservation-error {
+  margin: 6px 0 0;
+  color: #b00020;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .inflable-actions {

@@ -36,12 +36,13 @@ export function useCart() {
   const { state: sessionState } = useSession();
   const products = computed(() => getCompanyproducts());
 
-  function addToCart(productId) {
+  function addToCart(productId, reservationDate = null) {
     const existing = state.items.find((i) => i.productId === productId);
     if (existing) {
       existing.quantity += 1;
+      if (reservationDate) existing.reservationDate = reservationDate;
     } else {
-      state.items.push({ productId, quantity: 1 });
+      state.items.push({ productId, quantity: 1, reservationDate });
     }
     persist();
   }
@@ -72,7 +73,11 @@ export function useCart() {
       .map((item) => {
         const product = products.value.find((c) => c.id === item.productId);
         if (!product) return null;
-        return { ...product, quantity: item.quantity };
+        return {
+          ...product,
+          quantity: item.quantity,
+          reservationDate: item.reservationDate ?? null,
+        };
       })
       .filter(Boolean),
   );
@@ -90,12 +95,20 @@ export function useCart() {
 
   function checkout() {
     const userId = sessionState.user?.id ?? null;
-    const purchased = cartItems.value.map((item, index) => ({
-      ...item,
-      orderId: `${Date.now()}-${index}-${item.id}-${Math.random().toString(36).slice(2, 8)}`,
-      purchasedAt: new Date().toISOString(),
-      userId,
-    }));
+    const purchased = state.items
+      .map((cartItem, index) => {
+        const product = products.value.find((c) => c.id === cartItem.productId);
+        if (!product) return null;
+        return {
+          ...product,
+          quantity: cartItem.quantity,
+          reservationDate: cartItem.reservationDate ?? null,
+          orderId: `${Date.now()}-${index}-${product.id}-${Math.random().toString(36).slice(2, 8)}`,
+          purchasedAt: new Date().toISOString(),
+          userId,
+        };
+      })
+      .filter(Boolean);
     state.purchasedproducts.push(...purchased);
     clearCart();
     persist();

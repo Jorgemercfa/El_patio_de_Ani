@@ -81,7 +81,7 @@ const restaurantproducts = computed(() =>
 );
 
 const restaurantproducts2 = computed(() =>
-  products.value.filter((c) => c.category === 'Juegos e Inflables'),
+  products.value.filter((c) => c.category === 'Inflables' || c.category === 'Juegos'),
 );
 
 /* =============================
@@ -103,7 +103,7 @@ const scrollRestaurantsLeft = () => scrollRestaurantsBy(-1);
 const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
 
 /* =============================
-   CARRUSEL Juegos e Inflables (scroll)
+   CARRUSEL Inflables y Juegos (scroll)
 ============================= */
 const restaurantTrackRef2 = ref(null);
 
@@ -193,8 +193,13 @@ const tarifas = [
       </router-link>
       <router-link to="/Product-item" class="service-card service-card-games">
         <span class="service-icon">🎪</span>
-        <h3 class="service-name">Juegos e Inflables</h3>
-        <p class="service-desc">Inflables, trampolines y juegos para todos</p>
+        <h3 class="service-name">Inflables</h3>
+        <p class="service-desc">Inflables para bebés, medianos y grandes</p>
+      </router-link>
+      <router-link to="/Product-item" class="service-card service-card-juegos">
+        <span class="service-icon">🎠</span>
+        <h3 class="service-name">Juegos</h3>
+        <p class="service-desc">Little Tikes, trampolines y juegos para bebés</p>
       </router-link>
       <router-link to="/Product-item" class="service-card service-card-snacks">
         <span class="service-icon">🍿</span>
@@ -313,7 +318,7 @@ const tarifas = [
       </button>
     </div>
 
-    <h1 class="title-home">Juegos e Inflables</h1>
+    <h1 class="title-home">Inflables y Juegos</h1>
 
     <div class="our-products-wrapper">
       <button
@@ -648,7 +653,7 @@ const tarifas = [
 /* ===== NUESTROS SERVICIOS ===== */
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 24px;
   padding: 0 60px 40px;
 }
@@ -669,8 +674,15 @@ const tarifas = [
 
 .service-card-shows   { background: #FFF9C4; }
 .service-card-games   { background: #E8F5E9; }
+.service-card-juegos  { background: #E3F2FD; }
 .service-card-snacks  { background: #FFF3E0; }
 .service-card-estetica { background: #FCE4EC; }
+
+@media (max-width: 1200px) {
+  .services-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 .service-card:hover {
   transform: translateY(-4px);
