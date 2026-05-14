@@ -8,8 +8,8 @@ export default [
   },
   {
     id: 2,
-    name: 'Juan',
-    email: 'juanvilla@outlook.com',
+    name: 'Usuario',
+    email: 'usuariopruebas@outlook.com',
     password: '123456789',
     products: [],
   },
