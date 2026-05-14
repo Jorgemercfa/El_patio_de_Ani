@@ -35,9 +35,21 @@ export function getCompanyproducts() {
       .filter((product) => product && product.id !== null && product.id !== undefined)
       .map((product) => [product.id, product]),
   );
-  const mergedSeed = normalizedSeed.map(
-    (product) => storedById[product.id] ?? product,
-  );
+
+  // Merge: stored data takes precedence EXCEPT for structural fields
+  // (category, subcategory) which always come from seed to avoid stale cache.
+  const mergedSeed = normalizedSeed.map((seedProduct) => {
+    const storedProduct = storedById[seedProduct.id];
+    if (!storedProduct) return seedProduct;
+
+    return {
+      ...storedProduct,
+      // Always sync structural taxonomy fields from seed
+      category: seedProduct.category,
+      subcategory: seedProduct.subcategory,
+    };
+  });
+
   const extraStored = stored.filter(
     (product) =>
       product &&
