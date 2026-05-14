@@ -13,6 +13,7 @@ import Cart from './views/Cart-item.vue';
 import Checkout from './views/Checkout-item.vue';
 import OrderConfirmation from './views/OrderConfirmation-item.vue';
 import PrivacyPolicy from './views/Privacy-Policy.vue';
+import TermsOfUse from './views/Terms-of-use.vue';
 
 // EMPRESA
 import SignInCompany from './views/views_companies/Sign-in-companies.vue';
@@ -81,6 +82,12 @@ const routes = [
     name: 'PrivacyPolicy',
     component: PrivacyPolicy,
     meta: { title: 'Política de Privacidad | El patio de Ani' },
+  },
+  {
+    path: '/Terms-of-Use',
+    name: 'TermsOfUse',
+    component: TermsOfUse,
+    meta: { title: 'Términos de Uso | El patio de Ani' },
   },
 
   // EMPRESA
