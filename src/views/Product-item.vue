@@ -10,33 +10,32 @@ const allProducts = computed(() => getCompanyproducts())
 
 const categories = ['Todas', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', 'Estética Infantil']
 const activeFilter = ref('Todas')
-const activeSubcategory = ref('Todas')
+const activeSubcategory = ref('')
 
 const subcategoryMap = {
-  'Shows Infantiles': ['Animación', 'Competencia', 'Magia'],
-  Inflables: ['Bebes', 'Mediano', 'Grande'],
-  Juegos: ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
-  'Carritos Snacks': ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
+  'Shows Infantiles':  ['Animación', 'Competencia', 'Magia'],
+  'Inflables':         ['Bebes', 'Mediano', 'Grande'],
+  'Juegos':            ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
   'Estética Infantil': ['Pintacaritas', 'Glitter Bar'],
+  'Carritos Snacks':   ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
 }
 
-const availableSubcategories = computed(() =>
-  activeFilter.value === 'Todas' ? [] : (subcategoryMap[activeFilter.value] || []),
+const activeSubcategories = computed(() =>
+  activeFilter.value !== 'Todas' ? (subcategoryMap[activeFilter.value] ?? []) : []
 )
 
-watch(activeFilter, () => {
-  activeSubcategory.value = 'Todas'
+watch(activeFilter, () => { activeSubcategory.value = '' })
+
+const products = computed(() => {
+  let list = activeFilter.value === 'Todas'
+    ? allProducts.value
+    : allProducts.value.filter((p) => p.category === activeFilter.value)
+
+  if (activeSubcategory.value) {
+    list = list.filter((p) => p.subcategory === activeSubcategory.value)
+  }
+  return list
 })
-
-const products = computed(() =>
-  allProducts.value.filter((p) => {
-    const matchesCategory =
-      activeFilter.value === 'Todas' || p.category === activeFilter.value
-    const matchesSubcategory =
-      activeSubcategory.value === 'Todas' || p.subcategory === activeSubcategory.value
-    return matchesCategory && matchesSubcategory
-  }),
-)
 
 const getProductName = (product) => product.name || 'Producto sin nombre'
 const getShortDescription = (product) => product.shortDescription || ''
@@ -91,7 +90,6 @@ const formatPrice = (product) => {
   if (price === null) return 'Precio no disponible'
   return `S/ ${price.toFixed(2)}`
 }
-
 </script>
 
 <template>
@@ -102,6 +100,7 @@ const formatPrice = (product) => {
   <div class="products-area">
     <h1 class="title-products">Nuestros Servicios</h1>
 
+    <!-- Filtro de categorías -->
     <div class="filter-pills">
       <button
         v-for="cat in categories"
@@ -114,18 +113,19 @@ const formatPrice = (product) => {
       </button>
     </div>
 
-    <div v-if="availableSubcategories.length" class="filter-pills">
+    <!-- Filtro de subcategorías (solo cuando hay categoría activa) -->
+    <div v-if="activeSubcategories.length > 0" class="filter-pills filter-pills-sub">
       <button
-        class="filter-pill"
-        :class="{ active: activeSubcategory === 'Todas' }"
-        @click="activeSubcategory = 'Todas'"
+        class="filter-pill filter-pill-sub"
+        :class="{ active: activeSubcategory === '' }"
+        @click="activeSubcategory = ''"
       >
         Todas
       </button>
       <button
-        v-for="sub in availableSubcategories"
+        v-for="sub in activeSubcategories"
         :key="sub"
-        class="filter-pill"
+        class="filter-pill filter-pill-sub"
         :class="{ active: activeSubcategory === sub }"
         @click="activeSubcategory = sub"
       >
@@ -205,7 +205,11 @@ const formatPrice = (product) => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 30px;
+  margin-bottom: 14px;
+}
+
+.filter-pills-sub {
+  margin-bottom: 28px;
 }
 
 .filter-pill {
@@ -224,6 +228,19 @@ const formatPrice = (product) => {
 .filter-pill.active,
 .filter-pill:hover {
   background: #E91E81;
+  color: #FFFFFF;
+}
+
+.filter-pill-sub {
+  padding: 6px 16px;
+  font-size: 0.82rem;
+  border-color: #2D3E94;
+  color: #2D3E94;
+}
+
+.filter-pill-sub.active,
+.filter-pill-sub:hover {
+  background: #2D3E94;
   color: #FFFFFF;
 }
 
