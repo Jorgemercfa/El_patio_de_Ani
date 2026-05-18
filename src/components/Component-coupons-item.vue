@@ -88,9 +88,9 @@ const inflableBadgeLabel = computed(() => {
 const addedFeedback = ref(false);
 const reservationDate = ref('');
 const reservationError = ref('');
-const todayDate = computed(() => new Date().toISOString().split('T')[0]);
+const todayDate = computed(() => new Date().toLocaleDateString('en-CA'));
 const isSelectedDateAvailable = computed(() => {
-  if (!reservationDate.value || !product.value || isInflable.value) return false;
+  if (!reservationDate.value || !product.value || isInflable.value) return null;
   return isDateAvailable(product.value.id, reservationDate.value);
 });
 const availabilityLabel = computed(() => {
@@ -287,7 +287,10 @@ watch(
               required
               aria-required="true"
             />
-            <p class="availability-indicator" :class="{ available: isSelectedDateAvailable, unavailable: reservationDate && !isSelectedDateAvailable }">
+            <p
+              class="availability-indicator"
+              :class="{ available: isSelectedDateAvailable === true, unavailable: isSelectedDateAvailable === false }"
+            >
               {{ availabilityLabel }}
             </p>
             <p v-if="reservationError" class="reservation-error" aria-live="polite">
@@ -299,7 +302,13 @@ watch(
             📋 Reservar este servicio
           </button>
 
-          <button class="buy-button" :disabled="!reservationDate || !isSelectedDateAvailable" @click="handleAddToCart">
+          <button
+            class="buy-button"
+            :disabled="!reservationDate || isSelectedDateAvailable !== true"
+            :title="!reservationDate || isSelectedDateAvailable !== true ? 'Selecciona una fecha disponible para agregar al carrito' : 'Agregar al carrito'"
+            aria-label="Agregar al carrito"
+            @click="handleAddToCart"
+          >
             {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
           </button>
         </template>

@@ -54,9 +54,7 @@ const selectedPrice = computed(() => {
 });
 
 const getLocalDate = () => {
-  const now = new Date();
-  const timezoneOffset = now.getTimezoneOffset() * 60000;
-  return new Date(now.getTime() - timezoneOffset).toISOString().split('T')[0];
+  return new Date().toLocaleDateString('en-CA');
 };
 
 const today = getLocalDate();
@@ -152,6 +150,17 @@ const selectCalendarDate = (day) => {
   if (!day?.isAvailable) return;
   form.value.eventDate = day.dateString;
   formErrors.value.eventDate = '';
+};
+
+const handleDateInput = () => {
+  if (!form.value.eventDate) {
+    formErrors.value.eventDate = '';
+    return;
+  }
+
+  formErrors.value.eventDate = isDateReserved(form.value.eventDate)
+    ? 'La fecha seleccionada ya no está disponible'
+    : '';
 };
 
 const reservationSummary = computed(() => ({
@@ -334,7 +343,7 @@ onMounted(() => {
 
                 <div class="field">
                   <label for="eventDate">Fecha del evento</label>
-                  <input id="eventDate" v-model="form.eventDate" :min="today" type="date" />
+                  <input id="eventDate" v-model="form.eventDate" :min="today" type="date" @change="handleDateInput" />
                   <p v-if="formErrors.eventDate" class="error-text">{{ formErrors.eventDate }}</p>
                 </div>
 
