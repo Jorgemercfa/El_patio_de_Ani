@@ -608,6 +608,13 @@ onMounted(() => {
             </div>
           </section>
 
+          <div class="note">
+            <h3>📝 Nota</h3>
+            <p>
+              Los servicios se alquilan por 5 horas.
+            </p>
+          </div>
+
           <button class="submit-btn" type="submit">✅ Confirmar Reserva</button>
         </form>
       </div>
@@ -980,6 +987,15 @@ select:focus {
   padding: 10px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.note{
+  background: #f0f4ff;
+  border: 1px solid #2D3E94;
+  color: #1a2d7a;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 14px;
 }
 
 @media (min-width: 900px) {
