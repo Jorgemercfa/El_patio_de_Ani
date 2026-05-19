@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart.js';
+import { useReservasServicio } from '@/store/reservas';
 import { useSession } from '@/auth/session';
 import { PREMIUM_INFLABLE_PRICE, WHATSAPP_BUSINESS_NUMBER } from '@/constants/inflables';
 
@@ -13,6 +14,7 @@ const route = useRoute();
 const router = useRouter();
 const { addToCart } = useCart();
 const { isAuthenticated } = useSession();
+const { isDateAvailable } = useReservasServicio();
 
 const products = computed(() => getCompanyproducts());
 
@@ -86,7 +88,15 @@ const inflableBadgeLabel = computed(() => {
 const addedFeedback = ref(false);
 const reservationDate = ref('');
 const reservationError = ref('');
-const todayDate = computed(() => new Date().toISOString().split('T')[0]);
+const todayDate = computed(() => new Date().toLocaleDateString('en-CA'));
+const isSelectedDateAvailable = computed(() => {
+  if (!reservationDate.value || !product.value || isInflable.value) return null;
+  return isDateAvailable(product.value.id, reservationDate.value);
+});
+const availabilityLabel = computed(() => {
+  if (!reservationDate.value) return 'Selecciona una fecha para verificar disponibilidad';
+  return isSelectedDateAvailable.value ? '✅ Fecha disponible' : '🔴 Fecha reservada';
+});
 
 function handleAddToCart() {
   if (!isAuthenticated.value) {
@@ -95,6 +105,10 @@ function handleAddToCart() {
   }
   if (!reservationDate.value) {
     reservationError.value = 'Selecciona la fecha del evento para continuar.';
+    return;
+  }
+  if (!isDateAvailable(product.value.id, reservationDate.value)) {
+    reservationError.value = 'La fecha seleccionada no está disponible para este servicio.';
     return;
   }
   reservationError.value = '';
@@ -107,6 +121,10 @@ function handleAddToCart() {
 
 function reserveInflable() {
   router.push({ path: '/Inflable-reserva', query: { id: product.value.id } });
+}
+
+function reserveServicio() {
+  router.push({ path: '/Servicio-reserva', query: { id: product.value.id } });
 }
 
 function consultInflableByWhatsApp() {
@@ -269,12 +287,28 @@ watch(
               required
               aria-required="true"
             />
+            <p
+              class="availability-indicator"
+              :class="{ available: isSelectedDateAvailable === true, unavailable: isSelectedDateAvailable === false }"
+            >
+              {{ availabilityLabel }}
+            </p>
             <p v-if="reservationError" class="reservation-error" aria-live="polite">
               {{ reservationError }}
             </p>
           </div>
 
-          <button class="buy-button" @click="handleAddToCart">
+          <button class="buy-button reserve-service-btn" @click="reserveServicio">
+            📋 Reservar este servicio
+          </button>
+
+          <button
+            class="buy-button"
+            :disabled="!reservationDate || isSelectedDateAvailable !== true"
+            :title="!reservationDate || isSelectedDateAvailable !== true ? 'Selecciona una fecha disponible para agregar al carrito' : 'Agregar al carrito'"
+            aria-label="Agregar al carrito"
+            @click="handleAddToCart"
+          >
             {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
           </button>
         </template>
@@ -506,9 +540,27 @@ watch(
   font-weight: 600;
 }
 
+.availability-indicator {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.availability-indicator.available {
+  color: #1b6b32;
+}
+
+.availability-indicator.unavailable {
+  color: #b00020;
+}
+
 .inflable-actions {
   display: grid;
   gap: 12px;
+}
+
+.reserve-service-btn {
+  margin-bottom: 10px;
 }
 
 .buy-button,
@@ -533,6 +585,13 @@ watch(
 .buy-button:hover {
   transform: scale(1.02);
   box-shadow: 0 6px 20px rgba(255, 210, 0, 0.55);
+}
+
+.buy-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .wa-button {

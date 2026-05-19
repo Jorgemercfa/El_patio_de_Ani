@@ -9,6 +9,7 @@ import SignUp from './views/Sign-up.vue';
 import ForgetPassword from './views/Forget-Password.vue';
 import Profile from './views/Profile-item.vue';
 import InflableReserva from './views/Inflable-reserva.vue';
+import ServicioReserva from './views/Servicio-reserva.vue';
 import Cart from './views/Cart-item.vue';
 import Checkout from './views/Checkout-item.vue';
 import OrderConfirmation from './views/OrderConfirmation-item.vue';
@@ -75,6 +76,16 @@ const routes = [
       requiresAuth: true,
       authOptional: true,
       title: 'Reservar Inflable | El Patio de Ani',
+    },
+  },
+  {
+    path: '/Servicio-reserva',
+    name: 'ServicioReserva',
+    component: ServicioReserva,
+    meta: {
+      requiresAuth: true,
+      authOptional: true,
+      title: 'Reservar Servicio | El Patio de Ani',
     },
   },
   {
