@@ -143,6 +143,9 @@ const tarifas = [
 
   <div class="home-area">
     <div class="carousel-container">
+      <div class="carousel-message">
+           <h1>Productora de eventos infantiles</h1>
+      </div>
       <img class="img-home" :src="images[currentImageIndex]" alt="Carrusel principal" />
       <div class="carousel-dots">
         <span
@@ -414,6 +417,24 @@ const tarifas = [
   inset: 0;
   background: rgba(45, 62, 148, 0.3);
 }
+
+.carousel-message {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  max-width: 220px;
+}
+
+
+.carousel-message h1 {
+  font-size: 48px;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
 
 .carousel-dots {
   position: absolute;
