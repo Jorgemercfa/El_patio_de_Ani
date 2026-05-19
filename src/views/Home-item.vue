@@ -875,4 +875,12 @@ const tarifas = [
     flex-basis: 160px;
   }
 }
+
+@media (max-width: 700px) {
+  .our-products-wrapper { padding: 20px 10px; }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .services-grid { grid-template-columns: 1fr; }
+}
 </style>

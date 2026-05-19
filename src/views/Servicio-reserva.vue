@@ -719,4 +719,11 @@ select:focus {
     padding: 28px;
   }
 }
+
+@media (max-width: 480px) {
+  .calendar-day { min-height: 42px; font-size: 0.8rem; border-radius: 8px; }
+  .calendar-day small { font-size: 0.5rem; }
+  .calendar-weekdays, .calendar-grid { gap: 3px; }
+  .calendar-weekdays span { font-size: 0.7rem; }
+}
 </style>
