@@ -862,6 +862,24 @@ const tarifas = [
   }
 }
 
+@media (max-width: 700px) {
+  .our-products-wrapper {
+    padding: 20px 10px;
+  }
+
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+@media (max-width: 600px) {
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 480px) {
   .img-home {
     height: 45vh;

@@ -998,6 +998,13 @@ select:focus {
   margin-top: 14px;
 }
 
+@media (max-width: 480px) {
+  .calendar-day { min-height: 42px; font-size: 0.8rem; border-radius: 8px; }
+  .calendar-day small { font-size: 0.5rem; }
+  .calendar-weekdays, .calendar-grid { gap: 3px; }
+  .calendar-weekdays span { font-size: 0.7rem; }
+}
+
 @media (min-width: 900px) {
   .section-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

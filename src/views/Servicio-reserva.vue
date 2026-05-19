@@ -6,10 +6,12 @@ import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { WHATSAPP_BUSINESS_NUMBER } from '@/constants/inflables';
+import { useCart } from '@/store/cart.js';
 import { useReservasServicio } from '@/store/reservas';
 
 const route = useRoute();
 const { state, isAuthenticated } = useSession();
+const { addToCart } = useCart();
 const { isDateAvailable, saveReservation } = useReservasServicio();
 
 const CURRENCY_PREFIX = 'S/';
@@ -228,6 +230,13 @@ function submitReservation() {
   showConfirmationModal.value = true;
 }
 
+function addToCartAndClose() {
+  if (selectedProduct.value && form.value.eventDate) {
+    addToCart(selectedProduct.value.id, form.value.eventDate);
+  }
+  showConfirmationModal.value = false;
+}
+
 onMounted(() => {
   if (state.user?.name) {
     form.value.responsibleName = state.user.name;
@@ -386,6 +395,9 @@ onMounted(() => {
         <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="whatsapp-cta">
           Enviar confirmación por WhatsApp
         </a>
+        <button type="button" class="cart-confirm-btn" @click="addToCartAndClose">
+          Agregar al carrito
+        </button>
         <button class="secondary-close" @click="showConfirmationModal = false">Cerrar</button>
       </div>
     </div>
@@ -694,6 +706,18 @@ select:focus {
   color: #2D3E94;
 }
 
+.cart-confirm-btn {
+  margin-top: 10px;
+  width: 100%;
+  border: none;
+  background: #FFD200;
+  color: #2D3E94;
+  border-radius: 10px;
+  padding: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .secondary-close {
   margin-top: 10px;
   width: 100%;
@@ -704,6 +728,13 @@ select:focus {
   padding: 10px;
   font-weight: 700;
   cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .calendar-day { min-height: 42px; font-size: 0.8rem; border-radius: 8px; }
+  .calendar-day small { font-size: 0.5rem; }
+  .calendar-weekdays, .calendar-grid { gap: 3px; }
+  .calendar-weekdays span { font-size: 0.7rem; }
 }
 
 @media (min-width: 900px) {

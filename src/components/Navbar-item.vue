@@ -162,7 +162,33 @@ const { cartCount } = useCart();
 
 @media (max-width: 950px) {
   .link-style { display: none; }
-  .hamburger { display: block; margin-left: auto; }
+  .link-style.show-menu {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #E91E81;
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+    gap: 28px;
+    padding: 80px 30px 30px;
+  }
+  .link-style.show-menu .text-navbar {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+    padding: 10px 20px;
+    width: 100%;
+    text-align: center;
+  }
+  .link-style.show-menu .btn-perfil {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+    justify-content: center;
+    width: 80%;
+  }
+  .hamburger { display: block; margin-left: auto; z-index: 1001; position: relative; }
   .social-media { display: none; }
 }
 </style>
