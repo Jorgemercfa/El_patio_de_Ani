@@ -666,7 +666,7 @@ select:focus {
   font-weight: 700;
   text-decoration: none;
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   box-shadow: 0 4px 18px rgba(37, 211, 102, 0.35);
 }
 
@@ -725,5 +725,6 @@ select:focus {
   .calendar-day small { font-size: 0.5rem; }
   .calendar-weekdays, .calendar-grid { gap: 3px; }
   .calendar-weekdays span { font-size: 0.7rem; }
+  .whatsapp-cta { width: 100%; }
 }
 </style>

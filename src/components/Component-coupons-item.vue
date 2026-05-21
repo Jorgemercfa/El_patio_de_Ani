@@ -259,7 +259,7 @@ watch(
         <div v-if="isInflable" class="inflable-actions">
           <button
             v-if="isAuthenticated"
-            class="buy-button"
+            class="buy-button primary-action-btn"
             @click="reserveInflable"
           >
             📋 Reservar este inflable
@@ -298,7 +298,7 @@ watch(
             </p>
           </div>
 
-          <button class="buy-button reserve-service-btn" @click="reserveServicio">
+          <button class="buy-button reserve-service-btn primary-action-btn" @click="reserveServicio">
             📋 Reservar este servicio
           </button>
 
@@ -656,6 +656,12 @@ watch(
 
   .discount-price {
     font-size: 1.5rem;
+  }
+
+  .primary-action-btn {
+    position: sticky;
+    bottom: 10px;
+    z-index: 5;
   }
 }
 </style>

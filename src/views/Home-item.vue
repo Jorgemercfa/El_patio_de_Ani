@@ -124,15 +124,15 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
    TARIFAS DE MOVILIDAD
 ============================= */
 const tarifas = [
-  { distrito: 'Miraflores / San Isidro', precio: 35 },
-  { distrito: 'Surco / Barranco', precio: 35 },
-  { distrito: 'San Borja / Surquillo', precio: 35 },
+  { distrito: 'Miraflores / San Isidro', precio: 30 },
+  { distrito: 'Surco / Barranco', precio: 30 },
+  { distrito: 'San Borja / Surquillo', precio: 30 },
   { distrito: 'Jesús María / San Miguel / Pueblo Libre', precio: 35 },
   { distrito: 'La Molina / Santa Anita', precio: 40 },
-  { distrito: 'Ate / Chaclacayo / La Victoria', precio: 50 },
-  { distrito: 'Chorrillos / Pachacamac', precio: 50 },
-  { distrito: 'Centro de Lima', precio: 120 },
-  { distrito: 'Callao / Los Olivos', precio: 150 },
+  { distrito: 'Ate / Chaclacayo / La Victoria', precio: 45 },
+  { distrito: 'Chorrillos / Pachacamac', precio: 45 },
+  { distrito: 'Centro de Lima', precio: 60 },
+  { distrito: 'Callao / Los Olivos', precio: 70 },
 ];
 </script>
 
@@ -146,7 +146,7 @@ const tarifas = [
       <div class="carousel-message">
            <h1>Productora de eventos infantiles</h1>
       </div>
-      <img class="img-home" :src="images[currentImageIndex]" alt="Carrusel principal" />
+      <img class="img-home" :src="images[currentImageIndex]" alt="Carrusel principal" loading="eager" />
       <div class="carousel-dots">
         <span
           v-for="(image, index) in images"
@@ -210,8 +210,8 @@ const tarifas = [
         <p class="service-desc">Delicias saladas, dulces y combos</p>
       </router-link>
       <router-link to="/Product-item" class="service-card service-card-estetica">
-        <span class="service-icon">🎨</span>
-        <h3 class="service-name">Estética Infantil</h3>
+        <span class="service-icon">🎭</span>
+        <h3 class="service-name">Pintacaritas 🎨</h3>
         <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
       </router-link>
     </div>
@@ -243,6 +243,7 @@ const tarifas = [
             class="card-icons"
             :src="getProductImage(product)"
             :alt="getProductName(product)"
+            loading="lazy"
           />
 
           <div class="product-mini-info">
@@ -296,6 +297,7 @@ const tarifas = [
             class="card-icons"
             :src="getProductImage(product)"
             :alt="getProductName(product)"
+            loading="lazy"
           />
 
           <div class="product-mini-info">
@@ -348,6 +350,7 @@ const tarifas = [
             class="card-icons"
             :src="getProductImage(product)"
             :alt="getProductName(product)"
+            loading="lazy"
           />
 
           <div class="product-mini-info">
@@ -697,7 +700,10 @@ const tarifas = [
 .service-card-games   { background: #E8F5E9; }
 .service-card-juegos  { background: #E3F2FD; }
 .service-card-snacks  { background: #FFF3E0; }
-.service-card-estetica { background: #FCE4EC; }
+.service-card-estetica {
+  background: linear-gradient(135deg, rgba(233, 30, 129, 0.18), rgba(45, 62, 148, 0.12));
+  border-color: rgba(233, 30, 129, 0.4);
+}
 
 @media (max-width: 1200px) {
   .services-grid {
