@@ -10,10 +10,10 @@ import product5 from '@/assets/magics_show.png';
 // ================================
 // IMPORTS - INFLABLES
 // ================================
-import product6 from '@/assets/inflatable1.png';
+import product6 from '@/assets/inflatable1.jpeg';
 import product7 from '@/assets/inflatable2.png';
 import product8 from '@/assets/inflatable3.png';
-import product9 from '@/assets/inflatable4.png';
+import product9 from '@/assets/inflatable4.jpeg';
 import product10 from '@/assets/inflatable5.png';
 import product11 from '@/assets/inflatable6.jpeg';
 import product12 from '@/assets/inflatable7.png';
@@ -25,14 +25,14 @@ import product15 from '@/assets/inflatable10.png';
 // IMPORTS - LITTLE TIKES
 // ================================
 import product16 from '@/assets/little_tikes1.png';
-import product17 from '@/assets/little_tikes2.png';
+import product17 from '@/assets/little_tikes2.jpeg';
 import product18 from '@/assets/little_tikes3.png';
 import product19 from '@/assets/little_tikes4.png';
 import product20 from '@/assets/little_tikes5.png';
 import product21 from '@/assets/little_tikes6.png';
 import product22 from '@/assets/little_tikes7.png';
 import product23 from '@/assets/little_tikes8.png';
-import product24 from '@/assets/little_tikes9.png';  // Climber
+import product24 from '@/assets/little_tikes9.png';
 
 // ================================
 // IMPORTS - TRAMPOLINES
@@ -56,14 +56,14 @@ import product35 from '@/assets/baby_game9.png';
 // ================================
 // IMPORTS - ESTÉTICA
 // ================================
-import facepaint from '@/assets/picture3.png';
+import facepaint from '@/assets/facepaint1.jpeg';
 
 // ================================
 // IMPORTS - SNACKS
 // ================================
 import productSnack1 from '@/assets/productSnack1.png';
 import productSnack2 from '@/assets/productSnack2.png';
-import productSnack3 from '@/assets/productSnack3.png';
+import productSnack3 from '@/assets/productSnack3.jpeg';
 import productSnack4 from '@/assets/productSnack4.png';
 import productSnack5 from '@/assets/productSnack5.png';
 import productSnack6 from '@/assets/productSnack6.png';
