@@ -36,17 +36,20 @@ export function getCompanyproducts() {
       .map((product) => [product.id, product]),
   );
 
-  // Merge: stored data takes precedence EXCEPT for structural fields
-  // (category, subcategory) which always come from seed to avoid stale cache.
+  // Merge: stored data takes precedence EXCEPT for fields that must stay in sync
+  // with seed to avoid stale localStorage values across deploys.
   const mergedSeed = normalizedSeed.map((seedProduct) => {
     const storedProduct = storedById[seedProduct.id];
     if (!storedProduct) return seedProduct;
 
     return {
       ...storedProduct,
-      // Always sync structural taxonomy fields from seed
+      // Always sync structural taxonomy fields from seed to avoid stale cache.
       category: seedProduct.category,
       subcategory: seedProduct.subcategory,
+      // Image URLs include webpack hashes that can change on each build.
+      // Always use seed image to avoid 404s from stale localStorage hashes.
+      image: seedProduct.image,
     };
   });
 
