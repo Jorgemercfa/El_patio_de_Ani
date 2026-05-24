@@ -656,6 +656,7 @@ const tarifas = [
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
   gap: 6px;
 }
 
@@ -832,8 +833,25 @@ const tarifas = [
     padding: 0 20px 40px;
   }
 
+  .carousel-message h1 {
+  font-size: 20px;
+}
+
   .hero-title {
     font-size: 1.5rem;
+  }
+
+  .hero-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;  /* 2 columnas simétricas siempre */
+    gap: 16px 24px;                   /* menor gap: vertical horizontal */
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    white-space: nowrap;
   }
 
   .hero-stat-number {
