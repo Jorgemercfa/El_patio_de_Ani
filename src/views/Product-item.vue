@@ -1,16 +1,26 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+// ✅ Un solo import con todo lo necesario
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'  // ← agregar useRoute
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
 import { getCompanyproducts } from '@/auth/companyproductsRepo'
 
 const router = useRouter()
+const route = useRoute()  // ← declarar route
+
 const allProducts = computed(() => getCompanyproducts())
 
 const categories = ['Todas', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', 'Estética Infantil']
 const activeFilter = ref('Todas')
 const activeSubcategory = ref('')
+
+// ✅ Eliminar activeCategory duplicado, usar activeFilter directamente
+onMounted(() => {
+  if (route.query.category) {
+    activeFilter.value = route.query.category  // ← conectar al filtro real
+  }
+})
 
 const subcategoryMap = {
   'Shows Infantiles':  ['Animación', 'Competencia', 'Magia'],

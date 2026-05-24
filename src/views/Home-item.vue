@@ -189,32 +189,32 @@ const tarifas = [
     <h1 class="title-home">Nuestros Servicios</h1>
 
     <div class="services-grid">
-      <router-link to="/Product-item" class="service-card service-card-shows">
-        <span class="service-icon">🎭</span>
-        <h3 class="service-name">Shows Infantiles</h3>
-        <p class="service-desc">Animación, magia y mucha diversión</p>
-      </router-link>
-      <router-link to="/Product-item" class="service-card service-card-games">
-        <span class="service-icon">🎪</span>
-        <h3 class="service-name">Inflables</h3>
-        <p class="service-desc">Inflables para bebés, medianos y grandes</p>
-      </router-link>
-      <router-link to="/Product-item" class="service-card service-card-juegos">
-        <span class="service-icon">🎠</span>
-        <h3 class="service-name">Juegos</h3>
-        <p class="service-desc">Little Tikes, trampolines y juegos para bebés</p>
-      </router-link>
-      <router-link to="/Product-item" class="service-card service-card-snacks">
-        <span class="service-icon">🍿</span>
-        <h3 class="service-name">Carritos Snacks</h3>
-        <p class="service-desc">Delicias saladas, dulces y combos</p>
-      </router-link>
-      <router-link to="/Product-item" class="service-card service-card-estetica">
-        <span class="service-icon">🎭</span>
-        <h3 class="service-name">Pintacaritas 🎨</h3>
-        <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
-      </router-link>
-    </div>
+  <router-link to="/Product-item?category=Shows Infantiles" class="service-card service-card-shows">
+    <span class="service-icon">🎭</span>
+    <h3 class="service-name">Shows Infantiles</h3>
+    <p class="service-desc">Animación, magia y mucha diversión</p>
+  </router-link>
+  <router-link to="/Product-item?category=Inflables" class="service-card service-card-games">
+    <span class="service-icon">🎪</span>
+    <h3 class="service-name">Inflables</h3>
+    <p class="service-desc">Inflables para bebés, medianos y grandes</p>
+  </router-link>
+  <router-link to="/Product-item?category=Juegos" class="service-card service-card-juegos">
+    <span class="service-icon">🎠</span>
+    <h3 class="service-name">Juegos</h3>
+    <p class="service-desc">Little Tikes, trampolines y juegos para bebés</p>
+  </router-link>
+  <router-link to="/Product-item?category=Carritos Snacks" class="service-card service-card-snacks">
+    <span class="service-icon">🍿</span>
+    <h3 class="service-name">Carritos Snacks</h3>
+    <p class="service-desc">Delicias saladas, dulces y combos</p>
+  </router-link>
+  <router-link to="/Product-item?category=Estética Infantil" class="service-card service-card-estetica">
+    <span class="service-icon">🎭</span>
+    <h3 class="service-name">Pintacaritas 🎨</h3>
+    <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
+  </router-link>
+</div>
 
     <h1 class="title-home">Más populares</h1>
 
