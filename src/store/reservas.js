@@ -3,6 +3,8 @@ import {
   POPCORN_PRODUCT_IDS,
   POPCORN_MAX_STOCK,
   COMBO_POPCORN_IDS,
+  TRAMPOLINE_PRODUCT_IDS,
+  TRAMPOLINE_MAX_STOCK,
   RESERVATIONS_SERVICES_KEY,
 } from '@/constants/reservas';
 
@@ -69,6 +71,12 @@ export function useReservasServicio() {
       return reservedCount < POPCORN_MAX_STOCK;
     }
 
+    if (TRAMPOLINE_PRODUCT_IDS.includes(productId)) {
+      const trampolineDates = getReservedDates(productId);
+      const reservedCount = trampolineDates.filter((item) => item === date).length;
+      return reservedCount < TRAMPOLINE_MAX_STOCK;
+    }
+
     const productDates = getReservedDates(productId);
     return !productDates.includes(date);
   }
@@ -85,7 +93,10 @@ export function useReservasServicio() {
       all[popcornKey] = popcornDates;
     }
 
-    if (!POPCORN_PRODUCT_IDS.includes(productId)) {
+    if (TRAMPOLINE_PRODUCT_IDS.includes(productId)) {
+      const productDates = normalizeDates(all[productKey]);
+      all[productKey] = [...productDates, date].sort();
+    } else if (!POPCORN_PRODUCT_IDS.includes(productId)) {
       const productDates = normalizeDates(all[productKey]);
       if (!productDates.includes(date)) {
         all[productKey] = [...productDates, date].sort();

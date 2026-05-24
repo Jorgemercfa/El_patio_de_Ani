@@ -139,7 +139,8 @@ function sendWhatsApp() {
             </div>
 
             <div class="response-badge">
-              🟢 ¡Respondemos en menos de 2 horas durante horario de atención!
+              🟢 ¡Respondemos en menos de 2 horas!<br>
+              Durante horario de atención.
             </div>
           </div>
         </div>
@@ -365,6 +366,8 @@ function sendWhatsApp() {
   line-height: 1.5;
   color: #a8f0c8;
   margin-top: auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* RESPONSIVE */
@@ -376,6 +379,13 @@ function sendWhatsApp() {
 
   .form-row {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .response-badge {
+    font-size: 0.8rem;
+    padding: 12px;
   }
 }
 </style>

@@ -140,6 +140,7 @@ const formatPrice = (product) => {
           :src="product.image"
           :alt="getProductName(product)"
           class="product-image"
+          loading="lazy"
         />
 
         <div class="product-content">
@@ -248,11 +249,14 @@ const formatPrice = (product) => {
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
+  align-items: stretch;
+  justify-content: center;
 }
 
 .product-card {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   background: #FFFFFF;
   color: #2D3E94;
   border-radius: 14px;
