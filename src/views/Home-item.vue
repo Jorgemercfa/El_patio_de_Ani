@@ -6,51 +6,78 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 
 /* =============================
-   CARRUSEL PRINCIPAL
+   CARRUSEL PRINCIPAL DE VIDEOS (LOCALES)
 ============================= */
-import img1 from '@/assets/picture1.png';
-import img2 from '@/assets/picture2.png';
-import img3 from '@/assets/picture3.png';
-import img4 from '@/assets/picture4.png';
 
-const images = [img1, img2, img3, img4];
+// Importa aquí cada video. Renombra los archivos según tus nombres reales.
+// Si el archivo es .mov, escribe video1.MOV, etc.
+import video1 from '@/assets/videos/video1.mp4';
+import video2 from '@/assets/videos/video2.mp4';
+import video3 from '@/assets/videos/video3.mp4';
+import video4 from '@/assets/videos/video4.mp4';
+import video5 from '@/assets/videos/video5.mp4';
 
-const currentImageIndex = ref(0);
-const intervalId = ref(null);
+// Si alguno es .mov, cámbialo así:
+// import video1 from '@/assets/videos/video1.mov';
 
-const nextImage = () => {
-  currentImageIndex.value = (currentImageIndex.value + 1) % images.length;
+const videos = [video1, video2, video3, video4, video5];
+
+const currentVideoIndex = ref(0);
+const totalVideos = videos.length;
+const videoIntervalId = ref(null);
+const videoRef = ref(null); // referencia al elemento <video>
+
+const currentVideoSrc = computed(() => videos[currentVideoIndex.value]);
+
+const nextVideo = () => {
+  currentVideoIndex.value = (currentVideoIndex.value + 1) % totalVideos;
 };
 
-const startCarousel = () => {
-  stopCarousel();
-  intervalId.value = setInterval(nextImage, 5000);
+const prevVideo = () => {
+  currentVideoIndex.value = (currentVideoIndex.value - 1 + totalVideos) % totalVideos;
 };
 
-const stopCarousel = () => {
-  if (intervalId.value) {
-    clearInterval(intervalId.value);
-    intervalId.value = null;
+const goToVideo = (index) => {
+  currentVideoIndex.value = index;
+  restartVideoTimer();
+};
+
+const startVideoTimer = () => {
+  videoIntervalId.value = setInterval(nextVideo, 12000);
+};
+
+const stopVideoTimer = () => {
+  if (videoIntervalId.value) {
+    clearInterval(videoIntervalId.value);
+    videoIntervalId.value = null;
   }
 };
 
+const restartVideoTimer = () => {
+  stopVideoTimer();
+  startVideoTimer();
+};
+
+// Cuando el video termina, pasa al siguiente automáticamente
+const onVideoEnded = () => {
+  nextVideo();
+  restartVideoTimer();
+};
+
 onMounted(() => {
-  startCarousel();
+  startVideoTimer();
 });
 
 onBeforeUnmount(() => {
-  stopCarousel();
+  stopVideoTimer();
 });
 
 /* =============================
    HELPERS
 ============================= */
 const getProductPrice = (product) => Number(product.discount_price ?? product.price ?? 0);
-
 const getProductName = (product) => product.name ?? 'Producto sin nombre';
-
 const getProductCategory = (product) => product.category ?? '';
-
 const getProductImage = (product) => product.image ?? '';
 
 /* =============================
@@ -63,9 +90,7 @@ const scrollproductsBy = (direction) => {
   if (!el) return;
   const card = el.querySelector('.logs-item');
   const cardWidth = card ? card.getBoundingClientRect().width : 220;
-  const gap = 20;
-  const step = cardWidth + gap;
-  el.scrollBy({ left: direction * step, behavior: 'smooth' });
+  el.scrollBy({ left: direction * (cardWidth + 20), behavior: 'smooth' });
 };
 
 const scrollproductsLeft = () => scrollproductsBy(-1);
@@ -94,9 +119,7 @@ const scrollRestaurantsBy = (direction) => {
   if (!el) return;
   const card = el.querySelector('.logs-item');
   const cardWidth = card ? card.getBoundingClientRect().width : 220;
-  const gap = 20;
-  const step = cardWidth + gap;
-  el.scrollBy({ left: direction * step, behavior: 'smooth' });
+  el.scrollBy({ left: direction * (cardWidth + 20), behavior: 'smooth' });
 };
 
 const scrollRestaurantsLeft = () => scrollRestaurantsBy(-1);
@@ -112,9 +135,7 @@ const scrollRestaurantsBy2 = (direction) => {
   if (!el) return;
   const card = el.querySelector('.logs-item');
   const cardWidth = card ? card.getBoundingClientRect().width : 220;
-  const gap = 20;
-  const step = cardWidth + gap;
-  el.scrollBy({ left: direction * step, behavior: 'smooth' });
+  el.scrollBy({ left: direction * (cardWidth + 20), behavior: 'smooth' });
 };
 
 const scrollRestaurantsLeft2 = () => scrollRestaurantsBy2(-1);
@@ -142,17 +163,46 @@ const tarifas = [
   </header>
 
   <div class="home-area">
-    <div class="carousel-container">
-      <div class="carousel-message">
-           <h1>Productora de eventos infantiles</h1>
+
+    <!-- ===== CARRUSEL PRINCIPAL DE VIDEOS LOCALES ===== -->
+    <div class="main-video-carousel">
+      <div class="main-video-overlay">
+        <h1 class="main-video-title">Productora de eventos infantiles</h1>
       </div>
-      <img class="img-home" :src="images[currentImageIndex]" alt="Carrusel principal" loading="eager" />
-      <div class="carousel-dots">
+
+      <button
+        class="main-video-nav main-video-nav-left"
+        type="button"
+        aria-label="Video anterior"
+        @click="prevVideo(); restartVideoTimer()"
+      >‹</button>
+
+      <div class="main-video-wrapper">
+        <video
+          ref="videoRef"
+          :key="currentVideoIndex"
+          :src="currentVideoSrc"
+          class="main-video-player"
+          autoplay
+          muted
+          playsinline
+          @ended="onVideoEnded"
+        ></video>
+      </div>
+
+      <button
+        class="main-video-nav main-video-nav-right"
+        type="button"
+        aria-label="Video siguiente"
+        @click="nextVideo(); restartVideoTimer()"
+      >›</button>
+
+      <div class="main-video-dots">
         <span
-          v-for="(image, index) in images"
+          v-for="(v, index) in videos"
           :key="index"
-          :class="{ active: index === currentImageIndex }"
-          @click="currentImageIndex = index"
+          :class="{ active: index === currentVideoIndex }"
+          @click="goToVideo(index)"
         ></span>
       </div>
     </div>
@@ -189,45 +239,37 @@ const tarifas = [
     <h1 class="title-home">Nuestros Servicios</h1>
 
     <div class="services-grid">
-  <router-link to="/Product-item?category=Shows Infantiles" class="service-card service-card-shows">
-    <span class="service-icon">🎭</span>
-    <h3 class="service-name">Shows Infantiles</h3>
-    <p class="service-desc">Animación, magia y mucha diversión</p>
-  </router-link>
-  <router-link to="/Product-item?category=Inflables" class="service-card service-card-games">
-    <span class="service-icon">🎪</span>
-    <h3 class="service-name">Inflables</h3>
-    <p class="service-desc">Inflables para bebés, medianos y grandes</p>
-  </router-link>
-  <router-link to="/Product-item?category=Juegos" class="service-card service-card-juegos">
-    <span class="service-icon">🎠</span>
-    <h3 class="service-name">Juegos</h3>
-    <p class="service-desc">Little Tikes, trampolines y juegos para bebés</p>
-  </router-link>
-  <router-link to="/Product-item?category=Carritos Snacks" class="service-card service-card-snacks">
-    <span class="service-icon">🍿</span>
-    <h3 class="service-name">Carritos Snacks</h3>
-    <p class="service-desc">Delicias saladas, dulces y combos</p>
-  </router-link>
-  <router-link to="/Product-item?category=Estética Infantil" class="service-card service-card-estetica">
-    <span class="service-icon">🎭</span>
-    <h3 class="service-name">Pintacaritas 🎨</h3>
-    <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
-  </router-link>
-</div>
+      <router-link to="/Product-item?category=Shows Infantiles" class="service-card service-card-shows">
+        <span class="service-icon">🎭</span>
+        <h3 class="service-name">Shows Infantiles</h3>
+        <p class="service-desc">Animación, magia y mucha diversión</p>
+      </router-link>
+      <router-link to="/Product-item?category=Inflables" class="service-card service-card-games">
+        <span class="service-icon">🎪</span>
+        <h3 class="service-name">Inflables</h3>
+        <p class="service-desc">Inflables para bebés, medianos y grandes</p>
+      </router-link>
+      <router-link to="/Product-item?category=Juegos" class="service-card service-card-juegos">
+        <span class="service-icon">🎠</span>
+        <h3 class="service-name">Juegos</h3>
+        <p class="service-desc">Little Tikes, trampolines y juegos para bebés</p>
+      </router-link>
+      <router-link to="/Product-item?category=Carritos Snacks" class="service-card service-card-snacks">
+        <span class="service-icon">🍿</span>
+        <h3 class="service-name">Carritos Snacks</h3>
+        <p class="service-desc">Delicias saladas, dulces y combos</p>
+      </router-link>
+      <router-link to="/Product-item?category=Estética Infantil" class="service-card service-card-estetica">
+        <span class="service-icon">🎭</span>
+        <h3 class="service-name">Pintacaritas 🎨</h3>
+        <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
+      </router-link>
+    </div>
 
     <h1 class="title-home">Más populares</h1>
 
     <div class="our-products-wrapper">
-      <button
-        class="products-nav products-nav-left"
-        type="button"
-        aria-label="Anterior"
-        @click="scrollproductsLeft"
-      >
-        ‹
-      </button>
-
+      <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollproductsLeft">‹</button>
       <div class="our-products" ref="productsTrackRef">
         <router-link
           v-for="product in products"
@@ -235,53 +277,22 @@ const tarifas = [
           :to="{ name: 'productsDetails', params: { id: product.id } }"
           class="logs-item"
         >
-          <span v-if="product.age_range" class="product-mini-badge">
-            {{ product.age_range }}
-          </span>
-
-          <img
-            class="card-icons"
-            :src="getProductImage(product)"
-            :alt="getProductName(product)"
-            loading="lazy"
-          />
-
+          <span v-if="product.age_range" class="product-mini-badge">{{ product.age_range }}</span>
+          <img class="card-icons" :src="getProductImage(product)" :alt="getProductName(product)" loading="lazy" />
           <div class="product-mini-info">
             <h4 class="product-mini-title">{{ getProductName(product) }}</h4>
-
-            <div class="product-mini-category" v-if="getProductCategory(product)">
-              {{ getProductCategory(product) }}
-            </div>
-
-            <div class="product-mini-price">
-              S/ {{ getProductPrice(product).toFixed(2) }}
-            </div>
+            <div class="product-mini-category" v-if="getProductCategory(product)">{{ getProductCategory(product) }}</div>
+            <div class="product-mini-price">S/ {{ getProductPrice(product).toFixed(2) }}</div>
           </div>
         </router-link>
       </div>
-
-      <button
-        class="products-nav products-nav-right"
-        type="button"
-        aria-label="Siguiente"
-        @click="scrollproductsRight"
-      >
-        ›
-      </button>
+      <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollproductsRight">›</button>
     </div>
 
     <h1 class="title-home">Shows</h1>
 
     <div class="our-products-wrapper">
-      <button
-        class="products-nav products-nav-left"
-        type="button"
-        aria-label="Anterior"
-        @click="scrollRestaurantsLeft"
-      >
-        ‹
-      </button>
-
+      <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollRestaurantsLeft">‹</button>
       <div class="our-products" ref="restaurantTrackRef">
         <router-link
           v-for="product in restaurantproducts"
@@ -289,52 +300,22 @@ const tarifas = [
           :to="{ name: 'productsDetails', params: { id: product.id } }"
           class="logs-item"
         >
-          <span v-if="product.age_range" class="product-mini-badge">
-            {{ product.age_range }}
-          </span>
-
-          <img
-            class="card-icons"
-            :src="getProductImage(product)"
-            :alt="getProductName(product)"
-            loading="lazy"
-          />
-
+          <span v-if="product.age_range" class="product-mini-badge">{{ product.age_range }}</span>
+          <img class="card-icons" :src="getProductImage(product)" :alt="getProductName(product)" loading="lazy" />
           <div class="product-mini-info">
             <h4 class="product-mini-title">{{ getProductName(product) }}</h4>
-            <div class="product-mini-price">
-              S/ {{ getProductPrice(product).toFixed(2) }}
-            </div>
+            <div class="product-mini-price">S/ {{ getProductPrice(product).toFixed(2) }}</div>
           </div>
         </router-link>
-
-        <div v-if="restaurantproducts.length === 0" class="empty-carousel">
-          No hay productos en esta categoría todavía.
-        </div>
+        <div v-if="restaurantproducts.length === 0" class="empty-carousel">No hay productos en esta categoría todavía.</div>
       </div>
-
-      <button
-        class="products-nav products-nav-right"
-        type="button"
-        aria-label="Siguiente"
-        @click="scrollRestaurantsRight"
-      >
-        ›
-      </button>
+      <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollRestaurantsRight">›</button>
     </div>
 
     <h1 class="title-home">Inflables y Juegos</h1>
 
     <div class="our-products-wrapper">
-      <button
-        class="products-nav products-nav-left"
-        type="button"
-        aria-label="Anterior"
-        @click="scrollRestaurantsLeft2"
-      >
-        ‹
-      </button>
-
+      <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollRestaurantsLeft2">‹</button>
       <div class="our-products" ref="restaurantTrackRef2">
         <router-link
           v-for="product in restaurantproducts2"
@@ -342,38 +323,16 @@ const tarifas = [
           :to="{ name: 'productsDetails', params: { id: product.id } }"
           class="logs-item"
         >
-          <span v-if="product.age_range" class="product-mini-badge">
-            {{ product.age_range }}
-          </span>
-
-          <img
-            class="card-icons"
-            :src="getProductImage(product)"
-            :alt="getProductName(product)"
-            loading="lazy"
-          />
-
+          <span v-if="product.age_range" class="product-mini-badge">{{ product.age_range }}</span>
+          <img class="card-icons" :src="getProductImage(product)" :alt="getProductName(product)" loading="lazy" />
           <div class="product-mini-info">
             <h4 class="product-mini-title">{{ getProductName(product) }}</h4>
-            <div class="product-mini-price">
-              S/ {{ getProductPrice(product).toFixed(2) }}
-            </div>
+            <div class="product-mini-price">S/ {{ getProductPrice(product).toFixed(2) }}</div>
           </div>
         </router-link>
-
-        <div v-if="restaurantproducts2.length === 0" class="empty-carousel">
-          No hay productos en esta categoría todavía.
-        </div>
+        <div v-if="restaurantproducts2.length === 0" class="empty-carousel">No hay productos en esta categoría todavía.</div>
       </div>
-
-      <button
-        class="products-nav products-nav-right"
-        type="button"
-        aria-label="Siguiente"
-        @click="scrollRestaurantsRight2"
-      >
-        ›
-      </button>
+      <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollRestaurantsRight2">›</button>
     </div>
 
     <!-- ===== TARIFAS DE MOVILIDAD ===== -->
@@ -381,14 +340,12 @@ const tarifas = [
       <div class="movilidad-badge">COBERTURA EN LIMA</div>
       <h2 class="title-home">Tarifas de Movilidad 🚚</h2>
       <p class="movilidad-subtitle">Costo de traslado según distrito en Lima</p>
-
       <div class="movilidad-grid">
         <div v-for="tarifa in tarifas" :key="tarifa.distrito" class="movilidad-card">
           <p class="movilidad-distrito">{{ tarifa.distrito }}</p>
           <p class="movilidad-precio">S/ {{ tarifa.precio }}</p>
         </div>
       </div>
-
       <p class="movilidad-nota">* Los precios pueden variar según disponibilidad y tipo de evento.</p>
     </section>
   </div>
@@ -399,71 +356,115 @@ const tarifas = [
 </template>
 
 <style>
-.img-home {
-  width: 100%;
-  height: 80vh;
-  min-height: 500px;
-  object-fit: cover;
-  object-position: center 30%;
-  transition: opacity 0.8s ease;
-}
-
-.carousel-container {
+/* ===== CARRUSEL PRINCIPAL DE VIDEOS ===== */
+.main-video-carousel {
   position: relative;
   width: 100%;
   margin-top: -98px;
+  background: #000;
+  overflow: hidden;
 }
 
-.carousel-container::after {
-  content: '';
+.main-video-overlay {
   position: absolute;
-  inset: 0;
-  background: rgba(45, 62, 148, 0.3);
-}
-
-.carousel-message {
-  position: absolute;
-  left: 24px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 10;
-  max-width: 220px;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    rgba(45, 62, 148, 0.55) 0%,
+    rgba(45, 62, 148, 0.15) 50%,
+    transparent 100%
+  );
+  display: flex;
+  align-items: center;
 }
 
-
-.carousel-message h1 {
+.main-video-title {
   font-size: 48px;
   color: #ffffff;
-  margin: 0 0 8px 0;
+  margin: 0 0 0 32px;
   line-height: 1.2;
+  max-width: 260px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  pointer-events: none;
 }
 
+.main-video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 80vh;
+  min-height: 500px;
+}
 
-.carousel-dots {
+.main-video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;     /* igual que las imágenes anteriores */
+  object-position: center;
+  display: block;
+}
+
+.main-video-nav {
   position: absolute;
-  bottom: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.8);
+  cursor: pointer;
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  font-size: 32px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.main-video-nav:hover {
+  background: rgba(233, 30, 129, 0.85);
+  border-color: transparent;
+  transform: translateY(-50%) scale(1.08);
+}
+
+.main-video-nav-left  { left: 16px; }
+.main-video-nav-right { right: 16px; }
+
+.main-video-dots {
+  position: absolute;
+  bottom: 18px;
   left: 0;
   right: 0;
   display: flex;
   justify-content: center;
   gap: 10px;
-  z-index: 1;
+  z-index: 20;
+  pointer-events: none;
 }
 
-.carousel-dots span {
+.main-video-dots span {
   width: 12px;
   height: 12px;
   border-radius: 50%;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.3s;
   background: rgba(255, 255, 255, 0.45);
+  pointer-events: all;
 }
 
-.carousel-dots .active {
+.main-video-dots .active {
   background: #FFD200;
   transform: scale(1.2);
 }
 
+/* ===== RESTO ===== */
 .text-home {
   max-width: 900px;
   margin: 60px auto;
@@ -512,10 +513,7 @@ const tarifas = [
   padding: 20px 0;
 }
 
-.our-products::-webkit-scrollbar {
-  height: 8px;
-}
-
+.our-products::-webkit-scrollbar { height: 8px; }
 .our-products::-webkit-scrollbar-thumb {
   background: rgba(233, 30, 129, 0.3);
   border-radius: 10px;
@@ -578,11 +576,7 @@ const tarifas = [
   margin-bottom: 10px;
 }
 
-.product-mini-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.product-mini-info { display: flex; flex-direction: column; gap: 4px; }
 
 .product-mini-title {
   font-size: 0.95rem;
@@ -605,12 +599,6 @@ const tarifas = [
   font-weight: bold;
   color: #E91E81;
   font-size: 1rem;
-}
-
-.product-mini-date {
-  font-size: 0.8rem;
-  color: #2D3E94;
-  opacity: 0.65;
 }
 
 .product-mini-badge {
@@ -670,10 +658,7 @@ const tarifas = [
   line-height: 1;
 }
 
-.hero-stat-label {
-  font-size: 0.9rem;
-  opacity: 0.9;
-}
+.hero-stat-label { font-size: 0.9rem; opacity: 0.9; }
 
 /* ===== NUESTROS SERVICIOS ===== */
 .services-grid {
@@ -706,41 +691,17 @@ const tarifas = [
   border-color: rgba(233, 30, 129, 0.4);
 }
 
-@media (max-width: 1200px) {
-  .services-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
 .service-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 24px rgba(45, 62, 148, 0.15);
 }
 
-.service-icon {
-  font-size: 2.8rem;
-  line-height: 1;
-}
-
-.service-name {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 0;
-  text-align: center;
-}
-
-.service-desc {
-  font-size: 0.82rem;
-  margin: 0;
-  text-align: center;
-  opacity: 0.75;
-}
+.service-icon { font-size: 2.8rem; line-height: 1; }
+.service-name { font-size: 1rem; font-weight: 700; margin: 0; text-align: center; }
+.service-desc { font-size: 0.82rem; margin: 0; text-align: center; opacity: 0.75; }
 
 /* ===== TARIFAS DE MOVILIDAD ===== */
-.movilidad-section {
-  padding: 20px 60px 80px;
-  text-align: center;
-}
+.movilidad-section { padding: 20px 60px 80px; text-align: center; }
 
 .movilidad-badge {
   display: inline-block;
@@ -755,11 +716,7 @@ const tarifas = [
   margin-bottom: 8px;
 }
 
-.movilidad-subtitle {
-  font-size: 0.95rem;
-  color: #888;
-  margin: 14px 0 36px;
-}
+.movilidad-subtitle { font-size: 0.95rem; color: #888; margin: 14px 0 36px; }
 
 .movilidad-grid {
   display: grid;
@@ -787,145 +744,61 @@ const tarifas = [
   box-shadow: 0 8px 20px rgba(45, 62, 148, 0.12);
 }
 
-.movilidad-distrito {
-  font-weight: 600;
-  color: #2D3E94;
-  font-size: 0.9rem;
-  margin: 0;
-  flex: 1;
-}
+.movilidad-distrito { font-weight: 600; color: #2D3E94; font-size: 0.9rem; margin: 0; flex: 1; }
+.movilidad-precio { font-size: 1.2rem; font-weight: 800; color: #E91E81; margin: 0; white-space: nowrap; margin-left: 12px; }
+.movilidad-nota { margin-top: 24px; font-size: 0.82rem; color: #aaa; }
 
-.movilidad-precio {
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: #E91E81;
-  margin: 0;
-  white-space: nowrap;
-  margin-left: 12px;
-}
+.empty-carousel { padding: 40px 20px; color: #2D3E94; opacity: 0.5; font-size: 0.95rem; }
 
-.movilidad-nota {
-  margin-top: 24px;
-  font-size: 0.82rem;
-  color: #aaa;
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .services-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 900px) {
-  .services-grid {
-    grid-template-columns: repeat(2, 1fr);
-    padding: 0 30px 40px;
-  }
-
-  .hero-title {
-    font-size: 1.8rem;
-  }
-
-  .hero-stats {
-    gap: 24px;
-  }
-
-  .movilidad-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .movilidad-section {
-    padding: 20px 30px 60px;
-  }
-}
-
-@media (max-width: 480px) {
-  .services-grid {
-    grid-template-columns: 1fr;
-    padding: 0 20px 40px;
-  }
-
-  .carousel-message h1 {
-  font-size: 20px;
-}
-
-  .hero-title {
-    font-size: 1.5rem;
-  }
-
-  .hero-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;  /* 2 columnas simétricas siempre */
-    gap: 16px 24px;                   /* menor gap: vertical horizontal */
-    margin: 0 auto;
-    align-items: start;
-  }
-
-  .stat-label {
-    font-size: 11px;
-    white-space: nowrap;
-  }
-
-  .hero-stat-number {
-    font-size: 1.6rem;
-  }
-
-  .movilidad-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .movilidad-section {
-    padding: 20px 20px 50px;
-  }
-}
-
-.empty-carousel {
-  padding: 40px 20px;
-  color: #2D3E94;
-  opacity: 0.5;
-  font-size: 0.95rem;
+  .services-grid { grid-template-columns: repeat(2, 1fr); padding: 0 30px 40px; }
+  .hero-title { font-size: 1.8rem; }
+  .hero-stats { gap: 24px; }
+  .movilidad-grid { grid-template-columns: repeat(2, 1fr); }
+  .movilidad-section { padding: 20px 30px 60px; }
 }
 
 @media (max-width: 768px) {
-  .img-home {
-    height: 55vh;
-    min-height: 280px;
-  }
-
-  .text-home {
-    font-size: 16px;
-    padding: 0 20px;
-    margin: 40px auto;
-  }
-
-  .title-home {
-    font-size: 26px;
-    margin: 60px 0 30px 0;
-  }
-
-  .our-products-wrapper {
-    padding: 30px 45px;
-  }
-
-  .logs-item {
-    flex-basis: 180px;
-    min-height: 220px;
-  }
-}
-
-@media (max-width: 480px) {
-  .img-home {
-    height: 45vh;
-  }
-
-  .title-home {
-    font-size: 22px;
-  }
-
-  .logs-item {
-    flex-basis: 160px;
-  }
+  .main-video-wrapper { height: 55vh; min-height: 280px; }
+  .main-video-title { font-size: 28px; max-width: 160px; margin-left: 16px; }
+  .main-video-nav { width: 36px; height: 36px; font-size: 22px; }
+  .text-home { font-size: 16px; padding: 0 20px; margin: 40px auto; }
+  .title-home { font-size: 26px; margin: 60px 0 30px 0; }
+  .our-products-wrapper { padding: 30px 45px; }
+  .logs-item { flex-basis: 180px; min-height: 220px; }
 }
 
 @media (max-width: 700px) {
   .our-products-wrapper { padding: 20px 10px; }
   .hero-stats { grid-template-columns: repeat(2, 1fr); }
 }
+
 @media (max-width: 600px) {
   .services-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .main-video-wrapper { height: 45vh; min-height: 220px; }
+  .main-video-title { font-size: 20px; max-width: 130px; }
+  .main-video-nav { display: none; }
+  .services-grid { grid-template-columns: 1fr; padding: 0 20px 40px; }
+  .hero-title { font-size: 1.5rem; }
+  .hero-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+    margin: 0 auto;
+    align-items: start;
+  }
+  .hero-stat-number { font-size: 1.6rem; }
+  .movilidad-grid { grid-template-columns: 1fr; }
+  .movilidad-section { padding: 20px 20px 50px; }
+  .title-home { font-size: 22px; }
+  .logs-item { flex-basis: 160px; }
 }
 </style>
