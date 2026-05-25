@@ -33,9 +33,9 @@ const nextVideo = () => {
   currentVideoIndex.value = (currentVideoIndex.value + 1) % totalVideos;
 };
 
-const prevVideo = () => {
-  currentVideoIndex.value = (currentVideoIndex.value - 1 + totalVideos) % totalVideos;
-};
+// const prevVideo = () => {
+//   currentVideoIndex.value = (currentVideoIndex.value - 1 + totalVideos) % totalVideos;
+// };
 
 const goToVideo = (index) => {
   currentVideoIndex.value = index;
@@ -170,12 +170,7 @@ const tarifas = [
         <h1 class="main-video-title">Productora de eventos infantiles</h1>
       </div>
 
-      <button
-        class="main-video-nav main-video-nav-left"
-        type="button"
-        aria-label="Video anterior"
-        @click="prevVideo(); restartVideoTimer()"
-      >‹</button>
+    
 
       <div class="main-video-wrapper">
         <video
@@ -189,13 +184,6 @@ const tarifas = [
           @ended="onVideoEnded"
         ></video>
       </div>
-
-      <button
-        class="main-video-nav main-video-nav-right"
-        type="button"
-        aria-label="Video siguiente"
-        @click="nextVideo(); restartVideoTimer()"
-      >›</button>
 
       <div class="main-video-dots">
         <span
