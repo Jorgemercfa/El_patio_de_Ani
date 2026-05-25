@@ -1,4 +1,9 @@
 /* RESET BASE */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* RESET BASE */
 * {
   margin: 0;
   padding: 0;
@@ -6,18 +11,15 @@
 }
 
 /* CONFIGURACIÓN GLOBAL */
-html, body {
+html,
+body {
   width: 100%;
   overflow-x: hidden;
   font-family: 'Inter', sans-serif;
   background-color: #ffffff;
   color: #111111;
-
-  /* Mejor renderizado de texto */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  /* Tipografía base moderna */
   font-size: 16px;
   line-height: 1.6;
 }
@@ -36,7 +38,12 @@ body {
 }
 
 /* JERARQUÍA TIPOGRÁFICA 2026 */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 700;
   letter-spacing: -0.5px;
 }
@@ -47,7 +54,8 @@ p {
 }
 
 /* Mejor apariencia para textos pequeños */
-span, small {
+span,
+small {
   font-weight: 400;
 }
 
