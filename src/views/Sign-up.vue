@@ -130,7 +130,7 @@ const onSignUp = () => {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f4f6f3;
+  background-color: #FDF6EC;
   font-family: 'Nunito', sans-serif;
 }
 
@@ -149,8 +149,8 @@ const onSignUp = () => {
 .auth-card {
   background: white;
   border-radius: 28px;
-  border: 2px solid #E91E81;
-  box-shadow: 0 14px 35px rgba(45, 62, 148, 0.12);
+  border: none;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.10);
   padding: 34px;
 }
 

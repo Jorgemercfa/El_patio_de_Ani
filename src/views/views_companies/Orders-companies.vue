@@ -113,7 +113,7 @@ function completeOrder(order) {
 }
 
 .empty-state {
-  background: #f4f6f3;
+  background: #FDF6EC;
   border-radius: 10px;
   padding: 16px;
 }

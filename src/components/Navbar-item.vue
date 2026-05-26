@@ -84,7 +84,7 @@ const { cartCount } = useCart();
   display: flex;
   align-items: center;
   padding: 0 30px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(233, 30, 129, 0.25);
   width: 100%;
   box-sizing: border-box;
 }

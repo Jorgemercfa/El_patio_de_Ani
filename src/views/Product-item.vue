@@ -237,7 +237,13 @@ const formatPrice = (product) => {
   white-space: nowrap;
 }
 
-.filter-pill.active,
+.filter-pill.active {
+  background: linear-gradient(135deg, #E91E81, #7B2D8B);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(233,30,129,0.3);
+  transform: translateY(-1px);
+}
+
 .filter-pill:hover {
   background: #E91E81;
   color: #FFFFFF;
@@ -272,14 +278,14 @@ const formatPrice = (product) => {
   color: #2D3E94;
   border-radius: 24px;
   overflow: hidden;
-  border: 2px solid #E91E81;
-  box-shadow: 0 4px 16px rgba(233, 30, 129, 0.10);
+  border: none;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .product-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(233, 30, 129, 0.18);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.14);
 }
 
 .product-image {
@@ -347,19 +353,24 @@ const formatPrice = (product) => {
 }
 
 .details-button {
-  margin: 18px;
+  margin: 16px 14px 18px;
   margin-top: 16px;
   background-color: #FFD200;
   color: #2D3E94;
   border: none;
-  padding: 12px 20px;
-  font-size: 1rem;
+  padding: 14px 24px;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
   font-weight: 700;
   border-radius: 999px;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  width: calc(100% - 36px);
+  width: calc(100% - 28px);
   box-shadow: 0 4px 14px rgba(255, 210, 0, 0.35);
+}
+
+.details-button::after {
+  content: " →";
 }
 
 .details-button:hover {

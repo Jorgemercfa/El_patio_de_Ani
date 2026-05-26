@@ -42,7 +42,7 @@ import Footer from '@/components/Footer-item.vue';
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f4f6f3;
+  background-color: #FDF6EC;
   font-family: 'Nunito', sans-serif;
 }
 
@@ -64,8 +64,8 @@ import Footer from '@/components/Footer-item.vue';
   background: white;
   padding: 60px 40px;
   border-radius: 28px;
-  border: 2px solid #E91E81;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
+  border: none;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.10);
 }
 
 .success-icon {

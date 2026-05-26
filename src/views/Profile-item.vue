@@ -265,7 +265,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f4f6f3;
+  background-color: #FDF6EC;
   font-family: 'Nunito', sans-serif;
 }
 .contact-section {
@@ -302,8 +302,8 @@ onBeforeUnmount(() => {
   background: white;
   padding: 34px;
   border-radius: 28px;
-  border: 2px solid #E91E81;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+  border: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 .profile-header {
   display: flex;
@@ -366,10 +366,10 @@ onBeforeUnmount(() => {
 .kids-section {
   margin-top: 24px;
   background: #fff;
-  border: 2px solid #E91E81;
+  border: none;
   border-radius: 28px;
   padding: 24px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .kids-title {
@@ -384,7 +384,7 @@ onBeforeUnmount(() => {
 
 .kids-empty {
   background: #fff9fc;
-  border: 2px dashed #E91E81;
+  border: 2px dashed rgba(233, 30, 129, 0.4);
   border-radius: 24px;
   padding: 18px;
   text-align: center;
@@ -462,10 +462,10 @@ onBeforeUnmount(() => {
 .orders-section {
   margin-top: 24px;
   background: #fff;
-  border: 2px solid #E91E81;
+  border: none;
   border-radius: 28px;
   padding: 24px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .orders-grid {
@@ -476,9 +476,9 @@ onBeforeUnmount(() => {
 
 .order-card {
   background: #fff;
-  border: 2px solid #E91E81;
+  border: none;
   border-radius: 24px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   overflow: hidden;
 }
 
@@ -561,7 +561,7 @@ onBeforeUnmount(() => {
   padding: 24px;
   background: #fff;
   border-radius: 24px;
-  border: 2px dashed #E91E81;
+  border: 2px dashed rgba(233, 30, 129, 0.4);
 }
 
 .orders-empty p {

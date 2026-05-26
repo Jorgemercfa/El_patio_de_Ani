@@ -127,7 +127,7 @@ const catalogServices = computed(() => getCompanyproducts().slice(0, 6));
 .empty-card {
   border-radius: 10px;
   padding: 16px;
-  background: #f4f6f3;
+  background: #FDF6EC;
 }
 
 .products-list {
