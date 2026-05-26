@@ -43,6 +43,7 @@ import Footer from '@/components/Footer-item.vue';
   flex-direction: column;
   min-height: 100vh;
   background-color: #f4f6f3;
+  font-family: 'Nunito', sans-serif;
 }
 
 .confirmation-section {
@@ -62,7 +63,7 @@ import Footer from '@/components/Footer-item.vue';
 .success-card {
   background: white;
   padding: 60px 40px;
-  border-radius: 16px;
+  border-radius: 28px;
   border: 2px solid #E91E81;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
 }
@@ -106,7 +107,7 @@ import Footer from '@/components/Footer-item.vue';
   background: #FFD200;
   color: #2D3E94;
   border: none;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -123,7 +124,7 @@ import Footer from '@/components/Footer-item.vue';
   background: #E91E81;
   color: #fff;
   border: 2px solid #E91E81;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;

@@ -167,6 +167,7 @@ function confirmPayment() {
   flex-direction: column;
   min-height: 100vh;
   background-color: #f4f6f3;
+  font-family: 'Nunito', sans-serif;
 }
 
 .checkout-section {
@@ -215,7 +216,7 @@ function confirmPayment() {
   min-width: 260px;
   background: white;
   padding: 28px;
-  border-radius: 14px;
+  border-radius: 24px;
   border: 2px solid #E91E81;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
 }
@@ -267,7 +268,7 @@ function confirmPayment() {
   min-width: 300px;
   background: white;
   padding: 36px;
-  border-radius: 14px;
+  border-radius: 24px;
   border: 2px solid #E91E81;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
 }
@@ -287,7 +288,7 @@ function confirmPayment() {
 
 .form-group input {
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1.5px solid #ddd;
   font-size: 1rem;
   transition: border 0.2s;
@@ -329,7 +330,7 @@ function confirmPayment() {
   background: #FFD200;
   color: #2D3E94;
   border: none;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;

@@ -266,6 +266,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   min-height: 100vh;
   background-color: #f4f6f3;
+  font-family: 'Nunito', sans-serif;
 }
 .contact-section {
   flex: 1;
@@ -300,7 +301,7 @@ onBeforeUnmount(() => {
   gap: 24px;
   background: white;
   padding: 34px;
-  border-radius: 16px;
+  border-radius: 28px;
   border: 2px solid #E91E81;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
 }
@@ -350,7 +351,7 @@ onBeforeUnmount(() => {
 .submit-btn {
   margin-top: 10px;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: 999px;
   border: none;
   background-color: #E91E81;
   color: #fff;
@@ -366,7 +367,7 @@ onBeforeUnmount(() => {
   margin-top: 24px;
   background: #fff;
   border: 2px solid #E91E81;
-  border-radius: 16px;
+  border-radius: 28px;
   padding: 24px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
 }
@@ -384,7 +385,7 @@ onBeforeUnmount(() => {
 .kids-empty {
   background: #fff9fc;
   border: 2px dashed #E91E81;
-  border-radius: 14px;
+  border-radius: 24px;
   padding: 18px;
   text-align: center;
 }
@@ -403,7 +404,7 @@ onBeforeUnmount(() => {
 
 .child-item {
   border: 2px solid #f8d3e9;
-  border-radius: 14px;
+  border-radius: 20px;
   padding: 14px;
   display: flex;
   align-items: flex-start;
@@ -421,7 +422,7 @@ onBeforeUnmount(() => {
   border: 2px solid #E91E81;
   background: #fff;
   color: #E91E81;
-  border-radius: 12px;
+  border-radius: 999px;
   padding: 8px 10px;
   cursor: pointer;
   font-weight: 700;
@@ -436,7 +437,7 @@ onBeforeUnmount(() => {
 .add-child-btn,
 .save-children-btn {
   border: none;
-  border-radius: 12px;
+  border-radius: 999px;
   padding: 12px 16px;
   font-weight: 700;
   cursor: pointer;
@@ -462,7 +463,7 @@ onBeforeUnmount(() => {
   margin-top: 24px;
   background: #fff;
   border: 2px solid #E91E81;
-  border-radius: 16px;
+  border-radius: 28px;
   padding: 24px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
 }
@@ -476,7 +477,7 @@ onBeforeUnmount(() => {
 .order-card {
   background: #fff;
   border: 2px solid #E91E81;
-  border-radius: 14px;
+  border-radius: 24px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
@@ -549,7 +550,7 @@ onBeforeUnmount(() => {
 .order-code {
   background: #2D3E94;
   color: #fff;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 6px 10px;
   font-family: monospace;
   font-size: 0.82rem;
@@ -559,7 +560,7 @@ onBeforeUnmount(() => {
   text-align: center;
   padding: 24px;
   background: #fff;
-  border-radius: 14px;
+  border-radius: 24px;
   border: 2px dashed #E91E81;
 }
 
@@ -575,7 +576,7 @@ onBeforeUnmount(() => {
   background: #FFD200;
   color: #2D3E94;
   border: none;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;

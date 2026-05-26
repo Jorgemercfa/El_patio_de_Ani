@@ -48,6 +48,7 @@ function closeSession() {
 <style scoped>
 .admin-layout {
   min-height: 100vh;
+  font-family: 'Nunito', sans-serif;
   display: grid;
   grid-template-columns: 250px 1fr;
   background: #f4f6f3;
@@ -55,6 +56,7 @@ function closeSession() {
 
 .admin-sidebar {
   background: #2d3e94;
+  font-family: 'Nunito', sans-serif;
   color: white;
   padding: 24px 16px;
   position: sticky;
@@ -81,7 +83,7 @@ function closeSession() {
   background: transparent;
   color: #fff;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 16px;
   cursor: pointer;
   font-size: 0.95rem;
 }

@@ -187,6 +187,7 @@ const formatPrice = (product) => {
 
 <style>
 .products-area {
+  font-family: 'Nunito', sans-serif;
   margin: 42px 6%;
 }
 
@@ -269,7 +270,7 @@ const formatPrice = (product) => {
   justify-content: space-between;
   background: #FFFFFF;
   color: #2D3E94;
-  border-radius: 14px;
+  border-radius: 24px;
   overflow: hidden;
   border: 2px solid #E91E81;
   box-shadow: 0 4px 16px rgba(233, 30, 129, 0.10);
@@ -285,7 +286,7 @@ const formatPrice = (product) => {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border-radius: 14px 14px 0 0;
+  border-radius: 24px 24px 0 0;
 }
 
 .product-content {
@@ -307,7 +308,7 @@ const formatPrice = (product) => {
   font-size: 0.72rem;
   font-weight: 700;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 999px;
   letter-spacing: 0.03em;
 }
 
@@ -354,7 +355,7 @@ const formatPrice = (product) => {
   padding: 12px 20px;
   font-size: 1rem;
   font-weight: 700;
-  border-radius: 10px;
+  border-radius: 999px;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   width: calc(100% - 36px);
