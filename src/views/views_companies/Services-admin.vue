@@ -197,7 +197,7 @@ onMounted(loadServices);
 }
 
 .counter {
-  background: #f4f6f3;
+  background: #FDF6EC;
   border: 1px solid #e91e81;
   color: #2d3e94;
   border-radius: 999px;
@@ -248,7 +248,7 @@ onMounted(loadServices);
 
 .empty-card {
   border-radius: 12px;
-  background: #f4f6f3;
+  background: #FDF6EC;
   padding: 16px;
 }
 

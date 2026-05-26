@@ -107,7 +107,7 @@ function getItemPrice(item) {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f4f6f3;
+  background-color: #FDF6EC;
   font-family: 'Nunito', sans-serif;
 }
 
@@ -166,8 +166,8 @@ function getItemPrice(item) {
   background: white;
   padding: 16px;
   border-radius: 24px;
-  border: 2px solid #E91E81;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+  border: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   flex-wrap: wrap;
 }
 
@@ -256,8 +256,8 @@ function getItemPrice(item) {
   background: white;
   padding: 28px;
   border-radius: 24px;
-  border: 2px solid #E91E81;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+  border: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .summary-title {

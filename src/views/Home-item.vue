@@ -195,6 +195,13 @@ const tarifas = [
       </div>
     </div>
 
+    <!-- Wave divider -->
+    <div class="wave-divider">
+      <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#FDF6EC"/>
+      </svg>
+    </div>
+
     <div class="text-home">
       Encuentra todo lo que necesitas para una celebración inolvidable: desde shows mágicos y juegos inflables hasta deliciosos carritos de snacks. Nos encargamos de la diversión para que tú disfrutes cada momento especial.
     </div>
@@ -222,6 +229,12 @@ const tarifas = [
         </div>
       </div>
     </section>
+
+    <div class="wave-divider-hero">
+      <svg viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,30 C480,60 960,0 1440,30 L1440,60 L0,60 Z" fill="#FDF6EC"/>
+      </svg>
+    </div>
 
     <!-- ===== NUESTROS SERVICIOS ===== -->
     <h1 class="title-home">Nuestros Servicios</h1>
@@ -552,24 +565,31 @@ const tarifas = [
   border: none;
   border-radius: 24px;
   padding: 15px;
+  overflow: visible;
+  padding-top: 60px;
+  margin-top: 40px;
   text-align: center;
   text-decoration: none;
   color: #2D3E94;
-  box-shadow: 0 6px 20px rgba(233, 30, 129, 0.12);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   transition: 0.25s;
 }
 
 .logs-item:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(233, 30, 129, 0.22);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.14);
 }
 
 .card-icons {
-  width: 100%;
-  height: 110px;
-  object-fit: cover;
-  border-radius: 16px;
-  margin-bottom: 10px;
+  width: calc(100% - 20px);
+  height: 130px;
+  object-fit: contain;
+  border-radius: 12px;
+  margin: -60px auto 10px;
+  display: block;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+  position: relative;
+  z-index: 2;
 }
 
 .product-mini-info { display: flex; flex-direction: column; gap: 4px; }
@@ -609,9 +629,35 @@ const tarifas = [
   font-weight: bold;
 }
 
+
+.wave-divider {
+  position: relative;
+  margin-top: -2px;
+  line-height: 0;
+  background: #000;
+}
+
+.wave-divider svg {
+  width: 100%;
+  height: 80px;
+  display: block;
+}
+
+.wave-divider-hero {
+  margin-top: -2px;
+  line-height: 0;
+  background: linear-gradient(135deg, #E91E81 0%, #7B2D8B 50%, #2D3E94 100%);
+}
+
+.wave-divider-hero svg {
+  width: 100%;
+  height: 60px;
+  display: block;
+}
+
 /* ===== HERO SECTION ===== */
 .hero-section {
-  background: linear-gradient(135deg, #E91E81 0%, #7B2D8B 50%, #2D3E94 100%);
+  background: linear-gradient(135deg, #E91E81 0%, #A130B0 45%, #2D3E94 100%);
   padding: 60px 20px;
   text-align: center;
   color: #FFFFFF;
@@ -674,6 +720,7 @@ const tarifas = [
   text-decoration: none;
   color: #2D3E94;
   border: 2px solid transparent;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   cursor: pointer;
 }
@@ -688,8 +735,8 @@ const tarifas = [
 }
 
 .service-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(45, 62, 148, 0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
 }
 
 .service-icon { font-size: 2.8rem; line-height: 1; }
@@ -697,7 +744,7 @@ const tarifas = [
 .service-desc { font-size: 0.82rem; margin: 0; text-align: center; opacity: 0.75; }
 
 /* ===== TARIFAS DE MOVILIDAD ===== */
-.movilidad-section { padding: 20px 60px 80px; text-align: center; }
+.movilidad-section { background: #ffffff; border-radius: 32px; margin: 0 40px 80px; padding: 60px; text-align: center; }
 
 .movilidad-badge {
   display: inline-block;
@@ -756,7 +803,7 @@ const tarifas = [
   .hero-title { font-size: 1.8rem; }
   .hero-stats { gap: 24px; }
   .movilidad-grid { grid-template-columns: repeat(2, 1fr); }
-  .movilidad-section { padding: 20px 30px 60px; }
+  .movilidad-section { margin: 0 30px 60px; padding: 40px 30px 60px; }
 }
 
 @media (max-width: 768px) {
@@ -793,7 +840,7 @@ const tarifas = [
   }
   .hero-stat-number { font-size: 1.6rem; }
   .movilidad-grid { grid-template-columns: 1fr; }
-  .movilidad-section { padding: 20px 20px 50px; }
+  .movilidad-section { margin: 0 20px 50px; padding: 32px 20px 50px; }
   .title-home { font-size: 22px; }
   .logs-item { flex-basis: 160px; }
 }

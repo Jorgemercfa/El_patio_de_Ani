@@ -5,6 +5,11 @@ const year = new Date().getFullYear();
 
 <template>
   <footer class="footer-area">
+    <div class="footer-wave">
+      <svg viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,30 C360,0 1080,60 1440,30 L1440,0 L0,0 Z" fill="#FDF6EC"/>
+      </svg>
+    </div>
     <div class="footer-container">
       <div class="contact-footer">
         <h4 class="titile-footer">Contacto</h4>
@@ -29,11 +34,23 @@ const year = new Date().getFullYear();
 
 <style>
 .footer-area {
+  overflow: hidden;
   font-family: 'Nunito', sans-serif;
   background-color: #E91E81; /* SE MANTIENE TU VERDE */
   color: white;
-  margin-top: 100px;
+  margin-top: 0;
   border-radius: 24px 24px 0 0;
+}
+
+.footer-wave {
+  line-height: 0;
+  background: #E91E81;
+}
+
+.footer-wave svg {
+  width: 100%;
+  height: 60px;
+  display: block;
 }
 
 /* CONTENEDOR */

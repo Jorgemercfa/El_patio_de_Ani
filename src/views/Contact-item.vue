@@ -158,7 +158,7 @@ function sendWhatsApp() {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f4f6f3;
+  background-color: #FDF6EC;
   font-family: 'Nunito', sans-serif;
 }
 
@@ -215,7 +215,7 @@ function sendWhatsApp() {
   background: white;
   padding: 50px;
   border-radius: 28px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   flex-wrap: wrap;
   text-align: left;
 }

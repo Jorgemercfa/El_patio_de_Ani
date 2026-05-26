@@ -51,7 +51,7 @@ function closeSession() {
   font-family: 'Nunito', sans-serif;
   display: grid;
   grid-template-columns: 250px 1fr;
-  background: #f4f6f3;
+  background: #FDF6EC;
 }
 
 .admin-sidebar {

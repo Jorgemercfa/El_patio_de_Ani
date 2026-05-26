@@ -114,7 +114,7 @@ const onLogin = () => {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f4f6f3;
+  background-color: #FDF6EC;
 }
 
 .contact-section {

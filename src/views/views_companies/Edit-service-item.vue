@@ -295,7 +295,7 @@ function onSave() {
   border: 1px solid #f0d3e6;
   border-radius: 12px;
   padding: 12px;
-  background: #f4f6f3;
+  background: #FDF6EC;
 }
 
 .image-title {
