@@ -108,6 +108,7 @@ function getItemPrice(item) {
   flex-direction: column;
   min-height: 100vh;
   background-color: #f4f6f3;
+  font-family: 'Nunito', sans-serif;
 }
 
 .cart-section {
@@ -164,7 +165,7 @@ function getItemPrice(item) {
   gap: 16px;
   background: white;
   padding: 16px;
-  border-radius: 14px;
+  border-radius: 24px;
   border: 2px solid #E91E81;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
   flex-wrap: wrap;
@@ -174,7 +175,7 @@ function getItemPrice(item) {
   width: 72px;
   height: 72px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 16px;
   flex-shrink: 0;
 }
 
@@ -206,7 +207,7 @@ function getItemPrice(item) {
   width: 30px;
   height: 30px;
   border: 2px solid #E91E81;
-  border-radius: 6px;
+  border-radius: 999px;
   background: white;
   color: #E91E81;
   font-size: 1.1rem;
@@ -254,7 +255,7 @@ function getItemPrice(item) {
   width: 280px;
   background: white;
   padding: 28px;
-  border-radius: 14px;
+  border-radius: 24px;
   border: 2px solid #E91E81;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
 }
@@ -291,7 +292,7 @@ function getItemPrice(item) {
   background: #FFD200;
   color: #2D3E94;
   border: none;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -324,7 +325,7 @@ function getItemPrice(item) {
   background: #FFD200;
   color: #2D3E94;
   border: none;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;

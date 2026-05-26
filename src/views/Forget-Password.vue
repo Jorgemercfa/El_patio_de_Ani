@@ -121,6 +121,7 @@ const onSignUp = () => {
   flex-direction: column;
   min-height: 100vh;
   background-color: #f4f6f3;
+  font-family: 'Nunito', sans-serif;
 }
 
 .contact-section {
@@ -137,7 +138,7 @@ const onSignUp = () => {
 
 .auth-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 28px;
   border: 2px solid #E91E81;
   box-shadow: 0 14px 35px rgba(45, 62, 148, 0.12);
   padding: 34px;
@@ -173,7 +174,7 @@ const onSignUp = () => {
 
 .form-group input {
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1.5px solid #d9d9d9;
 }
 
@@ -189,7 +190,7 @@ const onSignUp = () => {
   border: none;
   padding: 14px;
   font-size: 1rem;
-  border-radius: 12px;
+  border-radius: 999px;
   font-weight: 700;
   cursor: pointer;
 }

@@ -344,6 +344,14 @@ const tarifas = [
 </template>
 
 <style>
+.main-video-carousel,
+.our-products-wrapper,
+.hero-section,
+.services-grid,
+.movilidad-section {
+  font-family: 'Nunito', sans-serif;
+}
+
 /* ===== CARRUSEL PRINCIPAL DE VIDEOS ===== */
 .main-video-carousel {
   position: relative;
@@ -542,7 +550,7 @@ const tarifas = [
   position: relative;
   background: #FFFFFF;
   border: none;
-  border-radius: 12px;
+  border-radius: 24px;
   padding: 15px;
   text-align: center;
   text-decoration: none;
@@ -560,7 +568,7 @@ const tarifas = [
   width: 100%;
   height: 110px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 16px;
   margin-bottom: 10px;
 }
 
@@ -596,7 +604,7 @@ const tarifas = [
   background: linear-gradient(135deg, #FFD200, #FF9800);
   color: #2D3E94;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: 999px;
   font-size: 0.75rem;
   font-weight: bold;
 }
@@ -662,7 +670,7 @@ const tarifas = [
   align-items: center;
   gap: 10px;
   padding: 28px 16px;
-  border-radius: 14px;
+  border-radius: 24px;
   text-decoration: none;
   color: #2D3E94;
   border: 2px solid transparent;
@@ -716,7 +724,7 @@ const tarifas = [
 
 .movilidad-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 20px 20px 20px 24px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.06);
   border-left: 4px solid #FFD200;

@@ -109,6 +109,7 @@ const onLogin = () => {
   flex-direction: column;
   min-height: 100vh;
   background-color: #f4f6f3;
+  font-family: 'Nunito', sans-serif;
 }
 
 .contact-section {
@@ -126,7 +127,7 @@ const onLogin = () => {
 .auth-card {
   background: white;
   border: 2px solid #E91E81;
-  border-radius: 16px;
+  border-radius: 28px;
   box-shadow: 0 14px 35px rgba(45, 62, 148, 0.12);
   padding: 34px;
 }
@@ -165,7 +166,7 @@ const onLogin = () => {
 
 .form-group input {
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1.5px solid #d9d9d9;
 }
 
@@ -178,7 +179,7 @@ const onLogin = () => {
 .submit-btn {
   margin-top: 4px;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: 999px;
   border: none;
   background-color: #FFD200;
   color: #2D3E94;
@@ -194,7 +195,7 @@ const onLogin = () => {
   margin-top: 8px;
   padding: 11px;
   width: 100%;
-  border-radius: 12px;
+  border-radius: 999px;
   border: 2px solid #E91E81;
   background-color: #fff;
   color: #E91E81;

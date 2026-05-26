@@ -29,9 +29,11 @@ const year = new Date().getFullYear();
 
 <style>
 .footer-area {
+  font-family: 'Nunito', sans-serif;
   background-color: #E91E81; /* SE MANTIENE TU VERDE */
   color: white;
   margin-top: 100px;
+  border-radius: 24px 24px 0 0;
 }
 
 /* CONTENEDOR */

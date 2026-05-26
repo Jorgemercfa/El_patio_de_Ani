@@ -1,5 +1,5 @@
 <template>
-  <div class="navbar-wrapper">
+  <div class="navbar-wrapper font-nunito">
     <nav class="navbar-area">
       <!-- 1. LOGO -->
       <div class="nav-logo">
@@ -77,6 +77,7 @@ const { cartCount } = useCart();
 }
 
 .navbar-area {
+  font-family: 'Nunito', sans-serif;
   background: #E91E81;
   border-radius: 999px;
   height: 70px;
@@ -101,6 +102,7 @@ const { cartCount } = useCart();
 }
 
 .text-navbar {
+  font-family: 'Nunito', sans-serif;
   color: white;
   text-decoration: none;
   font-size: 0.95rem;

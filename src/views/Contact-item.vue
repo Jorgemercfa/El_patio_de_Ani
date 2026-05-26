@@ -159,6 +159,7 @@ function sendWhatsApp() {
   flex-direction: column;
   min-height: 100vh;
   background-color: #f4f6f3;
+  font-family: 'Nunito', sans-serif;
 }
 
 .contact-section {
@@ -182,7 +183,7 @@ function sendWhatsApp() {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 6px 18px;
-  border-radius: 20px;
+  border-radius: 999px;
   margin-bottom: 16px;
 }
 
@@ -213,7 +214,7 @@ function sendWhatsApp() {
   gap: 40px;
   background: white;
   padding: 50px;
-  border-radius: 20px;
+  border-radius: 28px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
   flex-wrap: wrap;
   text-align: left;
@@ -256,7 +257,7 @@ function sendWhatsApp() {
 .form-group select,
 .form-group textarea {
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: 16px;
   border: 1.5px solid #ddd;
   font-size: 14px;
   transition: 0.3s ease;
@@ -275,7 +276,7 @@ function sendWhatsApp() {
 .whatsapp-btn {
   margin-top: 6px;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 999px;
   border: none;
   background: linear-gradient(135deg, #25D366, #128C7E);
   color: white;
@@ -305,7 +306,7 @@ function sendWhatsApp() {
   flex: 1;
   min-width: 240px;
   background: #2D3E94;
-  border-radius: 16px;
+  border-radius: 24px;
   padding: 36px 28px;
   display: flex;
   flex-direction: column;
@@ -360,7 +361,7 @@ function sendWhatsApp() {
 .response-badge {
   background: rgba(37, 211, 102, 0.15);
   border: 1px solid rgba(37, 211, 102, 0.4);
-  border-radius: 10px;
+  border-radius: 16px;
   padding: 14px;
   font-size: 0.88rem;
   line-height: 1.5;
