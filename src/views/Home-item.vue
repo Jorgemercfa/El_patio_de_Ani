@@ -511,12 +511,14 @@ const tarifas = [
   position: relative;
   width: 100%;
   padding: 40px 60px;
+  overflow: visible;
 }
 
 .our-products {
   display: flex;
   gap: 20px;
   overflow-x: auto;
+  overflow-y: visible;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   padding: 20px 0;
@@ -566,7 +568,7 @@ const tarifas = [
   border-radius: 24px;
   padding: 15px;
   overflow: visible;
-  padding-top: 60px;
+  padding-top: 18px;
   margin-top: 40px;
   text-align: center;
   text-decoration: none;
@@ -619,14 +621,17 @@ const tarifas = [
 
 .product-mini-badge {
   position: absolute;
-  top: 10px;
+  top: 22px;
   right: 10px;
   background: linear-gradient(135deg, #FFD200, #FF9800);
   color: #2D3E94;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
   font-size: 0.75rem;
-  font-weight: bold;
+  font-weight: 800;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.35);
 }
 
 
