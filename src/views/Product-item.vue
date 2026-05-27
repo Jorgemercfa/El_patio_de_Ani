@@ -185,7 +185,7 @@ const formatPrice = (product) => {
   </footer>
 </template>
 
-<style>
+<style scoped>
 .products-area {
   font-family: 'Nunito', sans-serif;
   margin: 42px 6%;
@@ -194,12 +194,11 @@ const formatPrice = (product) => {
 .title-products {
   font-size: clamp(1.8rem, 2vw + 1rem, 2.5rem);
   margin-bottom: 32px;
-  font-weight: 800;
-  text-align: left;
   position: relative;
   background: linear-gradient(135deg, #E91E81, #2D3E94);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  @apply font-black text-left;
 }
 
 .title-products::after {
@@ -214,187 +213,129 @@ const formatPrice = (product) => {
 }
 
 .filter-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 14px;
+  @apply flex flex-wrap gap-2 mb-4;
 }
 
 .filter-pills-sub {
-  margin-bottom: 28px;
+  @apply mb-7;
 }
 
 .filter-pill {
-  padding: 8px 20px;
-  border-radius: 999px;
-  border: 2px solid #E91E81;
-  background: #FFFFFF;
+  @apply px-5 py-2 rounded-full border-2 bg-white 
+         font-extrabold text-sm cursor-pointer 
+         transition-all duration-200 whitespace-nowrap;
+  border-color: #E91E81;
   color: #E91E81;
-  font-size: 0.92rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.25s ease;
-  white-space: nowrap;
 }
 
 .filter-pill.active {
   background: linear-gradient(135deg, #E91E81, #7B2D8B);
-  color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(233,30,129,0.3);
-  transform: translateY(-1px);
+  @apply text-white shadow-md -translate-y-px border-transparent;
 }
 
 .filter-pill:hover {
-  background: #E91E81;
-  color: #FFFFFF;
+  background-color: #E91E81;
+  @apply text-white;
 }
 
 .filter-pill-sub {
-  padding: 6px 16px;
-  font-size: 0.82rem;
+  @apply px-4 py-1.5 text-xs;
   border-color: #2D3E94;
   color: #2D3E94;
 }
 
 .filter-pill-sub.active,
 .filter-pill-sub:hover {
-  background: #2D3E94;
-  color: #FFFFFF;
+  background-color: #2D3E94;
+  @apply text-white;
 }
 
 .products-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-  align-items: stretch;
-  justify-content: center;
+  @apply grid grid-cols-1 gap-6 items-stretch justify-center;
 }
 
 .product-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background: #FFFFFF;
+  @apply flex flex-col justify-between bg-white rounded-3xl 
+         overflow-hidden shadow-md
+         transition-all duration-200 hover:-translate-y-1 
+         hover:shadow-xl;
   color: #2D3E94;
-  border-radius: 24px;
-  overflow: hidden;
-  border: none;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.14);
 }
 
 .product-image {
-  width: 100%;
+  @apply w-full object-cover;
   aspect-ratio: 4 / 3;
-  object-fit: cover;
   border-radius: 24px 24px 0 0;
 }
 
 .product-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 18px 18px 0;
+  @apply flex flex-col gap-3 items-start p-4 pb-0;
 }
 
 .product-badges {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.badge-category,
-.badge-subcategory {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  letter-spacing: 0.03em;
+  @apply flex gap-2 flex-wrap;
 }
 
 .badge-category {
+  @apply text-xs font-bold px-3 py-1 rounded-full text-white;
   background: linear-gradient(135deg, #E91E81, #2D3E94);
-  color: #FFFFFF;
+  letter-spacing: 0.03em;
 }
 
 .badge-subcategory {
+  @apply text-xs font-bold px-3 py-1 rounded-full;
   background: #e7efff;
   color: #2D3E94;
+  letter-spacing: 0.03em;
 }
 
 .product-title {
-  font-size: 1.18rem;
-  font-weight: 800;
-  margin: 0;
+  @apply text-lg font-black m-0 text-left;
   color: #2D3E94;
-  text-align: left;
 }
 
 .product-description {
-  font-size: 0.92rem;
-  text-align: left;
+  @apply text-sm text-left m-0 leading-relaxed;
   color: #2D3E94;
   opacity: 0.82;
-  margin: 0;
-  line-height: 1.5;
 }
 
 .product-price {
-  font-size: 1.5rem;
-  font-weight: 800;
+  @apply text-2xl font-black mt-1;
   color: #E91E81;
-  margin: 4px 0 0;
 }
 
 .details-button {
-  margin: 16px 14px 18px;
-  margin-top: 16px;
+  @apply mx-3.5 mt-4 mb-4 px-6 py-3.5 
+         font-black text-sm tracking-wide
+         rounded-full border-none cursor-pointer
+         transition-all duration-200
+         hover:scale-105;
   background-color: #FFD200;
   color: #2D3E94;
-  border: none;
-  padding: 14px 24px;
-  font-size: 0.95rem;
-  letter-spacing: 0.02em;
-  font-weight: 700;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
   width: calc(100% - 28px);
   box-shadow: 0 4px 14px rgba(255, 210, 0, 0.35);
 }
 
-.details-button::after {
-  content: " →";
-}
-
 .details-button:hover {
-  transform: scale(1.03);
   box-shadow: 0 7px 18px rgba(255, 210, 0, 0.5);
 }
 
 @media (max-width: 600px) {
   .filter-pills {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 4px;
+    @apply overflow-x-auto flex-nowrap pb-1;
   }
 }
 
 @media (min-width: 720px) {
   .products-container {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @apply grid-cols-2;
   }
 }
 
 @media (min-width: 1080px) {
   .products-container {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    @apply grid-cols-3;
   }
 }
 </style>
