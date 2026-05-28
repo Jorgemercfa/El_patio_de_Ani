@@ -1,16 +1,16 @@
-import { fontFamily } from 'tailwindcss/defaultTheme'
+const defaultTheme = require('tailwindcss/defaultTheme')
 
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
-    "./index.html",
+    "./public/index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
   important: '#app',
   theme: {
     extend: {
       fontFamily: {
-        nunito: ['Nunito', ...fontFamily.sans],
+        nunito: ['Nunito', ...defaultTheme.fontFamily.sans],
       },
       colors: {
         brand: {

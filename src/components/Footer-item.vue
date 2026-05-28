@@ -21,8 +21,8 @@ const year = new Date().getFullYear();
       <div class="links-footer">
         <h4 class="titile-footer">Enlaces</h4>
         <div class="footer-text">
-          <div><a href="/Privacy-Policy" class="footer-text-2">Política de Privacidad</a></div>
-          <div><a href="/Terms-of-Use" class="footer-text-2">Términos de Uso</a></div>
+          <div><router-link to="/Privacy-Policy" class="footer-text-2">Política de Privacidad</router-link></div>
+          <div><router-link to="/Terms-of-Use" class="footer-text-2">Términos de Uso</router-link></div>
         </div>
       </div>
     </div>
