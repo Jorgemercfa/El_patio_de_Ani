@@ -33,6 +33,7 @@ const loyaltyLevelColorMap = {
   '🥇 Oro': '#FFD200',
   '💎 VIP': '#E91E81',
 };
+const silverReservasTarget = NIVELES.find((nivel) => nivel.nombre === '🥈 Plata')?.minReservas || 3;
 const loyaltyLevelColor = computed(
   () => loyaltyLevelColorMap[loyaltyData.value.nivel] || '#2D3E94',
 );
@@ -51,7 +52,7 @@ const loyaltyMessage = computed(() => {
     return '¡Eres cliente VIP! Disfruta del máximo descuento 💎';
   }
   if (loyaltyData.value.nivel === '🥉 Bronce' && loyaltyData.value.reservas === 0) {
-    return '¡Completa 3 reservas para alcanzar el nivel Plata!';
+    return `¡Completa ${silverReservasTarget} reservas para alcanzar el nivel Plata!`;
   }
   return `Te faltan ${loyaltyData.value.reservasParaProximo} reserva(s) para ${loyaltyData.value.proximoNivel}.`;
 });

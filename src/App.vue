@@ -47,6 +47,7 @@ const showBirthdayPopup = ref(false);
 const upcomingBirthday = ref(null);
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const BIRTHDAY_NOTIFICATION_THRESHOLD_DAYS = 7;
 
 const getLocalDateString = (date = new Date()) => {
   const timezoneOffset = date.getTimezoneOffset() * 60000;
@@ -121,7 +122,13 @@ onMounted(() => {
       .map((child) => {
         const name = (child?.name || '').trim();
         const daysRemaining = getDaysUntilBirthday(child?.birthday);
-        if (!name || daysRemaining === null || daysRemaining > 7) return null;
+        if (
+          !name ||
+          daysRemaining === null ||
+          daysRemaining > BIRTHDAY_NOTIFICATION_THRESHOLD_DAYS
+        ) {
+          return null;
+        }
         return { name, daysRemaining };
       })
       .filter(Boolean)
