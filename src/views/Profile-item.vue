@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
 import { useCart } from '@/store/cart.js';
+import { NIVELES, useLoyalty } from '@/store/loyalty';
 
 const router = useRouter();
 const { state, logout } = useSession();
@@ -13,6 +14,7 @@ const showChildrenSavedMessage = ref(false);
 const childrenStorageTimer = ref(null);
 const ORDER_ID_DISPLAY_LENGTH = 12;
 const { getPurchasedproducts } = useCart();
+const { getLoyaltyData } = useLoyalty();
 
 const purchasedproducts = computed(() =>
   state.user ? getPurchasedproducts(state.user.id) : [],
@@ -22,6 +24,37 @@ const sortedOrders = computed(() =>
     (a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime(),
   ),
 );
+const loyaltyData = computed(() =>
+  state.user ? getLoyaltyData(state.user.id) : getLoyaltyData(null),
+);
+const loyaltyLevelColorMap = {
+  '🥉 Bronce': '#cd7f32',
+  '🥈 Plata': '#a8a9ad',
+  '🥇 Oro': '#FFD200',
+  '💎 VIP': '#E91E81',
+};
+const loyaltyLevelColor = computed(
+  () => loyaltyLevelColorMap[loyaltyData.value.nivel] || '#2D3E94',
+);
+const loyaltyProgress = computed(() => {
+  const levelIndex = NIVELES.findIndex((nivel) => nivel.nombre === loyaltyData.value.nivel);
+  if (levelIndex < 0 || levelIndex === NIVELES.length - 1) return 100;
+
+  const currentLevelMin = NIVELES[levelIndex].minReservas;
+  const nextLevelMin = NIVELES[levelIndex + 1].minReservas;
+  const progressRange = nextLevelMin - currentLevelMin;
+  const progressValue = loyaltyData.value.reservas - currentLevelMin;
+  return Math.min(100, Math.max(0, (progressValue / progressRange) * 100));
+});
+const loyaltyMessage = computed(() => {
+  if (loyaltyData.value.nivel === '💎 VIP') {
+    return '¡Eres cliente VIP! Disfruta del máximo descuento 💎';
+  }
+  if (loyaltyData.value.nivel === '🥉 Bronce' && loyaltyData.value.reservas === 0) {
+    return '¡Completa 3 reservas para alcanzar el nivel Plata!';
+  }
+  return `Te faltan ${loyaltyData.value.reservasParaProximo} reserva(s) para ${loyaltyData.value.proximoNivel}.`;
+});
 const initials = computed(() => {
   const name = state.user?.name || '';
   return name
@@ -149,6 +182,26 @@ onBeforeUnmount(() => {
               Cerrar sesión
             </button>
           </div>
+        </div>
+
+        <div class="loyalty-section">
+          <h2 class="kids-title">🏆 Mi Nivel</h2>
+          <div class="loyalty-badge" :style="{ borderColor: loyaltyLevelColor }">
+            <span class="loyalty-level" :style="{ color: loyaltyLevelColor }">{{ loyaltyData.nivel }}</span>
+            <span class="loyalty-reservas">{{ loyaltyData.reservas }} reservas acumuladas</span>
+          </div>
+          <div class="loyalty-progress">
+            <div class="loyalty-progress-fill" :style="{ width: `${loyaltyProgress}%`, backgroundColor: loyaltyLevelColor }"></div>
+          </div>
+          <p class="loyalty-next-level" v-if="loyaltyData.reservasParaProximo > 0">
+            Faltan <strong>{{ loyaltyData.reservasParaProximo }}</strong> reserva(s) para
+            <strong>{{ loyaltyData.proximoNivel }}</strong>
+          </p>
+          <p class="loyalty-next-level" v-else>
+            Has alcanzado el nivel máximo de beneficios.
+          </p>
+          <p class="loyalty-discount">{{ loyaltyData.descuento }}% de descuento activo</p>
+          <p class="loyalty-message">{{ loyaltyMessage }}</p>
         </div>
 
         <div class="kids-section">
@@ -361,6 +414,66 @@ onBeforeUnmount(() => {
 .submit-btn:hover {
   background-color: #d81b76;
   transform: translateY(-2px);
+}
+
+.loyalty-section {
+  margin-top: 24px;
+  background: #fff;
+  border-radius: 28px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.loyalty-badge {
+  border: 2px solid #E91E81;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #fff;
+}
+
+.loyalty-level {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.loyalty-reservas {
+  color: #2D3E94;
+  font-weight: 700;
+}
+
+.loyalty-progress {
+  margin-top: 14px;
+  background: #f1f3fb;
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.loyalty-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.loyalty-next-level {
+  margin: 12px 0 0;
+  color: #2D3E94;
+}
+
+.loyalty-discount {
+  margin: 8px 0 0;
+  color: #1c8c46;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.loyalty-message {
+  margin: 8px 0 0;
+  color: #2D3E94;
+  font-weight: 700;
 }
 
 .kids-section {
