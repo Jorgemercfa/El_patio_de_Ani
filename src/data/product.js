@@ -57,6 +57,7 @@ import product35 from '@/assets/baby_game9.png';
 // IMPORTS - ESTÉTICA
 // ================================
 import facepaint from '@/assets/facepaint1.jpeg';
+import facepaint2 from '@/assets/facepaint2.png';
 
 // ================================
 // IMPORTS - SNACKS
@@ -881,7 +882,7 @@ export default [
     shortDescription: 'Glitter, gemas y tatuajes de brillantina',
     longDescription:
       'Experiencia de belleza infantil con mucho glitter, gemas y glitter tattoo para que los niños luzcan increíbles.',
-    image: facepaint,
+    image: facepaint2,
     price: 300,
     category: 'Estética Infantil',
     subcategory: 'Glitter Bar',
