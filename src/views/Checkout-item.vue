@@ -1,12 +1,26 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useCart } from '@/store/cart.js';
+import { useSession } from '@/auth/session';
+import { useLoyalty } from '@/store/loyalty';
 
 const router = useRouter();
 const { cartItems, cartTotal, checkout } = useCart();
+const { state: sessionState } = useSession();
+const { getLoyaltyData, getDescuento, addReserva } = useLoyalty();
+const loyaltyData = computed(() =>
+  sessionState.user ? getLoyaltyData(sessionState.user.id) : getLoyaltyData(null),
+);
+const loyaltyDiscount = computed(() =>
+  sessionState.user ? getDescuento(sessionState.user.id) : 0,
+);
+const discountAmount = computed(() => cartTotal.value * (loyaltyDiscount.value / 100));
+const cartTotalWithDiscount = computed(() =>
+  cartTotal.value * (1 - loyaltyDiscount.value / 100),
+);
 
 const form = ref({
   cardName: '',
@@ -59,6 +73,9 @@ function confirmPayment() {
   submitting.value = true;
   setTimeout(() => {
     checkout();
+    if (sessionState.user?.id) {
+      addReserva(sessionState.user.id);
+    }
     submitting.value = false;
     router.push({ name: 'OrderConfirmation' });
   }, 800);
@@ -83,9 +100,17 @@ function confirmPayment() {
               <span class="order-name">{{ item.name }} <span class="order-qty">x{{ item.quantity }}</span></span>
               <span class="order-price">S/ {{ (Number(item.discount_price ?? item.price ?? 0) * item.quantity).toFixed(2) }}</span>
             </div>
-            <div class="order-total">
-              <span>Total</span>
+            <div class="order-row order-subtotal">
+              <span>Subtotal</span>
               <span>S/ {{ cartTotal.toFixed(2) }}</span>
+            </div>
+            <div v-if="loyaltyDiscount > 0" class="order-row discount-row">
+              <span>🎁 Descuento {{ loyaltyData.nivel }} (-{{ loyaltyDiscount }}%)</span>
+              <span>-S/ {{ discountAmount.toFixed(2) }}</span>
+            </div>
+            <div class="order-total">
+              <span>Total final</span>
+              <span>S/ {{ cartTotalWithDiscount.toFixed(2) }}</span>
             </div>
           </div>
 
@@ -250,6 +275,15 @@ function confirmPayment() {
 .order-price {
   font-weight: 600;
   color: #222;
+}
+
+.order-subtotal {
+  border-bottom: none;
+}
+
+.discount-row {
+  color: #1c8c46;
+  font-weight: 700;
 }
 
 .order-total {

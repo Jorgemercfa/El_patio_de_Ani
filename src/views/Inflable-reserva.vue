@@ -106,6 +106,7 @@ const form = ref({
   responsibleName: state.user?.name || '',
   eventAddress: '',
   district: '',
+  eventType: '',
   eventDate: '',
   startTime: '',
   endTime: '',
@@ -280,6 +281,7 @@ const reservationSummary = computed(() => ({
   responsable: form.value.responsibleName,
   direccion: form.value.eventAddress,
   distrito: form.value.district,
+  tipoEvento: form.value.eventType,
   fecha: form.value.eventDate,
   horario: `${form.value.startTime} - ${form.value.endTime}`,
   electrica: form.value.electricLogistics,
@@ -302,6 +304,7 @@ const whatsappUrl = computed(() => {
     `Responsable: ${reservationSummary.value.responsable}`,
     `Dirección: ${reservationSummary.value.direccion}`,
     `Distrito: ${reservationSummary.value.distrito}`,
+    `Tipo de evento: ${reservationSummary.value.tipoEvento}`,
     `Fecha: ${reservationSummary.value.fecha}`,
     `Horario: ${reservationSummary.value.horario}`,
     `Logística eléctrica: ${reservationSummary.value.electrica}`,
@@ -328,6 +331,9 @@ function validateForm() {
   }
   if (!form.value.district.trim()) {
     errors.district = 'Ingresa el distrito';
+  }
+  if (!form.value.eventType) {
+    errors.eventType = 'Selecciona el tipo de evento';
   }
   if (!form.value.eventDate) {
     errors.eventDate = 'Selecciona la fecha del evento';
@@ -493,6 +499,21 @@ onMounted(() => {
               </div>
 
               <div class="field">
+                <label for="eventType">Tipo de evento</label>
+                <select id="eventType" v-model="form.eventType">
+                  <option value="">Selecciona el tipo de evento</option>
+                  <option value="🎂 Cumpleaños">🎂 Cumpleaños</option>
+                  <option value="👶 Baby Shower">👶 Baby Shower</option>
+                  <option value="🎒 Kermesse Escolar">🎒 Kermesse Escolar</option>
+                  <option value="🏢 Evento Empresarial">🏢 Evento Empresarial</option>
+                  <option value="🌸 Bautizo / Primera Comunión">🌸 Bautizo / Primera Comunión</option>
+                  <option value="🎊 Celebración Familiar">🎊 Celebración Familiar</option>
+                  <option value="Otro">Otro</option>
+                </select>
+                <p v-if="formErrors.eventType" class="error-text">{{ formErrors.eventType }}</p>
+              </div>
+
+              <div class="field">
                 <label for="eventDate">Fecha del evento</label>
                 <input id="eventDate" v-model="form.eventDate" :min="today" type="date" />
                 <p v-if="formErrors.eventDate" class="error-text">{{ formErrors.eventDate }}</p>
@@ -625,6 +646,7 @@ onMounted(() => {
         <h3>Reserva lista para confirmar</h3>
         <p><strong>Inflable:</strong> {{ reservationSummary.producto }}</p>
         <p><strong>Responsable:</strong> {{ reservationSummary.responsable }}</p>
+        <p><strong>Tipo de evento:</strong> {{ reservationSummary.tipoEvento }}</p>
         <p><strong>Fecha:</strong> {{ reservationSummary.fecha }}</p>
         <p><strong>Horario:</strong> {{ reservationSummary.horario }}</p>
         <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="whatsapp-cta">

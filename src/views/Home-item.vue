@@ -155,6 +155,15 @@ const tarifas = [
   { distrito: 'Centro de Lima', precio: 60 },
   { distrito: 'Callao / Los Olivos', precio: 70 },
 ];
+
+const eventTypeCards = [
+  { icon: '🎂', name: 'Cumpleaños' },
+  { icon: '👶', name: 'Baby Shower' },
+  { icon: '🎒', name: 'Kermesse Escolar' },
+  { icon: '🏢', name: 'Evento Empresarial' },
+  { icon: '🌸', name: 'Bautizo / Primera Comunión' },
+  { icon: '🎊', name: 'Celebración Familiar' },
+];
 </script>
 
 <template>
@@ -266,6 +275,21 @@ const tarifas = [
         <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
       </router-link>
     </div>
+
+    <section class="event-types-section">
+      <h2 class="title-home">¿Para qué tipo de evento?</h2>
+      <div class="event-types-grid">
+        <router-link
+          v-for="event in eventTypeCards"
+          :key="event.name"
+          to="/Product-item"
+          class="event-type-card"
+        >
+          <span class="event-type-icon">{{ event.icon }}</span>
+          <span class="event-type-name">{{ event.name }}</span>
+        </router-link>
+      </div>
+    </section>
 
     <h1 class="title-home">Más populares</h1>
 
@@ -748,6 +772,49 @@ const tarifas = [
 .service-name { font-size: 1rem; font-weight: 700; margin: 0; text-align: center; }
 .service-desc { font-size: 0.82rem; margin: 0; text-align: center; opacity: 0.75; }
 
+.event-types-section {
+  padding: 0 60px;
+}
+
+.event-types-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.event-type-card {
+  background: #fff;
+  border: 2px solid #E91E81;
+  border-radius: 16px;
+  text-decoration: none;
+  color: #2D3E94;
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.event-type-card:hover {
+  background: #fff0f7;
+  box-shadow: 0 10px 24px rgba(233, 30, 129, 0.16);
+  transform: translateY(-3px);
+}
+
+.event-type-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.event-type-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2D3E94;
+}
+
 /* ===== TARIFAS DE MOVILIDAD ===== */
 .movilidad-section { background: #ffffff; border-radius: 32px; margin: 0 40px 80px; padding: 60px; text-align: center; }
 
@@ -805,6 +872,8 @@ const tarifas = [
 
 @media (max-width: 900px) {
   .services-grid { grid-template-columns: repeat(2, 1fr); padding: 0 30px 40px; }
+  .event-types-section { padding: 0 30px; }
+  .event-types-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero-title { font-size: 1.8rem; }
   .hero-stats { gap: 24px; }
   .movilidad-grid { grid-template-columns: repeat(2, 1fr); }
@@ -828,6 +897,7 @@ const tarifas = [
 
 @media (max-width: 600px) {
   .services-grid { grid-template-columns: 1fr; }
+  .event-types-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
@@ -835,6 +905,7 @@ const tarifas = [
   .main-video-title { font-size: 20px; max-width: 130px; }
   .main-video-nav { display: none; }
   .services-grid { grid-template-columns: 1fr; padding: 0 20px 40px; }
+  .event-types-section { padding: 0 20px; }
   .hero-title { font-size: 1.5rem; }
   .hero-stats {
     display: grid;
