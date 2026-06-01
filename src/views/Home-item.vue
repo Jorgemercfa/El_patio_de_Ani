@@ -282,7 +282,7 @@ const eventTypeCards = [
         <router-link
           v-for="event in eventTypeCards"
           :key="event.name"
-          to="/Product-item"
+          to=""
           class="event-type-card"
         >
           <span class="event-type-icon">{{ event.icon }}</span>
