@@ -372,6 +372,9 @@ const eventTypeCards = [
         </div>
       </div>
       <p class="movilidad-nota">* Los precios pueden variar según disponibilidad y tipo de evento.</p>
+      <div class="faq-cta">
+        <p>¿Tienes dudas? Revisa nuestras <router-link to="/FAQ">Preguntas Frecuentes</router-link></p>
+      </div>
     </section>
   </div>
 
@@ -584,20 +587,20 @@ const eventTypeCards = [
 
 .logs-item {
   scroll-snap-align: start;
-  flex: 0 0 220px;
-  min-height: 300px;
+  flex: 0 0 200px;
+  display: flex;
+  flex-direction: column;
   position: relative;
   background: #FFFFFF;
-  border: none;
-  border-radius: 24px;
-  padding: 15px;
-  overflow: visible;
+  border-radius: 16px;
+  padding: 14px;
+  overflow: hidden;
   padding-top: 18px;
   margin-top: 40px;
   text-align: center;
   text-decoration: none;
   color: #2D3E94;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 16px rgba(233, 30, 129, 0.10);
   transition: 0.25s;
 }
 
@@ -608,17 +611,24 @@ const eventTypeCards = [
 
 .card-icons {
   width: calc(100% - 20px);
-  height: 130px;
+  height: 140px;
   object-fit: contain;
   border-radius: 12px;
-  margin: -60px auto 10px;
+  margin: 8px auto 10px;
   display: block;
   filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
   position: relative;
   z-index: 2;
 }
 
-.product-mini-info { display: flex; flex-direction: column; gap: 4px; }
+.product-mini-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  justify-content: flex-start;
+  padding-top: 8px;
+}
 
 .product-mini-title {
   font-size: 0.95rem;
@@ -863,6 +873,22 @@ const eventTypeCards = [
 .movilidad-precio { font-size: 1.2rem; font-weight: 800; color: #E91E81; margin: 0; white-space: nowrap; margin-left: 12px; }
 .movilidad-nota { margin-top: 24px; font-size: 0.82rem; color: #aaa; }
 
+.faq-cta {
+  margin-top: 18px;
+  font-size: 0.95rem;
+  color: #2D3E94;
+}
+
+.faq-cta a {
+  color: #E91E81;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.faq-cta a:hover {
+  text-decoration: underline;
+}
+
 .empty-carousel { padding: 40px 20px; color: #2D3E94; opacity: 0.5; font-size: 0.95rem; }
 
 /* ===== RESPONSIVE ===== */
@@ -887,7 +913,7 @@ const eventTypeCards = [
   .text-home { font-size: 16px; padding: 0 20px; margin: 40px auto; }
   .title-home { font-size: 26px; margin: 60px 0 30px 0; }
   .our-products-wrapper { padding: 30px 45px; }
-  .logs-item { flex-basis: 180px; min-height: 220px; }
+  .logs-item { flex-basis: 180px; }
 }
 
 @media (max-width: 700px) {
