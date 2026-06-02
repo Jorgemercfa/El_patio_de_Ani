@@ -23,6 +23,7 @@ const year = new Date().getFullYear();
         <div class="footer-text">
           <div><router-link to="/Privacy-Policy" class="footer-text-2">Política de Privacidad</router-link></div>
           <div><router-link to="/Terms-of-Use" class="footer-text-2">Términos de Uso</router-link></div>
+          <div><router-link to="/FAQ" class="footer-text-2">Preguntas Frecuentes</router-link></div>
         </div>
       </div>
     </div>
