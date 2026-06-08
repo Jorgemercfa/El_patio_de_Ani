@@ -1,6 +1,6 @@
 <script setup>
 // ✅ Un solo import con todo lo necesario
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'  // ← agregar useRoute
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
@@ -36,7 +36,22 @@ const activeSubcategories = computed(() =>
   activeFilter.value !== 'Todas' ? (subcategoryMap[activeFilter.value] ?? []) : []
 )
 
-watch(activeFilter, () => { activeSubcategory.value = '' })
+let filterScrollTimeout = null
+
+watch(activeFilter, () => {
+  activeSubcategory.value = ''
+
+  if (filterScrollTimeout) clearTimeout(filterScrollTimeout)
+
+  filterScrollTimeout = setTimeout(() => {
+    const el = document.querySelector('.products-container')
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, 100)
+})
+
+onBeforeUnmount(() => {
+  if (filterScrollTimeout) clearTimeout(filterScrollTimeout)
+})
 
 const products = computed(() => {
   let list = activeFilter.value === 'Todas'
@@ -126,23 +141,26 @@ const formatPrice = (product) => {
     </div>
 
     <!-- Filtro de subcategorías (solo cuando hay categoría activa) -->
-    <div v-if="activeSubcategories.length > 0" class="filter-pills filter-pills-sub">
-      <button
-        class="filter-pill filter-pill-sub"
-        :class="{ active: activeSubcategory === '' }"
-        @click="activeSubcategory = ''"
-      >
-        Todas
-      </button>
-      <button
-        v-for="sub in activeSubcategories"
-        :key="sub"
-        class="filter-pill filter-pill-sub"
-        :class="{ active: activeSubcategory === sub }"
-        @click="activeSubcategory = sub"
-      >
-        {{ sub }}
-      </button>
+    <div v-if="activeSubcategories.length > 0" class="filter-subcategory-wrapper">
+      <span class="filter-subcategory-label">↳ Subcategoría:</span>
+      <div class="filter-pills filter-pills-sub">
+        <button
+          class="filter-pill filter-pill-sub"
+          :class="{ active: activeSubcategory === '' }"
+          @click="activeSubcategory = ''"
+        >
+          Todas las subcategorías
+        </button>
+        <button
+          v-for="sub in activeSubcategories"
+          :key="sub"
+          class="filter-pill filter-pill-sub"
+          :class="{ active: activeSubcategory === sub }"
+          @click="activeSubcategory = sub"
+        >
+          {{ sub }}
+        </button>
+      </div>
     </div>
 
     <div class="products-container">
@@ -229,7 +247,27 @@ const formatPrice = (product) => {
 }
 
 .filter-pills-sub {
-  @apply mb-7;
+  @apply mb-0;
+}
+
+.filter-subcategory-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+  padding: 10px 14px;
+  background: #f0f4ff;
+  border-radius: 12px;
+  border-left: 3px solid #2D3E94;
+}
+
+.filter-subcategory-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #2D3E94;
+  white-space: nowrap;
+  opacity: 0.75;
 }
 
 .filter-pill {
@@ -381,6 +419,7 @@ const formatPrice = (product) => {
 
 @media (max-width: 768px) {
   .products-area {
+    padding-bottom: 80px;
     margin-bottom: 96px;
   }
 

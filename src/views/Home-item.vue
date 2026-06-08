@@ -26,6 +26,7 @@ const currentVideoIndex = ref(0);
 const totalVideos = videos.length;
 const videoIntervalId = ref(null);
 const videoRef = ref(null); // referencia al elemento <video>
+let videoEndedTimeout = null;
 
 const currentVideoSrc = computed(() => videos[currentVideoIndex.value]);
 
@@ -43,7 +44,7 @@ const goToVideo = (index) => {
 };
 
 const startVideoTimer = () => {
-  videoIntervalId.value = setInterval(nextVideo, 12000);
+  videoIntervalId.value = setInterval(nextVideo, 20000);
 };
 
 const stopVideoTimer = () => {
@@ -60,8 +61,12 @@ const restartVideoTimer = () => {
 
 // Cuando el video termina, pasa al siguiente automáticamente
 const onVideoEnded = () => {
-  nextVideo();
-  restartVideoTimer();
+  if (videoEndedTimeout) clearTimeout(videoEndedTimeout);
+
+  videoEndedTimeout = setTimeout(() => {
+    nextVideo();
+    restartVideoTimer();
+  }, 4000);
 };
 
 onMounted(() => {
@@ -70,6 +75,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopVideoTimer();
+  if (videoEndedTimeout) clearTimeout(videoEndedTimeout);
 });
 
 /* =============================
