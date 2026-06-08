@@ -1,6 +1,6 @@
 <script setup>
 // ✅ Un solo import con todo lo necesario
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'  // ← agregar useRoute
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
@@ -10,7 +10,9 @@ const router = useRouter()
 const route = useRoute()  // ← declarar route
 
 const ESTETICA_INFANTIL_CATEGORY = 'Estética Infantil'
+const FILTER_SCROLL_DELAY = 100
 const allProducts = computed(() => getCompanyproducts())
+const productsContainerRef = ref(null)
 
 const categories = ['Todas', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', ESTETICA_INFANTIL_CATEGORY]
 const activeFilter = ref('Todas')
@@ -36,7 +38,23 @@ const activeSubcategories = computed(() =>
   activeFilter.value !== 'Todas' ? (subcategoryMap[activeFilter.value] ?? []) : []
 )
 
-watch(activeFilter, () => { activeSubcategory.value = '' })
+const filterScrollTimeout = ref(null)
+
+watch(activeFilter, () => {
+  activeSubcategory.value = ''
+
+  if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
+
+  filterScrollTimeout.value = setTimeout(() => {
+    if (productsContainerRef.value) {
+      productsContainerRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, FILTER_SCROLL_DELAY)
+})
+
+onBeforeUnmount(() => {
+  if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
+})
 
 const products = computed(() => {
   let list = activeFilter.value === 'Todas'
@@ -126,26 +144,29 @@ const formatPrice = (product) => {
     </div>
 
     <!-- Filtro de subcategorías (solo cuando hay categoría activa) -->
-    <div v-if="activeSubcategories.length > 0" class="filter-pills filter-pills-sub">
-      <button
-        class="filter-pill filter-pill-sub"
-        :class="{ active: activeSubcategory === '' }"
-        @click="activeSubcategory = ''"
-      >
-        Todas
-      </button>
-      <button
-        v-for="sub in activeSubcategories"
-        :key="sub"
-        class="filter-pill filter-pill-sub"
-        :class="{ active: activeSubcategory === sub }"
-        @click="activeSubcategory = sub"
-      >
-        {{ sub }}
-      </button>
+    <div v-if="activeSubcategories.length > 0" class="filter-subcategory-wrapper">
+      <span class="filter-subcategory-label">↳ Subcategoría:</span>
+      <div class="filter-pills filter-pills-sub">
+        <button
+          class="filter-pill filter-pill-sub"
+          :class="{ active: activeSubcategory === '' }"
+          @click="activeSubcategory = ''"
+        >
+          Todas las subcategorías
+        </button>
+        <button
+          v-for="sub in activeSubcategories"
+          :key="sub"
+          class="filter-pill filter-pill-sub"
+          :class="{ active: activeSubcategory === sub }"
+          @click="activeSubcategory = sub"
+        >
+          {{ sub }}
+        </button>
+      </div>
     </div>
 
-    <div class="products-container">
+    <div ref="productsContainerRef" class="products-container">
       <div
         v-for="product in products"
         :key="product.id"
@@ -229,7 +250,27 @@ const formatPrice = (product) => {
 }
 
 .filter-pills-sub {
-  @apply mb-7;
+  @apply mb-0;
+}
+
+.filter-subcategory-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+  padding: 10px 14px;
+  background: #f0f4ff;
+  border-radius: 12px;
+  border-left: 3px solid #2D3E94;
+}
+
+.filter-subcategory-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #2D3E94;
+  white-space: nowrap;
+  opacity: 0.75;
 }
 
 .filter-pill {
@@ -381,6 +422,7 @@ const formatPrice = (product) => {
 
 @media (max-width: 768px) {
   .products-area {
+    padding-bottom: 80px;
     margin-bottom: 96px;
   }
 
