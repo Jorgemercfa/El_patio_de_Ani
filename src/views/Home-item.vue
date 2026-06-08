@@ -26,7 +26,7 @@ const currentVideoIndex = ref(0);
 const totalVideos = videos.length;
 const videoIntervalId = ref(null);
 const videoRef = ref(null); // referencia al elemento <video>
-let videoEndedTimeout = null;
+const videoEndedTimeout = ref(null);
 
 const currentVideoSrc = computed(() => videos[currentVideoIndex.value]);
 
@@ -61,9 +61,9 @@ const restartVideoTimer = () => {
 
 // Cuando el video termina, pasa al siguiente automáticamente
 const onVideoEnded = () => {
-  if (videoEndedTimeout) clearTimeout(videoEndedTimeout);
+  if (videoEndedTimeout.value) clearTimeout(videoEndedTimeout.value);
 
-  videoEndedTimeout = setTimeout(() => {
+  videoEndedTimeout.value = setTimeout(() => {
     nextVideo();
     restartVideoTimer();
   }, 4000);
@@ -75,7 +75,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopVideoTimer();
-  if (videoEndedTimeout) clearTimeout(videoEndedTimeout);
+  if (videoEndedTimeout.value) clearTimeout(videoEndedTimeout.value);
 });
 
 /* =============================

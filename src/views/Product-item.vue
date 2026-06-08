@@ -36,21 +36,21 @@ const activeSubcategories = computed(() =>
   activeFilter.value !== 'Todas' ? (subcategoryMap[activeFilter.value] ?? []) : []
 )
 
-let filterScrollTimeout = null
+const filterScrollTimeout = ref(null)
 
 watch(activeFilter, () => {
   activeSubcategory.value = ''
 
-  if (filterScrollTimeout) clearTimeout(filterScrollTimeout)
+  if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
 
-  filterScrollTimeout = setTimeout(() => {
+  filterScrollTimeout.value = setTimeout(() => {
     const el = document.querySelector('.products-container')
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, 100)
 })
 
 onBeforeUnmount(() => {
-  if (filterScrollTimeout) clearTimeout(filterScrollTimeout)
+  if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
 })
 
 const products = computed(() => {
