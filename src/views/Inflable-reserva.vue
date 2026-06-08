@@ -396,6 +396,7 @@ function submitReservation() {
 }
 
 onMounted(() => {
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   loadReservedDates();
 });
 </script>
@@ -773,6 +774,14 @@ select {
   font-family: inherit;
 }
 
+/* Esto evita el auto-zoom de iOS en inputs time al mantener 16px o más en focus. */
+.field input[type="time"] {
+  font-size: 16px;
+  min-height: 48px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 input:focus,
 select:focus {
   outline: none;
@@ -1031,6 +1040,16 @@ select:focus {
 
   .reservation-card {
     padding: 28px;
+  }
+}
+
+@media (min-width: 520px) {
+  .section-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
   }
 }
 

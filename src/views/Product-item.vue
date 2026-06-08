@@ -9,14 +9,16 @@ import { getCompanyproducts } from '@/auth/companyproductsRepo'
 const router = useRouter()
 const route = useRoute()  // ← declarar route
 
+const ESTETICA_INFANTIL_CATEGORY = 'Estética Infantil'
 const allProducts = computed(() => getCompanyproducts())
 
-const categories = ['Todas', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', 'Estética Infantil']
+const categories = ['Todas', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', ESTETICA_INFANTIL_CATEGORY]
 const activeFilter = ref('Todas')
 const activeSubcategory = ref('')
 
 // ✅ Eliminar activeCategory duplicado, usar activeFilter directamente
 onMounted(() => {
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   if (route.query.category) {
     activeFilter.value = route.query.category  // ← conectar al filtro real
   }
@@ -26,7 +28,7 @@ const subcategoryMap = {
   'Shows Infantiles':  ['Animación', 'Competencia', 'Magia'],
   'Inflables':         ['Bebes', 'Mediano', 'Grande'],
   'Juegos':            ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
-  'Estética Infantil': ['Pintacaritas', 'Glitter Bar'],
+  [ESTETICA_INFANTIL_CATEGORY]: ['Pintacaritas', 'Glitter Bar'],
   'Carritos Snacks':   ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
 }
 
@@ -144,7 +146,12 @@ const formatPrice = (product) => {
     </div>
 
     <div class="products-container">
-      <div v-for="product in products" :key="product.id" class="product-card">
+      <div
+        v-for="product in products"
+        :key="product.id"
+        class="product-card"
+        :class="{ 'product-card--estetica': product.category === ESTETICA_INFANTIL_CATEGORY }"
+      >
         <img
           v-if="product.image"
           :src="product.image"
@@ -178,6 +185,11 @@ const formatPrice = (product) => {
         </button>
       </div>
     </div>
+  </div>
+
+  <div class="sticky-cta-bar">
+    <span class="sticky-cta-text">¿Listo para reservar?</span>
+    <router-link to="/Contact-item" class="sticky-cta-btn">📲 Cotizar ahora</router-link>
   </div>
 
   <footer>
@@ -244,6 +256,13 @@ const formatPrice = (product) => {
   color: #2D3E94;
 }
 
+.product-card--estetica {
+  background: linear-gradient(135deg, #fff0f7 0%, #fff9e6 50%, #f0f0ff 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 4px 20px rgba(233, 30, 129, 0.15);
+}
+
 .filter-pill-sub.active,
 .filter-pill-sub:hover {
   background-color: #2D3E94;
@@ -282,6 +301,12 @@ const formatPrice = (product) => {
   letter-spacing: 0.03em;
 }
 
+.product-card--estetica .badge-category {
+  background: linear-gradient(135deg, #FF6B9D, #FFD200, #A66CFF);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
 .badge-subcategory {
   @apply text-xs font-bold px-3 py-1 rounded-full;
   background: #e7efff;
@@ -294,6 +319,14 @@ const formatPrice = (product) => {
   color: #2D3E94;
 }
 
+.product-card--estetica .product-title {
+  background: linear-gradient(135deg, #E91E81, #FF9800, #2D3E94);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 1.15rem;
+}
+
 .product-description {
   @apply text-sm text-left m-0 leading-relaxed;
   color: #2D3E94;
@@ -303,6 +336,14 @@ const formatPrice = (product) => {
 .product-price {
   @apply text-2xl font-black mt-1;
   color: #E91E81;
+}
+
+.product-card--estetica .product-price {
+  background: linear-gradient(135deg, #E91E81, #FF9800);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 1.6rem;
 }
 
 .details-button {
@@ -317,6 +358,17 @@ const formatPrice = (product) => {
   box-shadow: 0 4px 14px rgba(255, 210, 0, 0.35);
 }
 
+.product-card--estetica .details-button {
+  background: linear-gradient(135deg, #FF6B9D, #FFD200);
+  color: #2D3E94;
+  font-weight: 900;
+}
+
+/* Oculto por defecto para mostrarlo solo en mobile. */
+.sticky-cta-bar {
+  display: none;
+}
+
 .details-button:hover {
   box-shadow: 0 7px 18px rgba(255, 210, 0, 0.5);
 }
@@ -324,6 +376,46 @@ const formatPrice = (product) => {
 @media (max-width: 600px) {
   .filter-pills {
     @apply overflow-x-auto flex-nowrap pb-1;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-area {
+    margin-bottom: 96px;
+  }
+
+  .sticky-cta-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #2D3E94;
+    padding: 12px 16px;
+    z-index: 100;
+    box-shadow: 0 -4px 16px rgba(45, 62, 148, 0.25);
+  }
+
+  .sticky-cta-text {
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  .sticky-cta-btn {
+    background: #FFD200;
+    color: #2D3E94;
+    font-weight: 900;
+    font-size: 0.9rem;
+    padding: 10px 18px;
+    border-radius: 999px;
+    text-decoration: none;
+    white-space: nowrap;
+    font-family: 'Nunito', sans-serif;
   }
 }
 
