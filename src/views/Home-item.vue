@@ -21,6 +21,8 @@ import video5 from '@/assets/videos/video5.mp4';
 // import video1 from '@/assets/videos/video1.mov';
 
 const videos = [video1, video2, video3, video4, video5];
+const VIDEO_AUTO_ADVANCE_INTERVAL = 20000;
+const VIDEO_ENDED_DELAY = 4000;
 
 const currentVideoIndex = ref(0);
 const totalVideos = videos.length;
@@ -44,7 +46,7 @@ const goToVideo = (index) => {
 };
 
 const startVideoTimer = () => {
-  videoIntervalId.value = setInterval(nextVideo, 20000);
+  videoIntervalId.value = setInterval(nextVideo, VIDEO_AUTO_ADVANCE_INTERVAL);
 };
 
 const stopVideoTimer = () => {
@@ -66,7 +68,7 @@ const onVideoEnded = () => {
   videoEndedTimeout.value = setTimeout(() => {
     nextVideo();
     restartVideoTimer();
-  }, 4000);
+  }, VIDEO_ENDED_DELAY);
 };
 
 onMounted(() => {

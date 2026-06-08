@@ -10,6 +10,7 @@ const router = useRouter()
 const route = useRoute()  // ← declarar route
 
 const ESTETICA_INFANTIL_CATEGORY = 'Estética Infantil'
+const FILTER_SCROLL_DELAY = 100
 const allProducts = computed(() => getCompanyproducts())
 const productsContainerRef = ref(null)
 
@@ -48,7 +49,7 @@ watch(activeFilter, () => {
     if (productsContainerRef.value) {
       productsContainerRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-  }, 100)
+  }, FILTER_SCROLL_DELAY)
 })
 
 onBeforeUnmount(() => {
