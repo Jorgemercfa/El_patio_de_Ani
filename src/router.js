@@ -2,34 +2,37 @@ import { createRouter, createWebHistory } from 'vue-router';
 // Usuarios
 import Home from './views/Home-item.vue';
 import products from './views/Product-item.vue';
-import Contact from './views/Contact-item.vue';
 import productsDetails from './components/Component-coupons-item.vue';
 import SignIn from './views/Sign-in.vue';
 import SignUp from './views/Sign-up.vue';
 import ForgetPassword from './views/Forget-Password.vue';
-import Profile from './views/Profile-item.vue';
-import InflableReserva from './views/Inflable-reserva.vue';
-import ServicioReserva from './views/Servicio-reserva.vue';
-import Cart from './views/Cart-item.vue';
-import Checkout from './views/Checkout-item.vue';
-import OrderConfirmation from './views/OrderConfirmation-item.vue';
-import PrivacyPolicy from './views/Privacy-Policy.vue';
-import TermsOfUse from './views/Terms-of-use.vue';
-import FAQ from './views/FAQ-item.vue';
+const Contact = () => import('./views/Contact-item.vue');
+const Profile = () => import('./views/Profile-item.vue');
+const InflableReserva = () => import('./views/Inflable-reserva.vue');
+const ServicioReserva = () => import('./views/Servicio-reserva.vue');
+const Cart = () => import('./views/Cart-item.vue');
+const Checkout = () => import('./views/Checkout-item.vue');
+const OrderConfirmation = () => import('./views/OrderConfirmation-item.vue');
+const PrivacyPolicy = () => import('./views/Privacy-Policy.vue');
+const TermsOfUse = () => import('./views/Terms-of-use.vue');
+const FAQ = () => import('./views/FAQ-item.vue');
 
 // EMPRESA
 import SignInCompany from './views/views_companies/Sign-in-companies.vue';
 import SignUpCompany from './views/views_companies/Sign-up-companies.vue';
 import ForgetPasswordCompany from './views/views_companies/Forget-password-companies.vue';
-import HomeCompanies from './views/views_companies/Home-companies.vue';
-import Createproducts from './views/views_companies/Create-product-item.vue';
-import ServicesAdmin from './views/views_companies/Services-admin.vue';
-import EditServiceItem from './views/views_companies/Edit-service-item.vue';
-import OrdersCompanies from './views/views_companies/Orders-companies.vue';
-import CompanyProfile from './views/views_companies/Company-profile-companies.vue';
+const HomeCompanies = () => import('./views/views_companies/Home-companies.vue');
+const Createproducts = () => import('./views/views_companies/Create-product-item.vue');
+const ServicesAdmin = () => import('./views/views_companies/Services-admin.vue');
+const EditServiceItem = () => import('./views/views_companies/Edit-service-item.vue');
+const OrdersCompanies = () => import('./views/views_companies/Orders-companies.vue');
+const CompanyProfile = () => import('./views/views_companies/Company-profile-companies.vue');
 
 import { useSession } from './auth/session';
 import { useSessionCompany } from './auth/session_companies';
+
+// 80ms gives dynamic views a brief extra tick to finish rendering before the second scroll reset.
+const DYNAMIC_CONTENT_SCROLL_DELAY = 80;
 
 const routes = [
   { path: '/', name: 'Home', component: Home, meta: { title: 'Inicio | El patio de Ani' }, },
@@ -194,7 +197,11 @@ router.beforeEach((to) => {
 
 // ✅ Asegurar scroll en navegación
 router.afterEach(() => {
-  window.scrollTo(0, 0);
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  // Segundo intento para vistas con contenido dinámico que terminan de montar tras la navegación.
+  setTimeout(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, DYNAMIC_CONTENT_SCROLL_DELAY);
 });
 
 export default router;

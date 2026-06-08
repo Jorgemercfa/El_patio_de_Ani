@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 
@@ -96,6 +96,10 @@ const faqSections = [
 function toggle(index) {
   openIndex.value = openIndex.value === index ? null : index;
 }
+
+onMounted(() => {
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+});
 </script>
 
 <template>

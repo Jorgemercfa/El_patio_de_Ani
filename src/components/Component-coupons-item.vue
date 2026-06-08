@@ -660,8 +660,14 @@ watch(
 
   .primary-action-btn {
     position: sticky;
-    bottom: 10px;
-    z-index: 5;
+    bottom: 16px;
+    z-index: 10;
+    box-shadow: 0 8px 24px rgba(255, 210, 0, 0.6);
+    width: 100%;
+  }
+
+  .primary-action-btn:hover {
+    transform: none;
   }
 }
 </style>

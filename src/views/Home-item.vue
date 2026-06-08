@@ -190,6 +190,7 @@ const eventTypeCards = [
           autoplay
           muted
           playsinline
+          preload="none"
           @ended="onVideoEnded"
         ></video>
       </div>
@@ -270,8 +271,8 @@ const eventTypeCards = [
         <p class="service-desc">Delicias saladas, dulces y combos</p>
       </router-link>
       <router-link to="/Product-item?category=Estética Infantil" class="service-card service-card-estetica">
-        <span class="service-icon">🎭</span>
-        <h3 class="service-name">Pintacaritas 🎨</h3>
+        <span class="service-icon">🎨</span>
+        <h3 class="service-name">Pintacaritas</h3>
         <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
       </router-link>
     </div>
@@ -769,8 +770,14 @@ const eventTypeCards = [
 .service-card-juegos  { background: #E3F2FD; }
 .service-card-snacks  { background: #FFF3E0; }
 .service-card-estetica {
-  background: linear-gradient(135deg, rgba(233, 30, 129, 0.18), rgba(45, 62, 148, 0.12));
-  border-color: rgba(233, 30, 129, 0.4);
+  background: linear-gradient(135deg, rgba(233, 30, 129, 0.12), rgba(255, 152, 0, 0.1), rgba(45, 62, 148, 0.08));
+  border: 2px solid rgba(233, 30, 129, 0.4);
+  animation: shimmer-border 3s ease-in-out infinite;
+}
+
+@keyframes shimmer-border {
+  0%, 100% { box-shadow: 0 2px 12px rgba(233, 30, 129, 0.15); }
+  50% { box-shadow: 0 2px 20px rgba(255, 152, 0, 0.3); }
 }
 
 .service-card:hover {

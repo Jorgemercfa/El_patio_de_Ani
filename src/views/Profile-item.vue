@@ -141,7 +141,10 @@ const saveChildren = () => {
   }, 3000);
 };
 
-onMounted(loadChildren);
+onMounted(() => {
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  loadChildren();
+});
 
 onBeforeUnmount(() => {
   if (childrenStorageTimer.value) {
