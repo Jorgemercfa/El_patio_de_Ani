@@ -61,7 +61,7 @@ const restartVideoTimer = () => {
 
 // Cuando el video termina, pasa al siguiente automáticamente
 const onVideoEnded = () => {
-  if (videoEndedTimeout.value) clearTimeout(videoEndedTimeout.value);
+  clearTimeout(videoEndedTimeout.value);
 
   videoEndedTimeout.value = setTimeout(() => {
     nextVideo();
@@ -75,7 +75,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopVideoTimer();
-  if (videoEndedTimeout.value) clearTimeout(videoEndedTimeout.value);
+  clearTimeout(videoEndedTimeout.value);
 });
 
 /* =============================

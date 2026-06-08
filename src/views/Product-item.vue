@@ -11,6 +11,7 @@ const route = useRoute()  // ← declarar route
 
 const ESTETICA_INFANTIL_CATEGORY = 'Estética Infantil'
 const allProducts = computed(() => getCompanyproducts())
+const productsContainerRef = ref(null)
 
 const categories = ['Todas', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', ESTETICA_INFANTIL_CATEGORY]
 const activeFilter = ref('Todas')
@@ -44,8 +45,9 @@ watch(activeFilter, () => {
   if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
 
   filterScrollTimeout.value = setTimeout(() => {
-    const el = document.querySelector('.products-container')
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (productsContainerRef.value) {
+      productsContainerRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }, 100)
 })
 
@@ -163,7 +165,7 @@ const formatPrice = (product) => {
       </div>
     </div>
 
-    <div class="products-container">
+    <div ref="productsContainerRef" class="products-container">
       <div
         v-for="product in products"
         :key="product.id"
