@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import AdminLayout from '@/components/AdminLayout.vue';
 import {
+  fetchCompanyproducts,
   getCompanyproducts,
   resetCompanyproductToSeed,
 } from '@/auth/companyproductsRepo';
@@ -11,7 +12,7 @@ const router = useRouter();
 const search = ref('');
 const activeFilter = ref('Todas');
 const activeSubcategoryFilter = ref('Todas');
-const services = ref([]);
+const services = computed(() => getCompanyproducts());
 
 const categories = [
   'Todas',
@@ -38,8 +39,8 @@ watch(activeFilter, () => {
   activeSubcategoryFilter.value = 'Todas';
 });
 
-function loadServices() {
-  services.value = getCompanyproducts();
+async function loadServices() {
+  await fetchCompanyproducts();
 }
 
 const totalServices = computed(() => services.value.length);
@@ -60,9 +61,8 @@ const filteredServices = computed(() => {
   });
 });
 
-function onReset(serviceId) {
-  resetCompanyproductToSeed(serviceId);
-  loadServices();
+async function onReset(serviceId) {
+  await resetCompanyproductToSeed(serviceId);
 }
 
 onMounted(loadServices);

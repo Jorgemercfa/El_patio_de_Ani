@@ -5,18 +5,20 @@ import { useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 
-import { addUser } from '@/auth/usersRepo';
+import { sendUserResetPassword } from '@/auth/usersRepo';
 import { useSession } from '@/auth/session';
 
 const router = useRouter();
-const { login } = useSession();
+const { logout } = useSession();
 const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
 const error = ref('');
+const success = ref('');
 
-const onSignUp = () => {
+const onRequestPasswordReset = async () => {
   error.value = '';
+  success.value = '';
 
   if (password.value.length < 6) {
     error.value = 'La contraseña debe tener al menos 6 caracteres.';
@@ -29,18 +31,16 @@ const onSignUp = () => {
   }
 
   try {
-    const user = addUser({
-      name: name.value,
-      email: email.value,
-      password: password.value,
-    });
-
-    // Opcional recomendado: iniciar sesión después de registrar
-    login(user);
-
-    router.push({ name: 'Profile' });
+    await logout();
+    await sendUserResetPassword(email.value);
+    success.value = 'Te enviamos un enlace para restablecer tu contraseña.';
+    password.value = '';
+    confirmPassword.value = '';
+    setTimeout(() => {
+      router.push({ name: 'SignIn' });
+    }, 1200);
   } catch (e) {
-    error.value = e?.message || 'No se pudo registrar el usuario.';
+    error.value = e?.message || 'No se pudo enviar el correo de recuperación.';
   }
 };
 </script>
@@ -56,9 +56,12 @@ const onSignUp = () => {
         <div class="auth-card">
           <div class="lock-icon">🔒</div>
           <h1 class="main-title">Olvidé mi contraseña</h1>
-          <form class="form-area" @submit.prevent="onSignUp" autocomplete="on">
+          <form class="form-area" @submit.prevent="onRequestPasswordReset" autocomplete="on">
             <div v-if="error" style="color: #b00020; font-weight: 600">
               {{ error }}
+            </div>
+            <div v-if="success" style="color: #177245; font-weight: 600">
+              {{ success }}
             </div>
 
             <div class="form-group">

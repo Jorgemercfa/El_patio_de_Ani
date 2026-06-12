@@ -1,7 +1,7 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import AdminLayout from '@/components/AdminLayout.vue';
-import { getCompanyproducts } from '@/auth/companyproductsRepo';
+import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart';
 
 const { getPurchasedproducts } = useCart();
@@ -16,6 +16,10 @@ const activeOrders = computed(() =>
 );
 
 const catalogServices = computed(() => getCompanyproducts().slice(0, 6));
+
+onMounted(async () => {
+  await fetchCompanyproducts();
+});
 </script>
 
 <template>

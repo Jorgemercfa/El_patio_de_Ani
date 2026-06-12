@@ -9,8 +9,8 @@ const BUSINESS_NAME = 'El Patio de Ani';
 
 const companyName = computed(() => state.company?.name || BUSINESS_NAME);
 
-function closeSession() {
-  logout();
+async function closeSession() {
+  await logout();
   router.push({ name: 'SignInCompany' });
 }
 </script>

@@ -1,4 +1,5 @@
 export {
+  fetchCompanyproducts,
   getCompanyproducts,
   saveCompanyproducts,
   addCompanyproduct,

@@ -17,7 +17,7 @@ const password = ref('');
 const confirmPassword = ref('');
 const error = ref('');
 
-const onSignUp = () => {
+const onSignUp = async () => {
   error.value = '';
 
   if (!name.value.trim()) {
@@ -36,7 +36,7 @@ const onSignUp = () => {
   }
 
   try {
-    const company = addCompany({
+    const company = await addCompany({
       name: name.value,
       email: email.value,
       password: password.value,

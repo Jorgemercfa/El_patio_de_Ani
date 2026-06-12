@@ -3,7 +3,7 @@ import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { getCompanyproducts } from '@/auth/companyproductsRepo';
+import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 
 /* =============================
    CARRUSEL PRINCIPAL DE VIDEOS (LOCALES)
@@ -71,7 +71,8 @@ const onVideoEnded = () => {
   }, VIDEO_ENDED_DELAY);
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchCompanyproducts();
   startVideoTimer();
 });
 

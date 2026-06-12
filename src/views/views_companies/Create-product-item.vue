@@ -6,8 +6,9 @@ import AdminLayout from '@/components/AdminLayout.vue';
 import { useSessionCompany } from '@/auth/session_companies';
 import {
   addCompanyproduct,
+  fetchCompanyproducts,
   getCompanyproducts,
-  saveCompanyproducts,
+  updateCompanyproduct,
 } from '@/auth/companyproductsRepo';
 
 const route = useRoute();
@@ -110,7 +111,7 @@ const generateProductCode = () => {
 };
 
 // ─── Submit ────────────────────────────────────────────────
-const onCreateProduct = () => {
+const onCreateProduct = async () => {
   error.value   = '';
   success.value = '';
 
@@ -136,6 +137,7 @@ const onCreateProduct = () => {
     name:             name.value.trim(),
     shortDescription: shortDescription.value.trim(),
     longDescription:  longDescription.value.trim(),
+    image:            '',
     category:         category.value,
     subcategory:      subcategory.value,
     price:            priceNumber,
@@ -144,23 +146,24 @@ const onCreateProduct = () => {
     dimensions:       dimensions.value.trim(),
     options:          [...options.value],
     Terms_of_use:     termsOfUse.value.trim(),
-    product_code:     productCode.value.trim().toUpperCase(),
     companyId:        state.company.id,
     companyName:      state.company.name,
-    companyRuc:       state.company.ruc,
     companyemail:     state.company.email,
+    buy_button:       'Reservar',
+    details_button:   'Ver detalles',
   };
 
   const isEditing = Number.isFinite(editingId.value) && editingId.value > 0;
 
-  if (isEditing) {
-    const all     = getCompanyproducts();
-    const updated = all.map((p) =>
-      p.id === editingId.value ? { ...p, ...payload, _modified: true } : p,
-    );
-    saveCompanyproducts(updated);
-  } else {
-    addCompanyproduct(payload);
+  try {
+    if (isEditing) {
+      await updateCompanyproduct(editingId.value, { ...payload, _modified: true });
+    } else {
+      await addCompanyproduct(payload);
+    }
+  } catch (e) {
+    error.value = e?.message || 'No se pudo guardar el producto.';
+    return;
   }
 
   success.value = isEditing
@@ -189,8 +192,9 @@ const resetForm = () => {
 };
 
 // ─── Cargar producto existente (edición) ───────────────────
-onMounted(() => {
+onMounted(async () => {
   if (!Number.isFinite(editingId.value) || editingId.value <= 0) return;
+  await fetchCompanyproducts();
   const existing = getCompanyproducts().find((p) => p.id === editingId.value);
   if (!existing) return;
 
