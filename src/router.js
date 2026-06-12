@@ -186,6 +186,12 @@ router.beforeEach((to) => {
         return { name: 'SignIn' };
       }
       return true;
+    }).catch((error) => {
+      console.warn('[Router] Error validando sesión de usuario:', error);
+      if (!to.meta?.authOptional) {
+        return { name: 'SignIn' };
+      }
+      return true;
     });
   }
 
@@ -197,6 +203,9 @@ router.beforeEach((to) => {
         return { name: 'SignInCompany' };
       }
       return true;
+    }).catch((error) => {
+      console.warn('[Router] Error validando sesión de empresa:', error);
+      return { name: 'SignInCompany' };
     });
   }
 

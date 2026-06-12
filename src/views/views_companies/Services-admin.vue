@@ -61,8 +61,8 @@ const filteredServices = computed(() => {
   });
 });
 
-async function onReset() {
-  await resetCompanyproductToSeed();
+async function onReset(serviceId) {
+  await resetCompanyproductToSeed(serviceId);
 }
 
 onMounted(loadServices);

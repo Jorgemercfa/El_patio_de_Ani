@@ -110,7 +110,8 @@ export async function fetchCompanyproducts(force = false) {
 }
 
 function triggerBackgroundFetch() {
-  fetchCompanyproducts().catch(() => {
+  fetchCompanyproducts().catch((error) => {
+    console.warn('[Products] No se pudo cargar productos desde Firestore:', error);
     if (!hasLoadedState.value) {
       ensureLocalFallbackLoaded();
     }
@@ -220,7 +221,24 @@ export async function updateCompanyproduct(id, data) {
   );
 }
 
-export async function resetCompanyproductToSeed() {
+export async function resetCompanyproductToSeed(id) {
+  if (!isFirebaseConfigured || !db) {
+    if (id === undefined || id === null) {
+      productsState.value = normalizeSeedProducts();
+      hasLoadedState.value = true;
+      return;
+    }
+
+    const normalizedId = Number(id);
+    productsState.value = productsState.value.map((product) => {
+      if (product.id !== normalizedId) return product;
+      const seedProduct = productsSeed.find((item) => Number(item?.id) === normalizedId);
+      return seedProduct ? normalizeProduct(seedProduct, product._docId) : product;
+    });
+    productsState.value = sortProducts(productsState.value);
+    return;
+  }
+
   await fetchCompanyproducts(true);
 }
 

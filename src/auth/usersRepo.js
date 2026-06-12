@@ -78,8 +78,12 @@ export async function addUser({ name, email, password }) {
   ensureFirebaseReady();
 
   const normalizedEmail = normalizeEmail(email);
+  const normalizedPassword = String(password || '');
   if (!normalizedEmail) {
     throw new Error('Debes ingresar un email válido.');
+  }
+  if (normalizedPassword.length < 6) {
+    throw new Error('La contraseña debe tener al menos 6 caracteres.');
   }
 
   const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
@@ -87,7 +91,7 @@ export async function addUser({ name, email, password }) {
     throw new Error('Este correo ya está registrado.');
   }
 
-  const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, String(password));
+  const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, normalizedPassword);
   const uid = credential.user.uid;
 
   const payload = {

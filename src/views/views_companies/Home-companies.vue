@@ -17,8 +17,8 @@ const activeOrders = computed(() =>
 
 const catalogServices = computed(() => getCompanyproducts().slice(0, 6));
 
-onMounted(() => {
-  fetchCompanyproducts();
+onMounted(async () => {
+  await fetchCompanyproducts();
 });
 </script>
 

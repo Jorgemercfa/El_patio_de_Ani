@@ -71,8 +71,8 @@ const onVideoEnded = () => {
   }, VIDEO_ENDED_DELAY);
 };
 
-onMounted(() => {
-  fetchCompanyproducts();
+onMounted(async () => {
+  await fetchCompanyproducts();
   startVideoTimer();
 });
 

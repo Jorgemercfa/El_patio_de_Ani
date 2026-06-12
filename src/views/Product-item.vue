@@ -19,9 +19,9 @@ const activeFilter = ref('Todas')
 const activeSubcategory = ref('')
 
 // ✅ Eliminar activeCategory duplicado, usar activeFilter directamente
-onMounted(() => {
+onMounted(async () => {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-  fetchCompanyproducts()
+  await fetchCompanyproducts()
   if (route.query.category) {
     activeFilter.value = route.query.category  // ← conectar al filtro real
   }

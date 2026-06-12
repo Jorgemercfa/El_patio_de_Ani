@@ -89,7 +89,8 @@ function initAuthListener() {
         } else {
           setUser(null);
         }
-      } catch {
+      } catch (error) {
+        console.warn('[Session] Error sincronizando sesión de usuario:', error);
         setUser(null);
       } finally {
         state.ready = true;

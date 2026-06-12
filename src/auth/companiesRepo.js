@@ -85,8 +85,12 @@ export async function addCompany(companyInput) {
   ensureFirebaseReady();
 
   const normalizedEmail = normalizeEmail(companyInput?.email);
+  const normalizedPassword = String(companyInput?.password || '');
   if (!normalizedEmail) {
     throw new Error('Debes ingresar un email válido.');
+  }
+  if (normalizedPassword.length < 6) {
+    throw new Error('La contraseña debe tener al menos 6 caracteres.');
   }
 
   const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
@@ -97,7 +101,7 @@ export async function addCompany(companyInput) {
   const credential = await createUserWithEmailAndPassword(
     auth,
     normalizedEmail,
-    String(companyInput?.password || ''),
+    normalizedPassword,
   );
 
   const uid = credential.user.uid;

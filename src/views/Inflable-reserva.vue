@@ -395,8 +395,8 @@ function submitReservation() {
   showConfirmationModal.value = true;
 }
 
-onMounted(() => {
-  fetchCompanyproducts();
+onMounted(async () => {
+  await fetchCompanyproducts();
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   loadReservedDates();
 });

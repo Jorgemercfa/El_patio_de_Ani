@@ -16,7 +16,7 @@ const confirmPassword = ref('');
 const error = ref('');
 const success = ref('');
 
-const onSignUp = async () => {
+const onRequestPasswordReset = async () => {
   error.value = '';
   success.value = '';
 
@@ -56,7 +56,7 @@ const onSignUp = async () => {
         <div class="auth-card">
           <div class="lock-icon">🔒</div>
           <h1 class="main-title">Olvidé mi contraseña</h1>
-          <form class="form-area" @submit.prevent="onSignUp" autocomplete="on">
+          <form class="form-area" @submit.prevent="onRequestPasswordReset" autocomplete="on">
             <div v-if="error" style="color: #b00020; font-weight: 600">
               {{ error }}
             </div>

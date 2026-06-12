@@ -94,7 +94,8 @@ function initAuthListener() {
         } else {
           setCompany(null);
         }
-      } catch {
+      } catch (error) {
+        console.warn('[Session Company] Error sincronizando sesión de empresa:', error);
         setCompany(null);
       } finally {
         state.ready = true;

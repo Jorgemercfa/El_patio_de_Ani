@@ -165,8 +165,8 @@ async function forceScrollTop() {
   }, 250);
 }
 
-onMounted(() => {
-  fetchCompanyproducts();
+onMounted(async () => {
+  await fetchCompanyproducts();
   forceScrollTop();
 });
 

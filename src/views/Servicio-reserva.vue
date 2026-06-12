@@ -228,8 +228,8 @@ function submitReservation() {
   showConfirmationModal.value = true;
 }
 
-onMounted(() => {
-  fetchCompanyproducts();
+onMounted(async () => {
+  await fetchCompanyproducts();
   if (state.user?.name) {
     form.value.responsibleName = state.user.name;
   }
