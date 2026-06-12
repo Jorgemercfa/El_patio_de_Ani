@@ -1,97 +1,140 @@
-import { reactive, computed } from 'vue';
+import { computed, reactive } from 'vue';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db, isFirebaseConfigured } from '@/firebase';
 
 const STORAGE_KEY = 'al-toque-session-company';
+const COMPANIES_COLLECTION = 'company';
 
-/**
- * Convierte JSON de forma segura
- */
 function safeParse(json) {
   if (!json) return null;
 
   try {
     return JSON.parse(json);
-  } catch (error) {
-    console.warn('Error parsing session data:', error);
+  } catch {
     return null;
   }
 }
 
-/**
- * Obtener datos iniciales desde localStorage
- */
-function loadInitialSession() {
-  const stored = safeParse(localStorage.getItem(STORAGE_KEY));
+const initialStored = safeParse(localStorage.getItem(STORAGE_KEY)) || {
+  company: null,
+};
 
-  if (!stored || typeof stored !== 'object') {
-    return {
-      company: null,
-    };
-  }
-
-  return {
-    company: stored.company || null,
-  };
-}
-
-const initial = loadInitialSession();
-
-/**
- * Estado reactivo global
- */
 const state = reactive({
-  company: initial.company,
+  company: initialStored.company,
+  ready: !isFirebaseConfigured,
 });
 
-/**
- * Computed para verificar autenticación
- */
 const isCompanyAuthenticated = computed(() => !!state.company);
 
-/**
- * Guardar sesión en localStorage
- */
 function persist() {
-  try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        company: state.company,
-      }),
-    );
-  } catch (error) {
-    console.warn('Error saving session:', error);
-  }
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      company: state.company,
+    }),
+  );
 }
 
-/**
- * Composable de sesión
- */
-export function useSessionCompany() {
-  const login = (company) => {
-    if (!company) return;
-
-    state.company = {
-      id: company.id ?? null,
-      name: company.name ?? '',
-      email: company.email ?? '',
-    };
-
+function setCompany(company) {
+  if (!company) {
+    state.company = null;
     persist();
+    return;
+  }
+
+  const numericId = Number(company.id);
+
+  state.company = {
+    uid: company.uid || company.id,
+    id: Number.isFinite(numericId) ? numericId : company.uid || company.id,
+    name: company.name || '',
+    email: company.email || '',
   };
 
-  const logout = () => {
-    state.company = null;
+  persist();
+}
 
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      persist();
+let sessionInitPromise = null;
+
+function initAuthListener() {
+  if (sessionInitPromise) return sessionInitPromise;
+
+  if (!isFirebaseConfigured || !auth || !db) {
+    state.ready = true;
+    sessionInitPromise = Promise.resolve();
+    return sessionInitPromise;
+  }
+
+  sessionInitPromise = new Promise((resolve) => {
+    let hasResolved = false;
+
+    onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        setCompany(null);
+        state.ready = true;
+        if (!hasResolved) {
+          hasResolved = true;
+          resolve();
+        }
+        return;
+      }
+
+      try {
+        const companyDoc = await getDoc(doc(db, COMPANIES_COLLECTION, firebaseUser.uid));
+
+        if (companyDoc.exists()) {
+          const data = companyDoc.data();
+          setCompany({
+            uid: firebaseUser.uid,
+            id: data?.id,
+            name: data?.name || '',
+            email: data?.email || firebaseUser.email || '',
+          });
+        } else {
+          setCompany(null);
+        }
+      } catch (error) {
+        console.warn('[Session Company] Error sincronizando sesión de empresa:', error);
+        setCompany(null);
+      } finally {
+        state.ready = true;
+        if (!hasResolved) {
+          hasResolved = true;
+          resolve();
+        }
+      }
+    });
+  });
+
+  return sessionInitPromise;
+}
+
+export async function ensureCompanySessionReady() {
+  await initAuthListener();
+}
+
+export function useSessionCompany() {
+  initAuthListener();
+
+  const login = (company) => {
+    setCompany(company);
+    state.ready = true;
+  };
+
+  const logout = async () => {
+    if (isFirebaseConfigured && auth) {
+      await signOut(auth);
+      return;
     }
+
+    setCompany(null);
   };
 
   return {
     state,
     isCompanyAuthenticated,
+    ensureReady: ensureCompanySessionReady,
     login,
     logout,
   };

@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
-import { getCompanyproducts } from '@/auth/companyproductsRepo';
+import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import {
   PREMIUM_INFLABLE_PRICE,
   MAX_GUEST_COUNT,
@@ -395,7 +395,8 @@ function submitReservation() {
   showConfirmationModal.value = true;
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchCompanyproducts();
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   loadReservedDates();
 });

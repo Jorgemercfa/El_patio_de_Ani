@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 
-import { getCompanies } from '@/auth/companiesRepo';
+import { loginCompany } from '@/auth/companiesRepo';
 import { useSessionCompany } from '@/auth/session_companies';
 
 const router = useRouter();
@@ -15,36 +15,20 @@ const email = ref('');
 const password = ref('');
 const error = ref('');
 
-const onLogin = () => {
+const onLogin = async () => {
   error.value = '';
 
-  const emailNormalized = email.value.trim().toLowerCase();
+  try {
+    const company = await loginCompany({
+      email: email.value,
+      password: password.value,
+    });
 
-  // 🔹 obtener vendedors locales de forma segura
-  const localCompaniesRaw = getCompanies();
-  const localCompanies = Array.isArray(localCompaniesRaw)
-    ? localCompaniesRaw
-    : [];
-
-  const allCompanies = localCompanies;
-
-  const found = allCompanies.find(
-    (c) => (c.email || '').trim().toLowerCase() === emailNormalized,
-  );
-
-  if (!found) {
-    error.value = 'El email no está registrado.';
-    return;
+    login(company);
+    router.push({ name: 'HomeCompanies' });
+  } catch (e) {
+    error.value = e?.message || 'No se pudo iniciar sesión.';
   }
-
-  if (found.password !== password.value) {
-    error.value = 'Contraseña incorrecta.';
-    return;
-  }
-
-  login(found);
-
-  router.push({ name: 'HomeCompanies' });
 };
 </script>
 

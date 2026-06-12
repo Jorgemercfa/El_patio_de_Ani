@@ -1,119 +1,245 @@
+import { ref } from 'vue';
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  updateDoc,
+} from 'firebase/firestore';
 import productsSeed from '@/data/product';
+import { db, isFirebaseConfigured } from '@/firebase';
 
-const STORAGE_KEY = 'al-toque-company-products';
+const PRODUCTS_COLLECTION = 'products';
 
-function safeParse(json) {
-  if (!json) return [];
+const productsState = ref([]);
+const hasLoadedState = ref(false);
+const loadingState = ref(false);
+
+function sortProducts(products) {
+  return [...products].sort((a, b) => {
+    const idA = Number(a?.id);
+    const idB = Number(b?.id);
+
+    if (Number.isFinite(idA) && Number.isFinite(idB)) {
+      return idA - idB;
+    }
+
+    return String(a?.name || '').localeCompare(String(b?.name || ''));
+  });
+}
+
+function normalizeProduct(product, docId = '') {
+  const numericId = Number(product?.id);
+
+  return {
+    ...product,
+    id: Number.isFinite(numericId) ? numericId : null,
+    options: Array.isArray(product?.options)
+      ? product.options.filter((item) => typeof item === 'string' && item.trim() !== '')
+      : [],
+    _docId: docId || product?._docId || '',
+  };
+}
+
+function normalizeSeedProducts() {
+  return sortProducts(productsSeed.map((item) => normalizeProduct(item)));
+}
+
+function sanitizeProductPayload(productInput) {
+  return {
+    name: String(productInput?.name || '').trim(),
+    shortDescription: String(productInput?.shortDescription || '').trim(),
+    longDescription: String(productInput?.longDescription || '').trim(),
+    image: String(productInput?.image || '').trim(),
+    price: Number(productInput?.price || 0),
+    category: String(productInput?.category || '').trim(),
+    subcategory: String(productInput?.subcategory || '').trim(),
+    duration: String(productInput?.duration || '').trim(),
+    age_range: String(productInput?.age_range || '').trim(),
+    dimensions: String(productInput?.dimensions || '').trim(),
+    options: Array.isArray(productInput?.options)
+      ? productInput.options
+          .map((item) => String(item || '').trim())
+          .filter(Boolean)
+      : [],
+    Terms_of_use: String(productInput?.Terms_of_use || '').trim(),
+    buy_button: String(productInput?.buy_button || '').trim(),
+    details_button: String(productInput?.details_button || '').trim(),
+    companyId: productInput?.companyId ?? null,
+    companyName: String(productInput?.companyName || '').trim(),
+    companyemail: String(productInput?.companyemail || '').trim(),
+  };
+}
+
+function ensureLocalFallbackLoaded() {
+  if (!hasLoadedState.value) {
+    productsState.value = normalizeSeedProducts();
+    hasLoadedState.value = true;
+  }
+
+  return productsState.value;
+}
+
+export async function fetchCompanyproducts(force = false) {
+  if (!isFirebaseConfigured || !db) {
+    return ensureLocalFallbackLoaded();
+  }
+
+  if (loadingState.value) {
+    return productsState.value;
+  }
+
+  if (hasLoadedState.value && !force) {
+    return productsState.value;
+  }
+
+  loadingState.value = true;
 
   try {
-    const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.warn('Error leyendo cupones de empresa:', error);
-    return [];
+    const snapshot = await getDocs(collection(db, PRODUCTS_COLLECTION));
+    const normalized = snapshot.docs.map((item) => normalizeProduct(item.data(), item.id));
+    productsState.value = sortProducts(normalized);
+    hasLoadedState.value = true;
+    return productsState.value;
+  } finally {
+    loadingState.value = false;
   }
+}
+
+function triggerBackgroundFetch() {
+  fetchCompanyproducts().catch((error) => {
+    console.warn('[Products] No se pudo cargar productos desde Firestore:', error);
+    if (!hasLoadedState.value) {
+      ensureLocalFallbackLoaded();
+    }
+  });
 }
 
 export function getCompanyproducts() {
-  const stored = safeParse(localStorage.getItem(STORAGE_KEY));
-  const normalizedSeed = productsSeed.map((product) => ({
-    ...product,
-    companyId: null,
-    companyName: product.name || '',
-    companyemail: null,
-    createdAt: null,
-  }));
-
-  if (!Array.isArray(stored) || stored.length === 0) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedSeed));
-    return normalizedSeed;
+  if (!hasLoadedState.value && !loadingState.value) {
+    triggerBackgroundFetch();
   }
 
-  const seedIds = new Set(normalizedSeed.map((product) => product.id));
-  const storedById = Object.fromEntries(
-    stored
-      .filter((product) => product && product.id !== null && product.id !== undefined)
-      .map((product) => [product.id, product]),
-  );
+  if (!isFirebaseConfigured || !db) {
+    return ensureLocalFallbackLoaded();
+  }
 
-  // Merge: stored data takes precedence EXCEPT for fields that must stay in sync
-  // with seed to avoid stale localStorage values across deploys.
-  const mergedSeed = normalizedSeed.map((seedProduct) => {
-    const storedProduct = storedById[seedProduct.id];
-    if (!storedProduct) return seedProduct;
-
-    return {
-      ...storedProduct,
-      // Always sync structural taxonomy fields from seed to avoid stale cache.
-      category: seedProduct.category,
-      subcategory: seedProduct.subcategory,
-      // Image URLs include webpack hashes that can change on each build.
-      // Always use seed image to avoid 404s from stale localStorage hashes.
-      image: seedProduct.image,
-    };
-  });
-
-  const extraStored = stored.filter(
-    (product) =>
-      product &&
-      product.id !== null &&
-      product.id !== undefined &&
-      !seedIds.has(product.id),
-  );
-  const merged = [...mergedSeed, ...extraStored];
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-
-  return merged;
+  return productsState.value;
 }
 
-export function saveCompanyproducts(products) {
+export async function saveCompanyproducts(products) {
   if (!Array.isArray(products)) return;
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+  productsState.value = sortProducts(products.map((item) => normalizeProduct(item, item?._docId)));
 }
 
-function nextproductId(products) {
-  const maxId = products.reduce(
-    (max, product) => (product?.id > max ? product.id : max),
-    0,
-  );
+async function nextProductId() {
+  const q = query(collection(db, PRODUCTS_COLLECTION), orderBy('id', 'desc'), limit(1));
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return 1;
 
-  return maxId + 1;
+  const maxId = Number(snapshot.docs[0].data()?.id || 0);
+  return (Number.isFinite(maxId) ? maxId : 0) + 1;
 }
 
-export function addCompanyproduct(productInput) {
-  const products = getCompanyproducts();
+export async function addCompanyproduct(productInput) {
+  const payload = sanitizeProductPayload(productInput);
 
-  const product = {
-    ...productInput,
-    id: nextproductId(products),
-    createdAt: new Date().toISOString(),
+  if (!isFirebaseConfigured || !db) {
+    const localProducts = ensureLocalFallbackLoaded();
+    const localMaxId = localProducts.reduce((max, product) => {
+      const currentId = Number(product?.id || 0);
+      return currentId > max ? currentId : max;
+    }, 0);
+
+    const created = normalizeProduct(
+      {
+        ...payload,
+        id: localMaxId + 1,
+      },
+      '',
+    );
+
+    productsState.value = sortProducts([...localProducts, created]);
+    return created;
+  }
+
+  await fetchCompanyproducts();
+
+  const generatedId = await nextProductId();
+  const createdPayload = {
+    ...payload,
+    id: generatedId,
   };
 
-  products.push(product);
-  saveCompanyproducts(products);
+  const docRef = await addDoc(collection(db, PRODUCTS_COLLECTION), createdPayload);
+  const createdProduct = normalizeProduct(createdPayload, docRef.id);
 
-  return product;
+  productsState.value = sortProducts([...productsState.value, createdProduct]);
+  return createdProduct;
 }
 
-export function updateCompanyproduct(id, data) {
-  const products = getCompanyproducts();
-  const updated = products.map((product) =>
-    product.id === id ? { ...product, ...data, id } : product,
+export async function updateCompanyproduct(id, data) {
+  await fetchCompanyproducts();
+
+  const normalizedId = Number(id);
+  const targetProduct = productsState.value.find(
+    (product) => product.id === normalizedId || product._docId === String(id),
   );
-  saveCompanyproducts(updated);
+
+  if (!targetProduct) {
+    throw new Error('No se encontró el producto a actualizar.');
+  }
+
+  const payload = sanitizeProductPayload({ ...targetProduct, ...data });
+  const productId = Number(data?.id || targetProduct.id || normalizedId);
+
+  if (Number.isFinite(productId)) {
+    payload.id = productId;
+  }
+
+  if (!isFirebaseConfigured || !db || !targetProduct._docId) {
+    productsState.value = productsState.value.map((product) =>
+      product.id === targetProduct.id
+        ? normalizeProduct({ ...product, ...payload }, product._docId)
+        : product,
+    );
+    productsState.value = sortProducts(productsState.value);
+    return;
+  }
+
+  await updateDoc(doc(db, PRODUCTS_COLLECTION, targetProduct._docId), payload);
+
+  productsState.value = sortProducts(
+    productsState.value.map((product) =>
+      product._docId === targetProduct._docId
+        ? normalizeProduct({ ...product, ...payload }, targetProduct._docId)
+        : product,
+    ),
+  );
 }
 
-export function resetCompanyproductToSeed(id) {
-  const stored = safeParse(localStorage.getItem(STORAGE_KEY));
-  const withoutOverride = stored.filter((product) => product.id !== id);
+export async function resetCompanyproductToSeed(id) {
+  if (!isFirebaseConfigured || !db) {
+    if (id === undefined || id === null) {
+      productsState.value = normalizeSeedProducts();
+      hasLoadedState.value = true;
+      return;
+    }
 
-  if (withoutOverride.length === 0) {
-    localStorage.removeItem(STORAGE_KEY);
-  } else {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(withoutOverride));
+    const normalizedId = Number(id);
+    productsState.value = productsState.value.map((product) => {
+      if (product.id !== normalizedId) return product;
+      const seedProduct = productsSeed.find((item) => Number(item?.id) === normalizedId);
+      return seedProduct ? normalizeProduct(seedProduct, product._docId) : product;
+    });
+    productsState.value = sortProducts(productsState.value);
+    return;
   }
+
+  await fetchCompanyproducts(true);
 }
 
 export function getproductsByCompany(company) {

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
-import { getCompanyproducts } from '@/auth/companyproductsRepo';
+import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart.js';
 import { useReservasServicio } from '@/store/reservas';
 import { useSession } from '@/auth/session';
@@ -165,7 +165,8 @@ async function forceScrollTop() {
   }, 250);
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchCompanyproducts();
   forceScrollTop();
 });
 

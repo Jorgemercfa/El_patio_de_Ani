@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AdminLayout from '@/components/AdminLayout.vue';
 import {
+  fetchCompanyproducts,
   getCompanyproducts,
   updateCompanyproduct,
 } from '@/auth/companyproductsRepo';
@@ -62,7 +63,8 @@ watch(
   },
 );
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchCompanyproducts();
   const service = getCompanyproducts().find((item) => item.id === serviceId);
   if (!service) {
     error.value = 'Servicio no encontrado.';
@@ -94,7 +96,7 @@ function onCancel() {
   router.push('/Services-admin');
 }
 
-function onSave() {
+async function onSave() {
   error.value = '';
 
   if (!form.value.name.trim()) {
@@ -113,27 +115,31 @@ function onSave() {
     return;
   }
 
-  updateCompanyproduct(serviceId, {
-    name: form.value.name.trim(),
-    shortDescription: form.value.shortDescription.trim(),
-    longDescription: form.value.longDescription.trim(),
-    price,
-    category: form.value.category,
-    subcategory: form.value.subcategory.trim(),
-    duration: form.value.duration.trim(),
-    age_range: form.value.age_range.trim(),
-    dimensions: form.value.dimensions.trim(),
-    Terms_of_use: form.value.Terms_of_use.trim(),
-    buy_button: form.value.buy_button.trim(),
-    details_button: form.value.details_button.trim(),
-    options: form.value.optionsText
-      .split('\n')
-      .map((option) => option.trim())
-      .filter(Boolean),
-    _modified: true,
-  });
+  try {
+    await updateCompanyproduct(serviceId, {
+      name: form.value.name.trim(),
+      shortDescription: form.value.shortDescription.trim(),
+      longDescription: form.value.longDescription.trim(),
+      price,
+      category: form.value.category,
+      subcategory: form.value.subcategory.trim(),
+      duration: form.value.duration.trim(),
+      age_range: form.value.age_range.trim(),
+      dimensions: form.value.dimensions.trim(),
+      Terms_of_use: form.value.Terms_of_use.trim(),
+      buy_button: form.value.buy_button.trim(),
+      details_button: form.value.details_button.trim(),
+      options: form.value.optionsText
+        .split('\n')
+        .map((option) => option.trim())
+        .filter(Boolean),
+      _modified: true,
+    });
 
-  router.push('/Services-admin');
+    router.push('/Services-admin');
+  } catch (e) {
+    error.value = e?.message || 'No se pudo guardar el servicio.';
+  }
 }
 </script>
 

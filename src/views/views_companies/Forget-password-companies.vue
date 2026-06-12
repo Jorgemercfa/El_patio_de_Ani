@@ -5,19 +5,21 @@ import { useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 
-import { addCompany } from '@/auth/companiesRepo';
+import { sendCompanyResetPassword } from '@/auth/companiesRepo';
 import { useSessionCompany } from '@/auth/session_companies';
 
 const router = useRouter();
-const { login } = useSessionCompany();
+const { logout } = useSessionCompany();
 
 const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
 const error = ref('');
+const success = ref('');
 
-const onSignUp = () => {
+const onRequestPasswordReset = async () => {
   error.value = '';
+  success.value = '';
 
   if (password.value.length < 6) {
     error.value = 'La contraseña debe tener al menos 6 caracteres.';
@@ -30,17 +32,16 @@ const onSignUp = () => {
   }
 
   try {
-    const company = addCompany({
-      name: name.value,
-      email: email.value,
-      password: password.value,
-    });
-
-    login(company);
-
-    router.push({ name: 'HomeCompanies' });
+    await logout();
+    await sendCompanyResetPassword(email.value);
+    success.value = 'Te enviamos un enlace para restablecer tu contraseña.';
+    password.value = '';
+    confirmPassword.value = '';
+    setTimeout(() => {
+      router.push({ name: 'SignInCompany' });
+    }, 1200);
   } catch (e) {
-    error.value = e?.message || 'No se pudo registrar la empresa.';
+    error.value = e?.message || 'No se pudo enviar el correo de recuperación.';
   }
 };
 </script>
@@ -56,9 +57,12 @@ const onSignUp = () => {
         <div class="auth-card">
           <h1 class="main-title">Panel Administrativo</h1>
           <p class="subtitle">Recuperación de acceso</p>
-          <form class="form-area" @submit.prevent="onSignUp" autocomplete="on">
+          <form class="form-area" @submit.prevent="onRequestPasswordReset" autocomplete="on">
             <div v-if="error" style="color: #b00020; font-weight: 600">
               {{ error }}
+            </div>
+            <div v-if="success" style="color: #177245; font-weight: 600">
+              {{ success }}
             </div>
 
             <div class="form-group">
