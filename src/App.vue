@@ -224,7 +224,7 @@ body {
 /* Botón flotante WhatsApp */
 .whatsapp-btn {
   position: fixed;
-  bottom: 24px;
+  bottom: 32px;
   right: 24px;
   z-index: 9999;
 
@@ -253,6 +253,20 @@ body {
 .whatsapp-btn img {
   width: 38px;
   height: 38px;
+}
+
+@media (max-width: 768px) {
+  .whatsapp-btn {
+    bottom: 80px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .whatsapp-btn img {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 @keyframes pulse {
