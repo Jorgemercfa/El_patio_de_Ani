@@ -75,8 +75,8 @@ function formatDate(iso) {
   });
 }
 
-const onLogout = () => {
-  logout();
+const onLogout = async () => {
+  await logout();
   router.push({ name: 'Home' });
 };
 

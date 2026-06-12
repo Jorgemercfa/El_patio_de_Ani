@@ -17,7 +17,7 @@ const password = ref('');
 const confirmPassword = ref('');
 const error = ref('');
 
-const onSignUp = () => {
+const onSignUp = async () => {
   error.value = '';
 
   if (!name.value.trim()) {
@@ -36,13 +36,12 @@ const onSignUp = () => {
   }
 
   try {
-    const user = addUser({
+    const user = await addUser({
       name: name.value,
       email: email.value,
       password: password.value,
     });
 
-    // Opcional recomendado: iniciar sesión después de registrar
     login(user);
 
     router.push({ name: 'Profile' });

@@ -180,19 +180,27 @@ const router = createRouter({
 router.beforeEach((to) => {
   // Rutas de usuario
   if (to.meta?.requiresAuth) {
-    const { isAuthenticated } = useSession();
-    if (!isAuthenticated.value && !to.meta?.authOptional) {
-      return { name: 'SignIn' };
-    }
+    const { isAuthenticated, ensureReady } = useSession();
+    return ensureReady().then(() => {
+      if (!isAuthenticated.value && !to.meta?.authOptional) {
+        return { name: 'SignIn' };
+      }
+      return true;
+    });
   }
 
   // Rutas de empresa
   if (to.meta?.requiresCompanyAuth) {
-    const { isCompanyAuthenticated } = useSessionCompany();
-    if (!isCompanyAuthenticated.value) {
-      return { name: 'SignInCompany' };
-    }
+    const { isCompanyAuthenticated, ensureReady } = useSessionCompany();
+    return ensureReady().then(() => {
+      if (!isCompanyAuthenticated.value) {
+        return { name: 'SignInCompany' };
+      }
+      return true;
+    });
   }
+
+  return true;
 });
 
 // ✅ Asegurar scroll en navegación

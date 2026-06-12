@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 
-import { getUsers } from '@/auth/usersRepo';
+import { loginUser } from '@/auth/usersRepo';
 import { useSession } from '@/auth/session';
 
 const router = useRouter();
@@ -15,32 +15,20 @@ const email = ref('');
 const password = ref('');
 const error = ref('');
 
-const onLogin = () => {
+const onLogin = async () => {
   error.value = '';
 
-  const emailNormalized = email.value.trim().toLowerCase();
+  try {
+    const user = await loginUser({
+      email: email.value,
+      password: password.value,
+    });
 
-  // 1) Usuarios registrados vía Sign-up (localStorage)
-  const localUsers = getUsers();
-
-  const allUsers = localUsers;
-
-  const found = allUsers.find(
-    (u) => (u.email || '').trim().toLowerCase() === emailNormalized,
-  );
-
-  if (!found) {
-    error.value = 'El correo no está registrado.';
-    return;
+    login(user);
+    router.push({ name: 'Home' });
+  } catch (e) {
+    error.value = e?.message || 'No se pudo iniciar sesión.';
   }
-
-  if (found.password !== password.value) {
-    error.value = 'Contraseña incorrecta.';
-    return;
-  }
-
-  login(found);
-  router.push({ name: 'Home' });
 };
 </script>
 

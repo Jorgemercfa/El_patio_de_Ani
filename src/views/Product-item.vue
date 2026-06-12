@@ -4,7 +4,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'  // ← agregar useRoute
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
-import { getCompanyproducts } from '@/auth/companyproductsRepo'
+import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo'
 
 const router = useRouter()
 const route = useRoute()  // ← declarar route
@@ -21,6 +21,7 @@ const activeSubcategory = ref('')
 // ✅ Eliminar activeCategory duplicado, usar activeFilter directamente
 onMounted(() => {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  fetchCompanyproducts()
   if (route.query.category) {
     activeFilter.value = route.query.category  // ← conectar al filtro real
   }
