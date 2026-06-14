@@ -46,17 +46,22 @@ export function useReviews() {
       createdAt: new Date(),
     };
 
-    const docRef = await addDoc(collection(db, REVIEWS_COLLECTION), payload);
-    const newReview = { id: docRef.id, ...payload };
+    try {
+      const docRef = await addDoc(collection(db, REVIEWS_COLLECTION), payload);
+      const newReview = { id: docRef.id, ...payload };
 
-    const pid = Number(productId);
-    if (reviewsCache.value[pid]) {
-      reviewsCache.value[pid] = [newReview, ...reviewsCache.value[pid]];
-    } else {
-      reviewsCache.value[pid] = [newReview];
+      const pid = Number(productId);
+      if (reviewsCache.value[pid]) {
+        reviewsCache.value[pid] = [newReview, ...reviewsCache.value[pid]];
+      } else {
+        reviewsCache.value[pid] = [newReview];
+      }
+
+      return newReview;
+    } catch (err) {
+      console.warn('[Reviews] Error guardando reseña:', err);
+      throw err;
     }
-
-    return newReview;
   }
 
   function getAverageRating(productId) {

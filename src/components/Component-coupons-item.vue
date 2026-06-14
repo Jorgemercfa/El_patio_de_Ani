@@ -47,11 +47,17 @@ async function submitReview() {
     reviewForm.value = { rating: 5, comment: '' };
     reviewSuccess.value = true;
     setTimeout(() => { reviewSuccess.value = false; }, 3000);
-  } catch {
+  } catch (err) {
+    console.error('[Reviews] Error enviando reseña:', err);
     reviewError.value = 'No se pudo enviar la reseña. Intenta de nuevo.';
   } finally {
     reviewSubmitting.value = false;
   }
+}
+
+function formatReviewDate(createdAt) {
+  const ms = createdAt?.seconds ? createdAt.seconds * 1000 : createdAt;
+  return new Date(ms).toLocaleDateString('es-PE');
 }
 
 const products = computed(() => getCompanyproducts());
@@ -389,7 +395,7 @@ watch(
             </div>
           </div>
           <p class="review-comment">{{ review.comment }}</p>
-          <span class="review-date">{{ new Date(review.createdAt?.seconds ? review.createdAt.seconds * 1000 : review.createdAt).toLocaleDateString('es-PE') }}</span>
+          <span class="review-date">{{ formatReviewDate(review.createdAt) }}</span>
         </div>
       </div>
       <div v-else class="reviews-empty">
