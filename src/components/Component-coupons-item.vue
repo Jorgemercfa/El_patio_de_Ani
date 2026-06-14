@@ -8,13 +8,57 @@ import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproducts
 import { useCart } from '@/store/cart.js';
 import { useReservasServicio } from '@/store/reservas';
 import { useSession } from '@/auth/session';
+import { useReviews } from '@/store/reviews.js';
 import { PREMIUM_INFLABLE_PRICE, WHATSAPP_BUSINESS_NUMBER } from '@/constants/inflables';
 
 const route = useRoute();
 const router = useRouter();
 const { addToCart } = useCart();
-const { isAuthenticated } = useSession();
+const { state, isAuthenticated } = useSession();
 const { isDateAvailable } = useReservasServicio();
+const { fetchReviews, addReview, getAverageRating, reviewsCache } = useReviews();
+
+const reviews = computed(() => reviewsCache.value[Number(route.params.id)] || []);
+const avgRating = computed(() => getAverageRating(route.params.id));
+const reviewForm = ref({ rating: 5, comment: '' });
+const reviewSubmitting = ref(false);
+const reviewError = ref('');
+const reviewSuccess = ref(false);
+
+async function submitReview() {
+  if (!isAuthenticated.value) {
+    router.push('/Sign-in');
+    return;
+  }
+  if (!reviewForm.value.comment.trim()) {
+    reviewError.value = 'Escribe un comentario antes de enviar.';
+    return;
+  }
+  reviewSubmitting.value = true;
+  reviewError.value = '';
+  try {
+    await addReview(
+      route.params.id,
+      state.user.uid,
+      state.user.name || state.user.email,
+      reviewForm.value.rating,
+      reviewForm.value.comment,
+    );
+    reviewForm.value = { rating: 5, comment: '' };
+    reviewSuccess.value = true;
+    setTimeout(() => { reviewSuccess.value = false; }, 3000);
+  } catch (err) {
+    console.error('[Reviews] Error enviando reseña:', err);
+    reviewError.value = 'No se pudo enviar la reseña. Intenta de nuevo.';
+  } finally {
+    reviewSubmitting.value = false;
+  }
+}
+
+function formatReviewDate(createdAt) {
+  const ms = createdAt?.seconds ? createdAt.seconds * 1000 : createdAt;
+  return new Date(ms).toLocaleDateString('es-PE');
+}
 
 const products = computed(() => getCompanyproducts());
 
@@ -168,14 +212,20 @@ async function forceScrollTop() {
 onMounted(async () => {
   await fetchCompanyproducts();
   forceScrollTop();
+  if (route.params.id) {
+    await fetchReviews(route.params.id);
+  }
 });
 
 watch(
   () => route.params.id,
-  () => {
+  async (newId) => {
     forceScrollTop();
     reservationDate.value = '';
     reservationError.value = '';
+    if (newId) {
+      await fetchReviews(newId);
+    }
   },
 );
 </script>
@@ -320,6 +370,84 @@ watch(
       <p>Servicio no encontrado.</p>
     </div>
   </main>
+
+  <!-- ===== SECCIÓN DE REVIEWS ===== -->
+  <section class="reviews-section">
+    <div class="reviews-container">
+      <div class="reviews-header">
+        <h2 class="reviews-title">⭐ Opiniones de clientes</h2>
+        <div v-if="reviews.length > 0" class="reviews-avg">
+          <span class="avg-number">{{ avgRating }}</span>
+          <div class="avg-stars">
+            <span v-for="n in 5" :key="n" :class="['star', n <= Math.round(avgRating) ? 'star--filled' : 'star--empty']">★</span>
+          </div>
+          <span class="avg-count">({{ reviews.length }} {{ reviews.length === 1 ? 'opinión' : 'opiniones' }})</span>
+        </div>
+      </div>
+
+      <!-- Lista de reviews existentes -->
+      <div v-if="reviews.length > 0" class="reviews-list">
+        <div v-for="review in reviews" :key="review.id" class="review-card">
+          <div class="review-top">
+            <span class="review-author">👤 {{ review.userName }}</span>
+            <div class="review-stars">
+              <span v-for="n in 5" :key="n" :class="['star', n <= review.rating ? 'star--filled' : 'star--empty']">★</span>
+            </div>
+          </div>
+          <p class="review-comment">{{ review.comment }}</p>
+          <span class="review-date">{{ formatReviewDate(review.createdAt) }}</span>
+        </div>
+      </div>
+      <div v-else class="reviews-empty">
+        <p>Sé el primero en dejar tu opinión sobre este servicio ✨</p>
+      </div>
+
+      <!-- Formulario para dejar review -->
+      <div class="review-form-wrapper">
+        <h3 class="review-form-title">{{ isAuthenticated ? '📝 Deja tu opinión' : '🔑 Inicia sesión para comentar' }}</h3>
+
+        <template v-if="isAuthenticated">
+          <div class="review-rating-selector">
+            <span class="rating-label">Tu calificación:</span>
+            <div class="rating-stars-input">
+              <button
+                v-for="n in 5"
+                :key="n"
+                type="button"
+                class="star-btn"
+                :class="{ 'star-btn--active': n <= reviewForm.rating }"
+                @click="reviewForm.rating = n"
+              >★</button>
+            </div>
+          </div>
+          <textarea
+            v-model="reviewForm.comment"
+            class="review-textarea"
+            placeholder="Cuéntanos tu experiencia con este servicio..."
+            rows="4"
+            maxlength="500"
+          ></textarea>
+          <div class="review-form-footer">
+            <span class="char-count">{{ reviewForm.comment.length }}/500</span>
+            <p v-if="reviewError" class="review-error">{{ reviewError }}</p>
+            <p v-if="reviewSuccess" class="review-success">✅ ¡Gracias por tu opinión!</p>
+            <button
+              class="review-submit-btn"
+              :disabled="reviewSubmitting"
+              @click="submitReview"
+            >
+              {{ reviewSubmitting ? 'Enviando...' : '📤 Enviar opinión' }}
+            </button>
+          </div>
+        </template>
+        <template v-else>
+          <p class="review-login-prompt">
+            <router-link to="/Sign-in" class="review-login-link">Inicia sesión</router-link> para dejar tu opinión.
+          </p>
+        </template>
+      </div>
+    </div>
+  </section>
 
   <footer>
     <Footer />
@@ -671,4 +799,147 @@ watch(
     transform: none;
   }
 }
+
+/* ===== REVIEWS ===== */
+.reviews-section {
+  background: #FDF6EC;
+  padding: 48px 20px;
+  font-family: 'Nunito', sans-serif;
+}
+.reviews-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.reviews-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.reviews-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #E91E81, #2D3E94);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+.reviews-avg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.avg-number {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #FFD200;
+}
+.avg-stars { display: flex; gap: 2px; }
+.avg-count { font-size: 0.85rem; color: #888; }
+.star--filled { color: #FFD200; }
+.star--empty { color: #ddd; }
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.review-card {
+  background: white;
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border-left: 4px solid #E91E81;
+}
+.review-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.review-author { font-weight: 700; color: #2D3E94; font-size: 0.95rem; }
+.review-stars { display: flex; gap: 2px; font-size: 1.1rem; }
+.review-comment { color: #444; line-height: 1.6; margin: 0 0 6px; font-size: 0.95rem; }
+.review-date { font-size: 0.78rem; color: #aaa; }
+.reviews-empty {
+  text-align: center;
+  padding: 32px;
+  background: white;
+  border-radius: 16px;
+  color: #888;
+  margin-bottom: 32px;
+}
+.review-form-wrapper {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(233, 30, 129, 0.08);
+  border: 2px solid rgba(233, 30, 129, 0.15);
+}
+.review-form-title { font-size: 1.1rem; font-weight: 800; color: #2D3E94; margin: 0 0 16px; }
+.review-rating-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.rating-label { font-weight: 700; color: #2D3E94; font-size: 0.95rem; }
+.rating-stars-input { display: flex; gap: 4px; }
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #ddd;
+  cursor: pointer;
+  transition: color 0.15s, transform 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+.star-btn--active { color: #FFD200; }
+.star-btn:hover { transform: scale(1.2); color: #FFD200; }
+.review-textarea {
+  width: 100%;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem;
+  resize: vertical;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.review-textarea:focus { outline: none; border-color: #E91E81; }
+.review-form-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.char-count { font-size: 0.78rem; color: #aaa; }
+.review-error { color: #b00020; font-size: 0.88rem; font-weight: 600; margin: 0; }
+.review-success { color: #1b6b32; font-size: 0.9rem; font-weight: 700; margin: 0; }
+.review-submit-btn {
+  background: linear-gradient(135deg, #E91E81, #C2185B);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 28px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(233, 30, 129, 0.35);
+}
+.review-submit-btn:hover:not(:disabled) { transform: scale(1.04); }
+.review-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.review-login-prompt { color: #2D3E94; font-size: 0.95rem; }
+.review-login-link { color: #E91E81; font-weight: 700; }
 </style>

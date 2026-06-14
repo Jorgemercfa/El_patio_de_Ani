@@ -119,6 +119,9 @@ const form = ref({
   accessConfirmed: false,
   measureVisitChoice: '',
   measureVisitPhone: '',
+  waterConnection: '',
+  waterDrainType: '',
+  waterResponsible: false,
 });
 
 const showElectricityWarning = computed(
@@ -167,6 +170,17 @@ const ageRecommendation = computed(() => {
 });
 
 const requiresMeasureVisit = computed(() => selectedPrice.value > PREMIUM_INFLABLE_PRICE);
+
+const WATER_INFLABLE_IDS = [8, 9, 10, 14];
+const WATER_INFLABLE_NAMES = ['tropical', 'splash', 'lava', 'acuático', 'acuatico'];
+
+const isWaterInflable = computed(() => {
+  if (!selectedProduct.value) return false;
+  const productId = Number(selectedProduct.value.id);
+  if (WATER_INFLABLE_IDS.includes(productId)) return true;
+  const productName = (selectedProduct.value.name || '').toLowerCase();
+  return WATER_INFLABLE_NAMES.some((keyword) => productName.includes(keyword));
+});
 const formErrors = ref({});
 const showConfirmationModal = ref(false);
 const premiumPriceLabel = `${CURRENCY_PREFIX} ${PREMIUM_INFLABLE_PRICE}+`;
@@ -295,6 +309,8 @@ const reservationSummary = computed(() => ({
       ? form.value.measureVisitChoice
       : 'No aplica',
   telefonoMedida: form.value.measureVisitPhone || 'No indicado',
+  aguaConexion: isWaterInflable.value ? form.value.waterConnection : 'No aplica',
+  aguaDrenaje: isWaterInflable.value ? form.value.waterDrainType : 'No aplica',
 }));
 
 const whatsappUrl = computed(() => {
@@ -315,6 +331,10 @@ const whatsappUrl = computed(() => {
     `Ruta de acceso: ${reservationSummary.value.acceso}`,
     `Visita de medidas: ${reservationSummary.value.medida}`,
     `Teléfono visita: ${reservationSummary.value.telefonoMedida}`,
+    ...(isWaterInflable.value ? [
+      `Conexión de agua: ${reservationSummary.value.aguaConexion}`,
+      `Tipo de drenaje: ${reservationSummary.value.aguaDrenaje}`,
+    ] : []),
   ].join('\n');
 
   return `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`;
@@ -383,6 +403,18 @@ function validateForm() {
     !form.value.measureVisitPhone.trim()
   ) {
     errors.measureVisitPhone = 'Ingresa un teléfono de contacto para la visita';
+  }
+
+  if (isWaterInflable.value) {
+    if (!form.value.waterConnection) {
+      errors.waterConnection = 'Selecciona el tipo de conexión de agua disponible';
+    }
+    if (!form.value.waterDrainType) {
+      errors.waterDrainType = 'Selecciona cómo se gestionará el agua utilizada';
+    }
+    if (!form.value.waterResponsible) {
+      errors.waterResponsible = 'Debes confirmar la responsabilidad sobre el uso del agua';
+    }
   }
 
   formErrors.value = errors;
@@ -584,6 +616,67 @@ onMounted(async () => {
               <p v-if="formErrors.floorType" class="error-text">{{ formErrors.floorType }}</p>
             </div>
             <div class="alert info-alert">{{ floorInfo }}</div>
+          </section>
+
+          <!-- SECCIÓN DE AGUA (solo para inflables acuáticos) -->
+          <section v-if="isWaterInflable" class="form-section water-section">
+            <h2>💧 Conexiones de Agua</h2>
+
+            <div class="water-banner">
+              💧 Este inflable requiere <strong>conexión de agua</strong>. Por favor completa la información sobre las instalaciones disponibles en el lugar del evento.
+            </div>
+
+            <div class="field full-width">
+              <label>¿Con qué conexión de agua cuentas?</label>
+              <div class="radios">
+                <label>
+                  <input v-model="form.waterConnection" type="radio" value="si-toma" />
+                  🚿 Sí, tengo toma de agua fija (grifo o tubería)
+                </label>
+                <label>
+                  <input v-model="form.waterConnection" type="radio" value="si-manguera" />
+                  🚰 Sí, tengo manguera de jardín accesible
+                </label>
+                <label>
+                  <input v-model="form.waterConnection" type="radio" value="no-agua" />
+                  ❌ No cuento con conexión de agua
+                </label>
+              </div>
+              <p v-if="formErrors.waterConnection" class="error-text">{{ formErrors.waterConnection }}</p>
+
+              <div v-if="form.waterConnection === 'no-agua'" class="alert warning-alert">
+                ⚠️ Sin conexión de agua no es posible instalar este inflable en modalidad acuática. Te recomendamos contactarnos para evaluar alternativas (modalidad seca con pelotitas).
+              </div>
+            </div>
+
+            <div class="field full-width">
+              <label>¿Cómo se gestionará el agua utilizada?</label>
+              <div class="radios">
+                <label>
+                  <input v-model="form.waterDrainType" type="radio" value="tierra" />
+                  🌱 Se absorbe en el jardín / tierra
+                </label>
+                <label>
+                  <input v-model="form.waterDrainType" type="radio" value="desague" />
+                  🕳️ Hay desagüe cercano disponible
+                </label>
+                <label>
+                  <input v-model="form.waterDrainType" type="radio" value="sin-drenaje" />
+                  ⚠️ No hay sistema de drenaje disponible
+                </label>
+              </div>
+              <p v-if="formErrors.waterDrainType" class="error-text">{{ formErrors.waterDrainType }}</p>
+
+              <div v-if="form.waterDrainType === 'sin-drenaje'" class="alert warning-alert">
+                ⚠️ Sin drenaje el agua puede acumularse. Coordinaremos contigo para minimizar el impacto en el espacio.
+              </div>
+            </div>
+
+            <label class="checkbox-row">
+              <input v-model="form.waterResponsible" type="checkbox" />
+              Entiendo que soy responsable de proporcionar el acceso al agua y de la gestión del agua utilizada durante el evento.
+            </label>
+            <p v-if="formErrors.waterResponsible" class="error-text">{{ formErrors.waterResponsible }}</p>
           </section>
 
           <section class="form-section">
@@ -1059,5 +1152,25 @@ select:focus {
   .calendar-day small { font-size: 0.5rem; }
   .calendar-weekdays, .calendar-grid { gap: 3px; }
   .calendar-weekdays span { font-size: 0.7rem; }
+}
+
+.water-section {
+  border: 2px solid #2D9CDB;
+  border-radius: 14px;
+  padding: 16px;
+  background: #f0f8ff;
+}
+.water-section h2 {
+  color: #1a6b9a !important;
+}
+.water-banner {
+  background: #e0f3ff;
+  border: 1px solid #2D9CDB;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #1a4d6e;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
 }
 </style>
