@@ -417,12 +417,59 @@ const formatPrice = (product) => {
 
 @media (max-width: 600px) {
   .filter-pills {
-    @apply overflow-x-auto flex-nowrap pb-1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    overflow-x: visible;
+  }
+  .filter-pill {
+    width: 100%;
+    text-align: center;
+    padding: 10px 8px;
+    font-size: 0.82rem;
+  }
+  .filter-subcategory-wrapper {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .filter-subcategory-label {
+    width: 100%;
+    margin-bottom: 4px;
+  }
+  .filter-pills-sub {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    overflow-x: visible;
+  }
+  .filter-pill-sub {
+    width: 100%;
+    text-align: center;
+    font-size: 0.75rem;
+    padding: 8px 6px;
+  }
+}
+
+@media (min-width: 400px) and (max-width: 719px) {
+  .products-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .product-title {
+    font-size: 0.9rem;
+  }
+  .product-price {
+    font-size: 1.4rem;
+  }
+  .details-button {
+    padding: 10px 8px;
+    font-size: 0.78rem;
   }
 }
 
 @media (max-width: 768px) {
   .products-area {
+    margin: 16px 4%;
     padding-bottom: 80px;
     margin-bottom: 96px;
   }
