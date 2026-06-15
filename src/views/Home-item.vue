@@ -927,13 +927,26 @@ const eventTypeCards = [
   .main-video-title { font-size: 28px; max-width: 160px; margin-left: 16px; }
   .main-video-nav { width: 36px; height: 36px; font-size: 22px; }
   .text-home { font-size: 16px; padding: 0 20px; margin: 40px auto; }
-  .title-home { font-size: 26px; margin: 60px 0 30px 0; }
-  .our-products-wrapper { padding: 30px 45px; }
-  .logs-item { flex-basis: 180px; }
+  .title-home { font-size: 26px; margin: 36px 0 16px 0; }
+  .our-products-wrapper { padding: 8px 44px; }
+  .logs-item { flex-basis: 180px; margin-top: 16px; }
+  .card-icons { height: 110px; margin: 4px auto 8px; }
+  .products-nav {
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+    top: auto;
+    bottom: 0;
+    transform: none;
+    opacity: 0.85;
+  }
+  .products-nav-left  { left: 2px; }
+  .products-nav-right { right: 2px; }
+  .home-area { padding-bottom: 70px; }
 }
 
 @media (max-width: 700px) {
-  .our-products-wrapper { padding: 20px 10px; }
+  .our-products-wrapper { padding: 8px 10px; }
   .hero-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
