@@ -6,6 +6,7 @@ import {
   fetchCompanyproducts,
   getCompanyproducts,
   resetCompanyproductToSeed,
+  deleteCompanyproduct,
 } from '@/auth/companyproductsRepo';
 
 const router = useRouter();
@@ -63,6 +64,11 @@ const filteredServices = computed(() => {
 
 async function onReset(serviceId) {
   await resetCompanyproductToSeed(serviceId);
+}
+
+async function onDelete(serviceId) {
+  if (!confirm('¿Seguro que deseas eliminar este servicio? Esta acción no se puede deshacer.')) return;
+  await deleteCompanyproduct(serviceId);
 }
 
 onMounted(loadServices);
@@ -161,6 +167,9 @@ onMounted(loadServices);
                 @click="onReset(service.id)"
               >
                 Restaurar
+              </button>
+              <button type="button" class="delete-btn" @click="onDelete(service.id)">
+                Eliminar
               </button>
             </div>
           </div>
@@ -345,6 +354,20 @@ onMounted(loadServices);
 .restore-btn {
   background: #e91e81;
   color: #fff;
+}
+
+.delete-btn {
+  background: #d32f2f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.delete-btn:hover {
+  background: #b71c1c;
 }
 
 @media (max-width: 600px) {

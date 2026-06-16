@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDocs,
   limit,
@@ -261,5 +262,28 @@ export function getproductsByCompany(company) {
     (product) =>
       product.companyId === company.id ||
       (product.companyemail && product.companyemail === company.email),
+  );
+}
+
+export async function deleteCompanyproduct(id) {
+  await fetchCompanyproducts();
+
+  const normalizedId = Number(id);
+  const targetProduct = productsState.value.find(
+    (product) => product.id === normalizedId || product._docId === String(id),
+  );
+
+  if (!targetProduct) {
+    throw new Error(`No se encontró el producto con ID: ${id}`);
+  }
+
+  if (isFirebaseConfigured && db && targetProduct._docId) {
+    await deleteDoc(doc(db, PRODUCTS_COLLECTION, targetProduct._docId));
+  }
+
+  productsState.value = sortProducts(
+    productsState.value.filter(
+      (product) => product._docId !== targetProduct._docId && product.id !== targetProduct.id,
+    ),
   );
 }
