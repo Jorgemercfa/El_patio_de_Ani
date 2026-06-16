@@ -12,7 +12,6 @@ const route = useRoute();
 const router = useRouter();
 
 const serviceId = Number(route.params.id);
-const currentImage = ref('');
 const titleName = ref('');
 const error = ref('');
 
@@ -20,6 +19,7 @@ const form = ref({
   name: '',
   shortDescription: '',
   longDescription: '',
+  imageUrl: '',
   price: '',
   category: 'Shows Infantiles',
   subcategory: '',
@@ -72,11 +72,11 @@ onMounted(async () => {
   }
 
   titleName.value = service.name || '';
-  currentImage.value = service.image || '';
   form.value = {
     name: service.name || '',
     shortDescription: service.shortDescription || '',
     longDescription: service.longDescription || '',
+    imageUrl: service.image || '',
     price: service.price ?? '',
     category: service.category || 'Shows Infantiles',
     subcategory: service.subcategory || '',
@@ -120,6 +120,7 @@ async function onSave() {
       name: form.value.name.trim(),
       shortDescription: form.value.shortDescription.trim(),
       longDescription: form.value.longDescription.trim(),
+      image: form.value.imageUrl.trim(),
       price,
       category: form.value.category,
       subcategory: form.value.subcategory.trim(),
@@ -234,13 +235,11 @@ async function onSave() {
           <textarea v-model="form.optionsText" rows="6" />
         </div>
 
-        <div class="image-box">
-          <p class="image-title">Imagen actual</p>
-          <img v-if="currentImage" :src="currentImage" alt="Imagen del servicio" />
-          <p class="image-help">
-            La imagen se gestiona en los archivos de assets. Para cambiarla, actualiza
-            el archivo en src/assets.
-          </p>
+        <div class="form-group">
+          <label>URL de imagen</label>
+          <input v-model="form.imageUrl" type="url" placeholder="https://..." />
+          <p class="field-hint">Ingresa una URL pública de imagen</p>
+          <img v-if="form.imageUrl" :src="form.imageUrl" alt="Preview imagen" class="image-preview" />
         </div>
 
         <div class="actions">
@@ -297,30 +296,19 @@ async function onSave() {
   box-shadow: 0 0 0 3px rgba(233, 30, 129, 0.12);
 }
 
-.image-box {
-  border: 1px solid #f0d3e6;
-  border-radius: 12px;
-  padding: 12px;
-  background: #FDF6EC;
-}
-
-.image-title {
-  margin: 0 0 8px;
-  color: #2d3e94;
-  font-weight: 700;
-}
-
-.image-box img {
+.image-preview {
   width: 100%;
-  max-width: 340px;
+  max-width: 280px;
   border-radius: 10px;
-  margin-bottom: 8px;
+  margin-top: 8px;
+  object-fit: cover;
+  border: 2px solid #f0d3e6;
 }
 
-.image-help {
-  margin: 0;
-  color: #555;
-  font-size: 0.9rem;
+.field-hint {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 2px 0 0;
 }
 
 .actions {

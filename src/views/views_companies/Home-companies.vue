@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted } from 'vue';
 import AdminLayout from '@/components/AdminLayout.vue';
-import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
+import { fetchCompanyproducts, getCompanyproducts, isSeedOnlyMode } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart';
 
 const { getPurchasedproducts } = useCart();
@@ -16,6 +16,7 @@ const activeOrders = computed(() =>
 );
 
 const catalogServices = computed(() => getCompanyproducts().slice(0, 6));
+const isSeedOnly = computed(() => isSeedOnlyMode());
 
 onMounted(async () => {
   await fetchCompanyproducts();
@@ -24,6 +25,10 @@ onMounted(async () => {
 
 <template>
   <AdminLayout>
+    <div v-if="isSeedOnly" class="seed-warning">
+      ⚠️ Los productos mostrados son datos de prueba (seed local). Para publicar en producción, asegúrate de que Firebase esté configurado y los productos estén en Firestore.
+    </div>
+
     <section class="stats-grid">
       <article class="stat-card">
         <p>Total de servicios</p>
@@ -188,5 +193,15 @@ onMounted(async () => {
   .product-row {
     grid-template-columns: 1fr;
   }
+}
+
+.seed-warning {
+  background: #fff8e1;
+  border: 1.5px solid #ffc107;
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #6d4c00;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
 }
 </style>
