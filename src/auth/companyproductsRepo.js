@@ -6,4 +6,5 @@ export {
   updateCompanyproduct,
   resetCompanyproductToSeed,
   getproductsByCompany,
+  isSeedOnlyMode,
 } from './companyCouponsRepo';

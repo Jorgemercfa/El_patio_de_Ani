@@ -20,6 +20,7 @@ const editingId = computed(() => Number(route.query.edit));
 const name             = ref('');
 const shortDescription = ref('');
 const longDescription  = ref('');
+const imageUrl         = ref('');
 const category         = ref('Shows Infantiles');
 const subcategory      = ref('');
 const price            = ref('');
@@ -137,7 +138,7 @@ const onCreateProduct = async () => {
     name:             name.value.trim(),
     shortDescription: shortDescription.value.trim(),
     longDescription:  longDescription.value.trim(),
-    image:            '',
+    image:            imageUrl.value.trim(),
     category:         category.value,
     subcategory:      subcategory.value,
     price:            priceNumber,
@@ -146,6 +147,7 @@ const onCreateProduct = async () => {
     dimensions:       dimensions.value.trim(),
     options:          [...options.value],
     Terms_of_use:     termsOfUse.value.trim(),
+    product_code:     productCode.value.trim(),
     companyId:        state.company.id,
     companyName:      state.company.name,
     companyemail:     state.company.email,
@@ -171,7 +173,7 @@ const onCreateProduct = async () => {
     : 'Producto creado correctamente.';
 
   resetForm();
-  setTimeout(() => router.push({ name: 'Companyproducts' }), 500);
+  setTimeout(() => router.push({ name: 'ServicesAdmin' }), 500);
 };
 
 // ─── Reset ─────────────────────────────────────────────────
@@ -179,6 +181,7 @@ const resetForm = () => {
   name.value             = '';
   shortDescription.value = '';
   longDescription.value  = '';
+  imageUrl.value         = '';
   category.value         = 'Shows Infantiles';
   subcategory.value      = '';
   price.value            = '';
@@ -201,6 +204,7 @@ onMounted(async () => {
   name.value             = existing.name             ?? '';
   shortDescription.value = existing.shortDescription ?? '';
   longDescription.value  = existing.longDescription  ?? '';
+  imageUrl.value         = existing.image            ?? '';
   category.value         = existing.category         ?? 'Shows Infantiles';
   subcategory.value      = existing.subcategory      ?? '';
   price.value            = existing.price            ?? '';
@@ -240,6 +244,14 @@ onMounted(async () => {
         <div class="form-group">
           <label>Descripción larga</label>
           <textarea v-model="longDescription" rows="3" />
+        </div>
+
+        <!-- URL de imagen -->
+        <div class="form-group">
+          <label>URL de imagen</label>
+          <input v-model="imageUrl" type="url" placeholder="https://..." />
+          <p class="field-hint">Usa una URL pública de imagen (Google Drive, Imgur, etc.)</p>
+          <img v-if="imageUrl" :src="imageUrl" alt="Preview" class="image-preview" />
         </div>
 
         <!-- Categoría + Subcategoría -->
@@ -527,6 +539,21 @@ onMounted(async () => {
 
 .message.success {
   color: #177245;
+}
+
+.image-preview {
+  width: 100%;
+  max-width: 280px;
+  border-radius: 10px;
+  margin-top: 8px;
+  object-fit: cover;
+  border: 2px solid #f0d3e6;
+}
+
+.field-hint {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 2px 0 0;
 }
 
 @media (max-width: 700px) {

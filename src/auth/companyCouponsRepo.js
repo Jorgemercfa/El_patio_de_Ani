@@ -37,6 +37,7 @@ function normalizeProduct(product, docId = '') {
   return {
     ...product,
     id: Number.isFinite(numericId) ? numericId : null,
+    product_code: product?.product_code || '',
     options: Array.isArray(product?.options)
       ? product.options.filter((item) => typeof item === 'string' && item.trim() !== '')
       : [],
@@ -68,19 +69,28 @@ function sanitizeProductPayload(productInput) {
     Terms_of_use: String(productInput?.Terms_of_use || '').trim(),
     buy_button: String(productInput?.buy_button || '').trim(),
     details_button: String(productInput?.details_button || '').trim(),
+    product_code: String(productInput?.product_code || '').trim(),
     companyId: productInput?.companyId ?? null,
     companyName: String(productInput?.companyName || '').trim(),
     companyemail: String(productInput?.companyemail || '').trim(),
   };
 }
 
+// Constante de control — cambiar a false cuando Firestore tenga todos los productos
+const USE_SEED_FALLBACK = true;
+
 function ensureLocalFallbackLoaded() {
   if (!hasLoadedState.value) {
-    productsState.value = normalizeSeedProducts();
+    productsState.value = USE_SEED_FALLBACK ? normalizeSeedProducts() : [];
     hasLoadedState.value = true;
   }
 
   return productsState.value;
+}
+
+export function isSeedOnlyMode() {
+  if (!hasLoadedState.value) return true;
+  return productsState.value.every((p) => !p._docId);
 }
 
 export async function fetchCompanyproducts(force = false) {
