@@ -76,8 +76,8 @@ function sanitizeProductPayload(productInput) {
   };
 }
 
-// Constante de control — cambiar a false cuando Firestore tenga todos los productos
-const USE_SEED_FALLBACK = true;
+// Constante de control — false = leer siempre desde Firestore
+const USE_SEED_FALLBACK = false;
 
 function ensureLocalFallbackLoaded() {
   if (!hasLoadedState.value) {
