@@ -27,8 +27,6 @@ const ServicesAdmin = () => import('./views/views_companies/Services-admin.vue')
 const EditServiceItem = () => import('./views/views_companies/Edit-service-item.vue');
 const OrdersCompanies = () => import('./views/views_companies/Orders-companies.vue');
 const CompanyProfile = () => import('./views/views_companies/Company-profile-companies.vue');
-const MigrateImages = () => import('./views/views_companies/MigrateImages-admin.vue');
-
 import { useSession } from './auth/session';
 import { useSessionCompany } from './auth/session_companies';
 
@@ -165,13 +163,6 @@ const routes = [
     component: CompanyProfile,
     meta: { requiresCompanyAuth: true },
   },
-  {
-    path: '/Migrate-images',
-    name: 'MigrateImages',
-    component: MigrateImages,
-    meta: { requiresCompanyAuth: true },
-  },
-
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ];
 

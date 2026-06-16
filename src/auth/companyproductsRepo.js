@@ -4,6 +4,7 @@ export {
   saveCompanyproducts,
   addCompanyproduct,
   updateCompanyproduct,
+  deleteCompanyproduct,
   resetCompanyproductToSeed,
   getproductsByCompany,
   isSeedOnlyMode,
