@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AdminLayout from '@/components/AdminLayout.vue';
+import { uploadImage } from '@/auth/storageRepo';
 import {
   fetchCompanyproducts,
   getCompanyproducts,
@@ -14,12 +15,20 @@ const router = useRouter();
 const serviceId = Number(route.params.id);
 const titleName = ref('');
 const error = ref('');
+const currentImage = ref('');
+const imageFile = ref(null);
+const imagePreview = ref('');
+const imageUploading = ref(false);
+const revokeImagePreviewIfBlob = () => {
+  if (imagePreview.value?.startsWith('blob:')) {
+    URL.revokeObjectURL(imagePreview.value);
+  }
+};
 
 const form = ref({
   name: '',
   shortDescription: '',
   longDescription: '',
-  imageUrl: '',
   price: '',
   category: 'Shows Infantiles',
   subcategory: '',
@@ -76,7 +85,6 @@ onMounted(async () => {
     name: service.name || '',
     shortDescription: service.shortDescription || '',
     longDescription: service.longDescription || '',
-    imageUrl: service.image || '',
     price: service.price ?? '',
     category: service.category || 'Shows Infantiles',
     subcategory: service.subcategory || '',
@@ -90,6 +98,19 @@ onMounted(async () => {
       ? service.options.join('\n')
       : service.options || '',
   };
+  currentImage.value = service.image || '';
+});
+
+const onImageChange = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  revokeImagePreviewIfBlob();
+  imageFile.value = file;
+  imagePreview.value = URL.createObjectURL(file);
+};
+
+onBeforeUnmount(() => {
+  revokeImagePreviewIfBlob();
 });
 
 function onCancel() {
@@ -115,12 +136,25 @@ async function onSave() {
     return;
   }
 
+  let finalImageUrl = currentImage.value;
+  if (imageFile.value) {
+    imageUploading.value = true;
+    try {
+      finalImageUrl = await uploadImage(imageFile.value, 'products');
+    } catch (e) {
+      error.value = e?.message || 'No se pudo subir la imagen.';
+      imageUploading.value = false;
+      return;
+    }
+    imageUploading.value = false;
+  }
+
   try {
     await updateCompanyproduct(serviceId, {
       name: form.value.name.trim(),
       shortDescription: form.value.shortDescription.trim(),
       longDescription: form.value.longDescription.trim(),
-      image: form.value.imageUrl.trim(),
+      image: finalImageUrl,
       price,
       category: form.value.category,
       subcategory: form.value.subcategory.trim(),
@@ -236,15 +270,35 @@ async function onSave() {
         </div>
 
         <div class="form-group">
-          <label>URL de imagen</label>
-          <input v-model="form.imageUrl" type="url" placeholder="https://..." />
-          <p class="field-hint">Ingresa una URL pública de imagen</p>
-          <img v-if="form.imageUrl" :src="form.imageUrl" alt="Preview imagen" class="image-preview" />
+          <label>Imagen del servicio</label>
+          <img
+            v-if="currentImage && !imagePreview"
+            :src="currentImage"
+            alt="Imagen actual"
+            class="image-preview"
+          />
+          <img
+            v-if="imagePreview"
+            :src="imagePreview"
+            alt="Nueva imagen"
+            class="image-preview"
+          />
+          <input
+            type="file"
+            accept="image/*"
+            class="file-input"
+            @change="onImageChange"
+          />
+          <p class="field-hint">
+            {{ currentImage || imagePreview ? 'Selecciona otra para reemplazar' : 'Selecciona una imagen (JPG, PNG, WEBP o GIF — máx. 5MB)' }}
+          </p>
         </div>
 
         <div class="actions">
           <button type="button" class="cancel-btn" @click="onCancel">Cancelar</button>
-          <button type="submit" class="submit-btn">Guardar</button>
+          <button type="submit" class="submit-btn" :disabled="imageUploading">
+            {{ imageUploading ? 'Subiendo imagen...' : 'Guardar' }}
+          </button>
         </div>
       </form>
     </section>
@@ -296,6 +350,14 @@ async function onSave() {
   box-shadow: 0 0 0 3px rgba(233, 30, 129, 0.12);
 }
 
+.file-input {
+  border: 1.5px solid #ddd;
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: white;
+}
+
 .image-preview {
   width: 100%;
   max-width: 280px;
@@ -308,7 +370,7 @@ async function onSave() {
 .field-hint {
   font-size: 0.8rem;
   color: #888;
-  margin: 2px 0 0;
+  margin: 4px 0 0;
 }
 
 .actions {

@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import AdminLayout from '@/components/AdminLayout.vue';
 import { useSessionCompany } from '@/auth/session_companies';
+import { uploadImage } from '@/auth/storageRepo';
 import {
   addCompanyproduct,
   fetchCompanyproducts,
@@ -20,7 +21,7 @@ const editingId = computed(() => Number(route.query.edit));
 const name             = ref('');
 const shortDescription = ref('');
 const longDescription  = ref('');
-const imageUrl         = ref('');
+const currentImageUrl  = ref('');
 const category         = ref('Shows Infantiles');
 const subcategory      = ref('');
 const price            = ref('');
@@ -29,6 +30,9 @@ const ageRange         = ref('');
 const dimensions       = ref('');
 const termsOfUse       = ref('');
 const productCode      = ref('');
+const imageFile        = ref(null);
+const imagePreview     = ref('');
+const imageUploading   = ref(false);
 
 // ─── Options dinámicas ─────────────────────────────────────
 const options    = ref([]);
@@ -100,6 +104,21 @@ const showDimensions = computed(() =>
 const error   = ref('');
 const success  = ref('');
 
+const isEditing = computed(() => Number.isFinite(editingId.value) && editingId.value > 0);
+const revokeImagePreviewIfBlob = () => {
+  if (imagePreview.value?.startsWith('blob:')) {
+    URL.revokeObjectURL(imagePreview.value);
+  }
+};
+
+const onImageChange = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  revokeImagePreviewIfBlob();
+  imageFile.value = file;
+  imagePreview.value = URL.createObjectURL(file);
+};
+
 // ─── Código de producto ────────────────────────────────────
 const generateProductCode = () => {
   const prefix = name.value
@@ -134,11 +153,24 @@ const onCreateProduct = async () => {
 
   if (!productCode.value.trim()) generateProductCode();
 
+  let imageUrl = currentImageUrl.value.trim();
+  if (imageFile.value) {
+    imageUploading.value = true;
+    try {
+      imageUrl = await uploadImage(imageFile.value, 'products');
+    } catch (e) {
+      error.value = e?.message || 'No se pudo subir la imagen.';
+      imageUploading.value = false;
+      return;
+    }
+    imageUploading.value = false;
+  }
+
   const payload = {
     name:             name.value.trim(),
     shortDescription: shortDescription.value.trim(),
     longDescription:  longDescription.value.trim(),
-    image:            imageUrl.value.trim(),
+    image:            imageUrl,
     category:         category.value,
     subcategory:      subcategory.value,
     price:            priceNumber,
@@ -155,10 +187,8 @@ const onCreateProduct = async () => {
     details_button:   'Ver detalles',
   };
 
-  const isEditing = Number.isFinite(editingId.value) && editingId.value > 0;
-
   try {
-    if (isEditing) {
+    if (isEditing.value) {
       await updateCompanyproduct(editingId.value, { ...payload, _modified: true });
     } else {
       await addCompanyproduct(payload);
@@ -168,7 +198,7 @@ const onCreateProduct = async () => {
     return;
   }
 
-  success.value = isEditing
+  success.value = isEditing.value
     ? 'Producto actualizado correctamente.'
     : 'Producto creado correctamente.';
 
@@ -181,7 +211,7 @@ const resetForm = () => {
   name.value             = '';
   shortDescription.value = '';
   longDescription.value  = '';
-  imageUrl.value         = '';
+  currentImageUrl.value  = '';
   category.value         = 'Shows Infantiles';
   subcategory.value      = '';
   price.value            = '';
@@ -192,6 +222,9 @@ const resetForm = () => {
   newOption.value        = '';
   termsOfUse.value       = '';
   productCode.value      = '';
+  revokeImagePreviewIfBlob();
+  imageFile.value        = null;
+  imagePreview.value     = '';
 };
 
 // ─── Cargar producto existente (edición) ───────────────────
@@ -204,7 +237,8 @@ onMounted(async () => {
   name.value             = existing.name             ?? '';
   shortDescription.value = existing.shortDescription ?? '';
   longDescription.value  = existing.longDescription  ?? '';
-  imageUrl.value         = existing.image            ?? '';
+  currentImageUrl.value  = existing.image            ?? '';
+  imagePreview.value     = existing.image            ?? '';
   category.value         = existing.category         ?? 'Shows Infantiles';
   subcategory.value      = existing.subcategory      ?? '';
   price.value            = existing.price            ?? '';
@@ -215,13 +249,17 @@ onMounted(async () => {
   termsOfUse.value       = existing.Terms_of_use     ?? '';
   productCode.value      = existing.product_code     ?? '';
 });
+
+onBeforeUnmount(() => {
+  revokeImagePreviewIfBlob();
+});
 </script>
 
 <template>
   <AdminLayout>
     <section class="panel">
       <h2 class="panel-title">
-        {{ Number.isFinite(editingId) && editingId > 0 ? 'Editar producto' : 'Crear producto' }}
+        {{ isEditing ? 'Editar producto' : 'Crear producto' }}
       </h2>
 
       <form class="form-area" @submit.prevent="onCreateProduct" autocomplete="on">
@@ -246,12 +284,24 @@ onMounted(async () => {
           <textarea v-model="longDescription" rows="3" />
         </div>
 
-        <!-- URL de imagen -->
+        <!-- Imagen del producto -->
         <div class="form-group">
-          <label>URL de imagen</label>
-          <input v-model="imageUrl" type="url" placeholder="https://..." />
-          <p class="field-hint">Usa una URL pública de imagen (Google Drive, Imgur, etc.)</p>
-          <img v-if="imageUrl" :src="imageUrl" alt="Preview" class="image-preview" />
+          <label>Imagen del producto</label>
+          <input
+            type="file"
+            accept="image/*"
+            class="file-input"
+            @change="onImageChange"
+          />
+          <img
+            v-if="imagePreview"
+            :src="imagePreview"
+            alt="Preview"
+            class="image-preview"
+          />
+          <p v-if="!imagePreview" class="field-hint">
+            Selecciona una imagen (JPG, PNG, WEBP o GIF — máx. 5MB)
+          </p>
         </div>
 
         <!-- Categoría + Subcategoría -->
@@ -335,8 +385,8 @@ onMounted(async () => {
             Generar código
           </button>
           <span v-if="productCode" class="code-preview">{{ productCode }}</span>
-          <button type="submit" class="submit-btn">
-            {{ Number.isFinite(editingId) && editingId > 0 ? 'Guardar cambios' : 'Crear producto' }}
+          <button type="submit" class="submit-btn" :disabled="imageUploading">
+            {{ imageUploading ? 'Subiendo imagen...' : (isEditing ? 'Guardar cambios' : 'Crear producto') }}
           </button>
         </div>
       </form>
@@ -541,6 +591,14 @@ onMounted(async () => {
   color: #177245;
 }
 
+.file-input {
+  border: 1.5px solid #ddd;
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: white;
+}
+
 .image-preview {
   width: 100%;
   max-width: 280px;
@@ -553,7 +611,7 @@ onMounted(async () => {
 .field-hint {
   font-size: 0.8rem;
   color: #888;
-  margin: 2px 0 0;
+  margin: 4px 0 0;
 }
 
 @media (max-width: 700px) {

@@ -2,8 +2,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import Navbar from '@/components/Navbar-item.vue';
-import Footer from '@/components/Footer-item.vue';
+import AdminLayout from '@/components/AdminLayout.vue';
 
 import { addCompany } from '@/auth/companiesRepo';
 import { useSessionCompany } from '@/auth/session_companies';
@@ -17,11 +16,15 @@ const password = ref('');
 const confirmPassword = ref('');
 const error = ref('');
 
+const onCancel = () => {
+  router.push({ name: 'HomeCompanies' });
+};
+
 const onSignUp = async () => {
   error.value = '';
 
   if (!name.value.trim()) {
-    error.value = 'Ingresa el nombre de la vendedor.';
+    error.value = 'Ingresa el nombre del administrador.';
     return;
   }
 
@@ -46,29 +49,25 @@ const onSignUp = async () => {
 
     router.push({ name: 'HomeCompanies' });
   } catch (e) {
-    error.value = e?.message || 'No se pudo registrar la vendedor.';
+    error.value = e?.message || 'No se pudo registrar el administrador.';
   }
 };
 </script>
 
 <template>
-  <div class="page-wrapper">
-    <header>
-      <Navbar />
-    </header>
-
+  <AdminLayout>
     <section class="contact-section">
       <div class="auth-container">
         <div class="auth-card">
-          <h1 class="main-title">Panel Administrativo</h1>
-          <p class="subtitle">Registro de acceso - El Patio de Ani</p>
+          <h1 class="main-title">Registrar nuevo administrador</h1>
+          <p class="subtitle">Panel Administrativo - El Patio de Ani</p>
           <form class="form-area" @submit.prevent="onSignUp" autocomplete="on">
             <div v-if="error" style="color: #b00020; font-weight: 600">
               {{ error }}
             </div>
 
             <div class="form-group">
-              <label>Nombre del vendedor</label>
+              <label>Nombre del administrador</label>
               <input
                 v-model="name"
                 type="text"
@@ -110,38 +109,19 @@ const onSignUp = async () => {
             </div>
 
             <button type="submit" class="submit-btn">Registrarme</button>
-
-            <router-link
-              to="/Sign-in-companies"
-              class="text-navbar"
-              style="margin-top: 10px"
-            >
-              ¿Ya tienes cuenta? Inicia sesión
-            </router-link>
+            <button type="button" class="secondary-btn" @click="onCancel">Cancelar</button>
           </form>
         </div>
       </div>
     </section>
-
-    <footer>
-      <Footer />
-    </footer>
-  </div>
+  </AdminLayout>
 </template>
 
 <style scoped>
-.page-wrapper {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #FDF6EC;
-}
-
 .contact-section {
-  flex: 1;
   display: grid;
   place-items: center;
-  padding: 120px 20px 80px;
+  padding: 20px;
 }
 
 .auth-container {
@@ -217,9 +197,17 @@ const onSignUp = async () => {
   background-color: #f2c500;
 }
 
-.text-navbar {
-  color: #2D3E94;
-  text-decoration: none;
-  font-weight: 600;
+.secondary-btn {
+  border: none;
+  border-radius: 12px;
+  background: #2D3E94;
+  color: white;
+  padding: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background: #1f2f73;
 }
 </style>
