@@ -121,6 +121,7 @@ const routes = [
     path: '/Sign-up-companies',
     name: 'SignUpCompany',
     component: SignUpCompany,
+    meta: { requiresCompanyAuth: true },
   },
   {
     path: '/Forget-Password-Companies',

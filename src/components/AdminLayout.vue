@@ -27,6 +27,7 @@ async function closeSession() {
           >Crear servicio</router-link
         >
         <router-link to="/Company-profile" class="admin-link">Perfil</router-link>
+        <router-link to="/Sign-up-companies" class="admin-link">Registrar admin</router-link>
         <button class="logout-btn" type="button" @click="closeSession">
           Cerrar sesión
         </button>

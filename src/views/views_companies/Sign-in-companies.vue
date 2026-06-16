@@ -72,11 +72,6 @@ const onLogin = async () => {
           </form>
 
           <div class="contact-info">
-            <router-link to="/Sign-up-companies">
-              <button class="other-btn" type="button">
-                Registrar vendedor
-              </button>
-            </router-link>
             <router-link to="/Forget-Password-Companies">
               <button class="other-btn" type="button">
                 Olvide Contraseña vendedor
