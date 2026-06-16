@@ -32,7 +32,13 @@ export async function uploadImage(file, folder = 'products') {
     throw new Error(`La imagen no puede superar ${MAX_SIZE_MB}MB.`);
   }
 
-  const ext = file.name.split('.').pop();
+  const extensionByType = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+  };
+  const ext = extensionByType[file.type];
   const filename = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
   const fileRef = storageRef(storage, filename);
 

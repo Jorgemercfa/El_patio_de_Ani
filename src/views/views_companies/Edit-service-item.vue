@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AdminLayout from '@/components/AdminLayout.vue';
 import { uploadImage } from '@/auth/storageRepo';
@@ -19,6 +19,11 @@ const currentImage = ref('');
 const imageFile = ref(null);
 const imagePreview = ref('');
 const imageUploading = ref(false);
+const revokeImagePreviewIfBlob = () => {
+  if (imagePreview.value?.startsWith('blob:')) {
+    URL.revokeObjectURL(imagePreview.value);
+  }
+};
 
 const form = ref({
   name: '',
@@ -99,9 +104,14 @@ onMounted(async () => {
 const onImageChange = (event) => {
   const file = event.target.files[0];
   if (!file) return;
+  revokeImagePreviewIfBlob();
   imageFile.value = file;
   imagePreview.value = URL.createObjectURL(file);
 };
+
+onBeforeUnmount(() => {
+  revokeImagePreviewIfBlob();
+});
 
 function onCancel() {
   router.push('/Services-admin');
@@ -280,7 +290,7 @@ async function onSave() {
             @change="onImageChange"
           />
           <p class="field-hint">
-            {{ currentImage || imagePreview ? 'Selecciona otra para reemplazar' : 'Selecciona una imagen (JPG, PNG, WEBP — máx. 5MB)' }}
+            {{ currentImage || imagePreview ? 'Selecciona otra para reemplazar' : 'Selecciona una imagen (JPG, PNG, WEBP o GIF — máx. 5MB)' }}
           </p>
         </div>
 

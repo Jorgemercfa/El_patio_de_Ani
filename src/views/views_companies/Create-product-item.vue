@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import AdminLayout from '@/components/AdminLayout.vue';
@@ -105,10 +105,16 @@ const error   = ref('');
 const success  = ref('');
 
 const isEditing = computed(() => Number.isFinite(editingId.value) && editingId.value > 0);
+const revokeImagePreviewIfBlob = () => {
+  if (imagePreview.value?.startsWith('blob:')) {
+    URL.revokeObjectURL(imagePreview.value);
+  }
+};
 
 const onImageChange = (event) => {
   const file = event.target.files[0];
   if (!file) return;
+  revokeImagePreviewIfBlob();
   imageFile.value = file;
   imagePreview.value = URL.createObjectURL(file);
 };
@@ -216,6 +222,7 @@ const resetForm = () => {
   newOption.value        = '';
   termsOfUse.value       = '';
   productCode.value      = '';
+  revokeImagePreviewIfBlob();
   imageFile.value        = null;
   imagePreview.value     = '';
 };
@@ -241,6 +248,10 @@ onMounted(async () => {
   options.value          = Array.isArray(existing.options) ? [...existing.options] : [];
   termsOfUse.value       = existing.Terms_of_use     ?? '';
   productCode.value      = existing.product_code     ?? '';
+});
+
+onBeforeUnmount(() => {
+  revokeImagePreviewIfBlob();
 });
 </script>
 
@@ -289,7 +300,7 @@ onMounted(async () => {
             class="image-preview"
           />
           <p v-if="!imagePreview" class="field-hint">
-            Selecciona una imagen (JPG, PNG, WEBP — máx. 5MB)
+            Selecciona una imagen (JPG, PNG, WEBP o GIF — máx. 5MB)
           </p>
         </div>
 

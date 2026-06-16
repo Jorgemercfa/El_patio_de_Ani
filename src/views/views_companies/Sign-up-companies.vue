@@ -17,7 +17,7 @@ const confirmPassword = ref('');
 const error = ref('');
 
 const onCancel = () => {
-  router.push('/Home-companies');
+  router.push({ name: 'HomeCompanies' });
 };
 
 const onSignUp = async () => {
