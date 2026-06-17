@@ -13,6 +13,7 @@
         <router-link @click="closeMenu" to="/" class="text-navbar">Inicio</router-link>
         <router-link @click="closeMenu" to="/product-item" class="text-navbar">Servicios</router-link>
         <router-link @click="closeMenu" to="/Contact-item" class="text-navbar">Contacto</router-link>
+        <router-link @click="closeMenu" to="/Reviews-item" class="text-navbar">Reseñas</router-link>
 
         <!-- CONTENEDOR DEL CARRITO -->
         <router-link @click="closeMenu" to="/Cart" class="text-navbar cart-link">
