@@ -1,6 +1,5 @@
 import {
   createUserWithEmailAndPassword,
-  fetchSignInMethodsForEmail,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
@@ -16,13 +15,18 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore';
-import { auth, db, isFirebaseConfigured } from '@/firebase';
+
+// ─── IMPORTACIÓN DE RUTAS MODULARES REALES ────────────────
+import { auth } from '@/firebase/auth';
+import { db } from '@/firebase/firestore';
+// ──────────────────────────────────────────────────────────
 
 const COMPANIES_COLLECTION = 'company';
 
+// Eliminamos la dependencia de isFirebaseConfigured para evitar el crash
 function ensureFirebaseReady() {
-  if (!isFirebaseConfigured || !auth || !db) {
-    throw new Error('Firebase no está configurado correctamente.');
+  if (!auth || !db) {
+    throw new Error('Firebase no está inicializado correctamente.');
   }
 }
 
@@ -86,6 +90,7 @@ export async function addCompany(companyInput) {
 
   const normalizedEmail = normalizeEmail(companyInput?.email);
   const normalizedPassword = String(companyInput?.password || '');
+  
   if (!normalizedEmail) {
     throw new Error('Debes ingresar un email válido.');
   }
@@ -93,31 +98,36 @@ export async function addCompany(companyInput) {
     throw new Error('La contraseña debe tener al menos 6 caracteres.');
   }
 
-  const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
-  if (signInMethods.length > 0) {
-    throw new Error('Ya existe una empresa registrada con ese email.');
+  try {
+    // Registramos directamente en Auth
+    const credential = await createUserWithEmailAndPassword(
+      auth,
+      normalizedEmail,
+      normalizedPassword,
+    );
+
+    const uid = credential.user.uid;
+    const nextId = await getNextCompanyId();
+
+    const payload = {
+      uid,
+      id: nextId,
+      name: String(companyInput?.name || '').trim(),
+      email: normalizedEmail,
+      products: [],
+    };
+
+    // Guardamos en Firestore
+    await setDoc(doc(db, COMPANIES_COLLECTION, uid), payload);
+
+    return mapCompany(uid, payload, normalizedEmail);
+  } catch (error) {
+    // Controlamos de forma segura si el email ya existe en Firebase
+    if (error.code === 'auth/email-already-in-use') {
+      throw new Error('Ya existe una empresa registrada con ese email.');
+    }
+    throw error;
   }
-
-  const credential = await createUserWithEmailAndPassword(
-    auth,
-    normalizedEmail,
-    normalizedPassword,
-  );
-
-  const uid = credential.user.uid;
-  const nextId = await getNextCompanyId();
-
-  const payload = {
-    uid,
-    id: nextId,
-    name: String(companyInput?.name || '').trim(),
-    email: normalizedEmail,
-    products: [],
-  };
-
-  await setDoc(doc(db, COMPANIES_COLLECTION, uid), payload);
-
-  return mapCompany(uid, payload, normalizedEmail);
 }
 
 export async function loginCompany({ email, password }) {
