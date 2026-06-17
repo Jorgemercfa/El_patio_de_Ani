@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
@@ -13,9 +13,12 @@ const firebaseConfig = {
   measurementId: "G-728SC66LWR"
 };
 
-const app = initializeApp(firebaseConfig);
+// ─── CONTROL DE DUPLICADOS ─────────────────────────────────
+// Si ya existe una app activa en memoria, la toma con getApp(). 
+// Si el arreglo está vacío, recién inicializa una nueva.
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// ──────────────────────────────────────────────────────────
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
-// export const isFirebaseConfigured = !!app;
