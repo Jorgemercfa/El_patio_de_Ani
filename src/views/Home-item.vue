@@ -154,15 +154,16 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
    TARIFAS DE MOVILIDAD
 ============================= */
 const tarifas = [
-  { distrito: 'Miraflores / San Isidro', precio: 30 },
-  { distrito: 'Surco / Barranco', precio: 30 },
-  { distrito: 'San Borja / Surquillo', precio: 30 },
-  { distrito: 'Jesús María / San Miguel / Pueblo Libre', precio: 35 },
-  { distrito: 'La Molina / Santa Anita', precio: 40 },
-  { distrito: 'Ate / Chaclacayo / La Victoria', precio: 45 },
-  { distrito: 'Chorrillos / Pachacamac', precio: 45 },
-  { distrito: 'Centro de Lima', precio: 60 },
-  { distrito: 'Callao / Los Olivos', precio: 70 },
+  { distrito: 'Miraflores / San Isidro', precio: 80 },
+  { distrito: 'Surco / Barranco / San Luis', precio: 80 },
+  { distrito: 'San Borja / Surquillo', precio: 80 },
+  { distrito: 'Jesús María / San Miguel / Lince', precio: 90 },
+  { distrito: 'La Molina / Santa Anita*', precio: 100 },
+  { distrito: 'Chorrillos* / Villa', precio: 90 },
+  { distrito: 'Cieneguilla* / Pachacamac', precio: 110 },
+  { distrito: 'Centro de Lima', precio: 100 },
+  { distrito: 'Callao', precio: 120 },
+  { distrito: 'Chaclacayo / Lurin', precio: 170 },
 ];
 
 const eventTypeCards = [
@@ -381,7 +382,8 @@ const eventTypeCards = [
           <p class="movilidad-precio">S/ {{ tarifa.precio }}</p>
         </div>
       </div>
-      <p class="movilidad-nota">* Los precios pueden variar según disponibilidad y tipo de evento.</p>
+      <p class="movilidad-nota">* Otros distritos consultar costo</p>
+      <p class="movilidad-nota">Los precios pueden variar según disponibilidad y tipo de evento.</p>
       <div class="faq-cta">
         <p>¿Tienes dudas? Revisa nuestras <router-link to="/FAQ">Preguntas Frecuentes</router-link></p>
       </div>
