@@ -5,6 +5,9 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 
+// ─── AGREGAR ESTA EXPORTACIÓN ───
+export { auth };
+
 export const login = (email, password) => {
   return signInWithEmailAndPassword(auth, email, password);
 };

@@ -9,6 +9,9 @@ import {
   doc
 } from 'firebase/firestore';
 
+// ─── AGREGAR ESTA EXPORTACIÓN ───
+export { db };
+
 export const getAll = (col) => {
   return getDocs(collection(db, col));
 };

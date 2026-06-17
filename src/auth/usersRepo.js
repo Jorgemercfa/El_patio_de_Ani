@@ -1,12 +1,15 @@
 import {
   createUserWithEmailAndPassword,
-  fetchSignInMethodsForEmail,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
-import { auth, db, isFirebaseConfigured } from '@/firebase';
+
+// ─── RUTAS DE IMPORTACIÓN CORREGIDAS ───
+import { auth } from '@/firebase/auth'; 
+import { db } from '@/firebase/firestore'; 
+// ───────────────────────────────────────
 
 const USERS_COLLECTION = 'user';
 const DEFAULT_LOYALTY = {
@@ -14,12 +17,6 @@ const DEFAULT_LOYALTY = {
   nivel: 'bronce',
   descuento: 0,
 };
-
-function ensureFirebaseReady() {
-  if (!isFirebaseConfigured || !auth || !db) {
-    throw new Error('Firebase no está configurado correctamente.');
-  }
-}
 
 function normalizeEmail(email) {
   return String(email || '')
@@ -47,13 +44,11 @@ function mapUser(uid, data, fallbackEmail = '') {
 }
 
 export async function getUsers() {
-  ensureFirebaseReady();
   const snapshot = await getDocs(collection(db, USERS_COLLECTION));
   return snapshot.docs.map((item) => mapUser(item.id, item.data()));
 }
 
 export async function findUserByEmail(email) {
-  ensureFirebaseReady();
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return null;
 
@@ -66,7 +61,6 @@ export async function findUserByEmail(email) {
 }
 
 export async function getUserByUid(uid) {
-  ensureFirebaseReady();
   if (!uid) return null;
 
   const userDoc = await getDoc(doc(db, USERS_COLLECTION, uid));
@@ -75,10 +69,9 @@ export async function getUserByUid(uid) {
 }
 
 export async function addUser({ name, email, password }) {
-  ensureFirebaseReady();
-
   const normalizedEmail = normalizeEmail(email);
   const normalizedPassword = String(password || '');
+  
   if (!normalizedEmail) {
     throw new Error('Debes ingresar un email válido.');
   }
@@ -86,31 +79,30 @@ export async function addUser({ name, email, password }) {
     throw new Error('La contraseña debe tener al menos 6 caracteres.');
   }
 
-  const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
-  if (signInMethods.length > 0) {
-    throw new Error('Este correo ya está registrado.');
+  try {
+    const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, normalizedPassword);
+    const uid = credential.user.uid;
+
+    const payload = {
+      uid,
+      name: String(name || '').trim(),
+      email: normalizedEmail,
+      products: [],
+      children: [],
+      loyalty: { ...DEFAULT_LOYALTY },
+    };
+
+    await setDoc(doc(db, USERS_COLLECTION, uid), payload);
+    return mapUser(uid, payload, normalizedEmail);
+  } catch (error) {
+    if (error.code === 'auth/email-already-in-use') {
+      throw new Error('Este correo ya está registrado.');
+    }
+    throw error;
   }
-
-  const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, normalizedPassword);
-  const uid = credential.user.uid;
-
-  const payload = {
-    uid,
-    name: String(name || '').trim(),
-    email: normalizedEmail,
-    products: [],
-    children: [],
-    loyalty: { ...DEFAULT_LOYALTY },
-  };
-
-  await setDoc(doc(db, USERS_COLLECTION, uid), payload);
-
-  return mapUser(uid, payload, normalizedEmail);
 }
 
 export async function loginUser({ email, password }) {
-  ensureFirebaseReady();
-
   const normalizedEmail = normalizeEmail(email);
   const credential = await signInWithEmailAndPassword(auth, normalizedEmail, String(password));
   const firebaseUser = credential.user;
@@ -125,7 +117,6 @@ export async function loginUser({ email, password }) {
 }
 
 export async function sendUserResetPassword(email) {
-  ensureFirebaseReady();
   const normalizedEmail = normalizeEmail(email);
   await sendPasswordResetEmail(auth, normalizedEmail);
 }
