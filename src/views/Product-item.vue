@@ -14,8 +14,8 @@ const FILTER_SCROLL_DELAY = 100
 const allProducts = computed(() => getCompanyproducts())
 const productsContainerRef = ref(null)
 
-const categories = ['Todas', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', ESTETICA_INFANTIL_CATEGORY]
-const activeFilter = ref('Todas')
+const categories = ['Todos', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', ESTETICA_INFANTIL_CATEGORY]
+const activeFilter = ref('Todos')
 const activeSubcategory = ref('')
 
 // ✅ Eliminar activeCategory duplicado, usar activeFilter directamente
@@ -36,7 +36,7 @@ const subcategoryMap = {
 }
 
 const activeSubcategories = computed(() =>
-  activeFilter.value !== 'Todas' ? (subcategoryMap[activeFilter.value] ?? []) : []
+  activeFilter.value !== 'Todos' ? (subcategoryMap[activeFilter.value] ?? []) : []
 )
 
 const filterScrollTimeout = ref(null)
@@ -58,7 +58,7 @@ onBeforeUnmount(() => {
 })
 
 const products = computed(() => {
-  let list = activeFilter.value === 'Todas'
+  let list = activeFilter.value === 'Todos'
     ? allProducts.value
     : allProducts.value.filter((p) => p.category === activeFilter.value)
 
@@ -153,7 +153,7 @@ const formatPrice = (product) => {
           :class="{ active: activeSubcategory === '' }"
           @click="activeSubcategory = ''"
         >
-          Todas las subcategorías
+          Todos las subcategorías
         </button>
         <button
           v-for="sub in activeSubcategories"
