@@ -4,6 +4,7 @@ import Home from './views/Home-item.vue';
 import products from './views/Product-item.vue';
 import productsDetails from './components/Component-coupons-item.vue';
 import Reviews from './views/Reviews-item.vue';
+import About from './views/About-item.vue';
 import SignIn from './views/Sign-in.vue';
 import SignUp from './views/Sign-up.vue';
 import ForgetPassword from './views/Forget-Password.vue';
@@ -40,7 +41,7 @@ const routes = [
   { path: '/Contact-item', name: 'Contact', component: Contact, meta: { title: 'Contacto | El patio de Ani' }, },
   { path: '/product/:id', name: 'productsDetails', component: productsDetails, meta: { title: 'Detalles del Servicio | El patio de Ani' } },
   { path: '/Reviews-item', name: 'Reviews', component: Reviews, meta: { title: 'Reseñas | El patio de Ani' } },
-
+  { path: '/About-item', name: 'About', component: About, meta: { title: 'Sobre About | El patio de Ani' } },
   // USUARIO
   { path: '/Sign-in', name: 'SignIn', component: SignIn },
   { path: '/Sign-up', name: 'SignUp', component: SignUp },

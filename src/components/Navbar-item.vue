@@ -14,7 +14,7 @@
         <router-link @click="closeMenu" to="/product-item" class="text-navbar">Servicios</router-link>
         <router-link @click="closeMenu" to="/Contact-item" class="text-navbar">Contacto</router-link>
         <router-link @click="closeMenu" to="/Reviews-item" class="text-navbar">Reseñas</router-link>
-
+        <router-link @click="closeMenu" to="/About-item" class="text-navbar">Nosotros</router-link>
         <!-- CONTENEDOR DEL CARRITO -->
         <router-link @click="closeMenu" to="/Cart" class="text-navbar cart-link">
           <i class="pi pi-shopping-cart"></i>
@@ -47,7 +47,7 @@
           <a href="https://www.facebook.com/people/Alquiler-de-Juegos-Infantiles-El-Patio-de-Ani/100093147260858/" target="_blank"><i class="pi pi-facebook"></i></a>
           <a href="https://www.instagram.com/elpatiode.ani" target="_blank"><i class="pi pi-instagram"></i></a>
           <a href="https://www.tiktok.com/@elpatiode.ani" target="_blank"><i class="pi pi-tiktok"></i></a>
-          <!-- <a href="https://wa.me/51975495623" target="_blank"><i class="pi pi-whatsapp"></i></a> -->
+          <!-- <a href="https://www.youtube.com/@elpatiode.ani" target="_blank"><i class="pi pi-youtube"></i></a> -->
       </div>
 
       <div class="hamburger" @click="toggleMenu">☰</div>
