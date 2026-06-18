@@ -166,14 +166,14 @@ const tarifas = [
   { distrito: 'Chaclacayo / Lurin', precio: 170 },
 ];
 
-const eventTypeCards = [
-  { icon: '🎂', name: 'Cumpleaños' },
-  { icon: '👶', name: 'Baby Shower' },
-  { icon: '🎒', name: 'Kermesse Escolar' },
-  { icon: '🏢', name: 'Evento Empresarial' },
-  { icon: '🌸', name: 'Bautizo / Primera Comunión' },
-  { icon: '🎊', name: 'Celebración Familiar' },
-];
+// const eventTypeCards = [
+//   { icon: '🎂', name: 'Cumpleaños' },
+//   { icon: '👶', name: 'Baby Shower' },
+//   { icon: '🎒', name: 'Kermesse Escolar' },
+//   { icon: '🏢', name: 'Evento Empresarial' },
+//   { icon: '🌸', name: 'Bautizo / Primera Comunión' },
+//   { icon: '🎊', name: 'Celebración Familiar' },
+// ];
 </script>
 
 <template>
@@ -287,7 +287,7 @@ const eventTypeCards = [
       </router-link>
     </div>
 
-    <section class="event-types-section">
+    <!-- <section class="event-types-section">
       <h2 class="title-home">¿Para qué tipo de evento?</h2>
       <div class="event-types-grid">
         <router-link
@@ -300,7 +300,7 @@ const eventTypeCards = [
           <span class="event-type-name">{{ event.name }}</span>
         </router-link>
       </div>
-    </section>
+    </section> -->
 
     <h1 class="title-home">Más populares</h1>
 
