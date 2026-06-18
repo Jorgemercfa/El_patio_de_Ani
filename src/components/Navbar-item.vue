@@ -192,6 +192,15 @@ const { cartCount } = useCart();
     width: 80%;
   }
   .hamburger { display: block; margin-left: auto; z-index: 1001; position: relative; }
-  .social-media { display: none; }
+
+  .social-media-mobile {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+  }
+  .social-media-mobile i {
+    color: white;
+    font-size: 26px;
+  }
 }
 </style>
