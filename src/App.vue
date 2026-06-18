@@ -20,7 +20,7 @@
 
     <!-- Botón flotante de WhatsApp -->
     <a
-      href="https://wa.me/51987654321?text=¡Hola!%20Me%20gustaría%20más%20información."
+      href="https://wa.me/51975495623?text=¡Hola!%20Me%20gustaría%20más%20información."
       target="_blank"
       rel="noopener noreferrer"
       class="whatsapp-btn"

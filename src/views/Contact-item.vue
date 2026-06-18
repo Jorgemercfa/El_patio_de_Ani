@@ -121,16 +121,6 @@ function sendWhatsApp() {
             </div>
 
             <div class="info-item">
-              <span class="info-icon whatsapp-icon">📱</span>
-              <div>
-                <p class="info-label">WhatsApp Alternativo</p>
-                <a href="https://wa.me/51959181191" target="_blank" class="info-link">
-                  +51 959 181 191
-                </a>
-              </div>
-            </div>
-
-            <div class="info-item">
               <span class="info-icon">✉️</span>
               <div>
                 <p class="info-label">Correo</p>
