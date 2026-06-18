@@ -321,7 +321,7 @@ watch(
               💬 Consultar disponibilidad
             </button>
             <button class="secondary-login-button" @click="router.push('/Sign-in')">
-              🔑 Iniciar sesión para reservar
+              🔑 Iniciar sesión y obtener descuentos
             </button>
           </template>
         </div>
