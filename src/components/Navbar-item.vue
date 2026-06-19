@@ -174,29 +174,71 @@ const { cartCount } = useCart();
     z-index: 999;
     justify-content: center;
     align-items: center;
-    gap: 28px;
+    gap: 16px;
     padding: 80px 30px 30px;
   }
+
+  /* --- BOTONES OUTLINE (fondo transparente, borde blanco) --- */
   .link-style.show-menu .text-navbar {
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1.1rem;
+    font-weight: 800;
     color: white;
-    padding: 10px 20px;
-    width: 100%;
+    background: transparent;
+    padding: 14px 24px;
+    width: 80%;
     text-align: center;
+    border-radius: 999px;
+    border: 2px solid white;
+    transition: transform 0.15s ease, background 0.15s ease;
   }
-  .link-style.show-menu .btn-perfil {
-    background: rgba(255,255,255,0.2);
-    border-color: rgba(255,255,255,0.5);
+
+  .link-style.show-menu .text-navbar:active {
+    transform: scale(0.97);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Link de la ruta activa: fondo blanco sólido, texto rosa */
+  .link-style.show-menu .text-navbar.router-link-exact-active {
+    background: white;
+    color: #E91E81;
+  }
+
+  /* Carrito: mismo estilo outline */
+  .link-style.show-menu .cart-link {
     justify-content: center;
     width: 80%;
+    padding: 14px 24px;
+    gap: 10px;
   }
+
+  .link-style.show-menu .cart-link {
+    border: none;
+    width: auto;
+    padding: 14px;
+  }
+
+  .link-style.show-menu .cart-link i {
+    font-size: 1.6rem;
+  }
+
+  /* Botón de perfil/login: mismo outline, sin gradiente */
+  .link-style.show-menu .btn-perfil {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+    justify-content: center;
+    width: 80%;
+    padding: 14px 24px;
+    font-weight: 800;
+    margin-top: 8px;
+  }
+
   .hamburger { display: block; margin-left: auto; z-index: 1001; position: relative; }
 
   .social-media-mobile {
     display: flex;
     gap: 20px;
-    margin-top: 10px;
+    margin-top: 16px;
   }
   .social-media-mobile i {
     color: white;
