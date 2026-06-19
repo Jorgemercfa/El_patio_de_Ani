@@ -364,13 +364,10 @@ watch(
             {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
           </button>
 
-          <button
-            v-else
-            class="secondary-login-button"
-            @click="router.push('/Sign-in')"
-          >
-            🔑 Inicia sesión y obtener descuentos
-          </button>
+          <p v-else class="login-cart-hint">
+            Para acceder a descuentos
+            <router-link to="/Sign-in" class="login-cart-link">inicia sesión</router-link>
+          </p>
         </template>
       </div>
     </div>
@@ -951,4 +948,21 @@ watch(
 .review-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .review-login-prompt { color: #2D3E94; font-size: 0.95rem; }
 .review-login-link { color: #E91E81; font-weight: 700; }
+
+.login-cart-hint {
+  text-align: center;
+  font-size: 0.95rem;
+  color: #2D3E94;
+  margin: 4px 0 0;
+}
+
+.login-cart-link {
+  color: #E91E81;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.login-cart-link:hover {
+  opacity: 0.8;
+}
 </style>
