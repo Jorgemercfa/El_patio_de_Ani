@@ -4,6 +4,9 @@ import Footer from '@/components/Footer-item.vue';
 
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
+import { useSession } from '@/auth/session';
+
+const { isAuthenticated } = useSession();
 
 /* =============================
    CARRUSEL PRINCIPAL DE VIDEOS (LOCALES)
@@ -255,6 +258,33 @@ const tarifas = [
         <path d="M0,30 C480,60 960,0 1440,30 L1440,60 L0,60 Z" fill="#FDF6EC"/>
       </svg>
     </div>
+
+    <!-- ===== BENEFICIOS DE TENER CUENTA ===== -->
+    <section v-if="!isAuthenticated" class="beneficios-section">
+      <div class="movilidad-badge">CREA TU CUENTA</div>
+      <h2 class="title-home">Ahorra hasta 50% en cada evento 🎁</h2>
+      <p class="movilidad-subtitle">Acumula reservas y sube de nivel automáticamente, sin costo</p>
+
+      <div class="beneficios-grid">
+        <div class="beneficio-card beneficio-card-plata">
+          <span class="beneficio-icon">🥈</span>
+          <span class="beneficio-nivel">Plata</span>
+          <span class="beneficio-descuento">15% dto.</span>
+        </div>
+        <div class="beneficio-card beneficio-card-oro">
+          <span class="beneficio-icon">🥇</span>
+          <span class="beneficio-nivel">Oro</span>
+          <span class="beneficio-descuento">25% dto.</span>
+        </div>
+        <div class="beneficio-card beneficio-card-vip">
+          <span class="beneficio-icon">💎</span>
+          <span class="beneficio-nivel">VIP</span>
+          <span class="beneficio-descuento">50% dto.</span>
+        </div>
+      </div>
+
+      <router-link to="/Sign-in" class="beneficios-cta-btn">Crear cuenta gratis</router-link>
+    </section>
 
     <!-- ===== NUESTROS SERVICIOS ===== -->
     <h1 class="title-home">Nuestros Servicios</h1>
@@ -755,6 +785,75 @@ const tarifas = [
 
 .hero-stat-label { font-size: 0.9rem; opacity: 0.9; }
 
+/* ===== BENEFICIOS DE CUENTA ===== */
+.beneficios-section {
+  background: #ffffff;
+  border-radius: 32px;
+  margin: 0 40px;
+  padding: 56px 40px;
+  text-align: center;
+  font-family: 'Nunito', sans-serif;
+}
+
+.beneficios-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 760px;
+  margin: 0 auto 32px;
+}
+
+.beneficio-card {
+  background: #FDF6EC;
+  border-radius: 20px;
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border-top: 4px solid transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.beneficio-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+.beneficio-card-plata { border-top-color: #9CA3AF; }
+.beneficio-card-oro   { border-top-color: #FFD200; }
+.beneficio-card-vip   { border-top-color: #E91E81; }
+
+.beneficio-icon { font-size: 2.4rem; line-height: 1; }
+.beneficio-nivel {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #2D3E94;
+}
+.beneficio-descuento {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #E91E81;
+}
+
+.beneficios-cta-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #E91E81, #C2185B);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+  text-decoration: none;
+  padding: 14px 36px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(233, 30, 129, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.beneficios-cta-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 10px 26px rgba(233, 30, 129, 0.45);
+}
+
 /* ===== NUESTROS SERVICIOS ===== */
 .services-grid {
   display: grid;
@@ -924,6 +1023,7 @@ const tarifas = [
   .hero-stats { gap: 24px; }
   .movilidad-grid { grid-template-columns: repeat(2, 1fr); }
   .movilidad-section { margin: 0 30px 60px; padding: 40px 30px 60px; }
+  .beneficios-section { margin: 0 30px; padding: 44px 24px; }
 }
 
 @media (max-width: 768px) {
@@ -947,6 +1047,7 @@ const tarifas = [
   .products-nav-left  { left: 2px; }
   .products-nav-right { right: 2px; }
   .home-area { padding-bottom: 70px; }
+  .beneficios-grid { grid-template-columns: 1fr; gap: 14px; max-width: 320px; }
 }
 
 @media (max-width: 700px) {
@@ -978,6 +1079,7 @@ const tarifas = [
   .movilidad-section { margin: 0 20px 50px; padding: 32px 20px 50px; }
   .title-home { font-size: 22px; }
   .logs-item { flex-basis: 160px; }
+  .beneficios-section { margin: 0 20px; padding: 36px 16px; }
 }
 
 /* ===== REVIEWS ===== */
