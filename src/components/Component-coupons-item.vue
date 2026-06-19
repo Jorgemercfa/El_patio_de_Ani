@@ -321,7 +321,7 @@ watch(
               💬 Consultar disponibilidad
             </button>
             <button class="secondary-login-button" @click="router.push('/Sign-in')">
-              🔑 Iniciar sesión y obtener descuentos
+              🔑 Inicia sesión y obtener descuentos
             </button>
           </template>
         </div>
@@ -354,6 +354,7 @@ watch(
           </button>
 
           <button
+            v-if="isAuthenticated"
             class="buy-button"
             :disabled="!reservationDate || isSelectedDateAvailable !== true"
             :title="!reservationDate || isSelectedDateAvailable !== true ? 'Selecciona una fecha disponible para agregar al carrito' : 'Agregar al carrito'"
@@ -361,6 +362,14 @@ watch(
             @click="handleAddToCart"
           >
             {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
+          </button>
+
+          <button
+            v-else
+            class="secondary-login-button"
+            @click="router.push('/Sign-in')"
+          >
+            🔑 Inicia sesión y obtener descuentos
           </button>
         </template>
       </div>
