@@ -5,6 +5,7 @@ import Footer from '@/components/Footer-item.vue';
 
 const form = ref({
   nombre: '',
+  apellido: '',
   email: '',
   telefono: '',
   distrito: '',
@@ -13,16 +14,19 @@ const form = ref({
   comentarios: '',
 });
 
+const showConfirmation = ref(false);
+
 function sendWhatsApp() {
-  if (!form.value.nombre || !form.value.telefono || !form.value.distrito) {
-    alert('Por favor completa los campos obligatorios: Nombre, Teléfono y Distrito.');
+  if (!form.value.nombre || !form.value.apellido || !form.value.telefono || !form.value.distrito) {
+    alert('Por favor completa los campos obligatorios: Nombre, Apellido, Teléfono y Distrito.');
     return;
   }
 
   const phone = '51975495623';
   const message =
-    `¡Hola! Solicito una cotización 🎉\n\n` +
+    `Hola Ani, solicito una cotización 🎉\n\n` +
     `👤 Nombre: ${form.value.nombre}\n` +
+    `👤 Apellido: ${form.value.apellido}\n` +
     `📧 Email: ${form.value.email || 'No indicado'}\n` +
     `📱 Teléfono: ${form.value.telefono}\n` +
     `📍 Distrito: ${form.value.distrito}\n` +
@@ -32,8 +36,13 @@ function sendWhatsApp() {
 
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
-  // Se usa location.href en vez de window.open para evitar bloqueos de popups
-  window.location.href = url;
+  // Mostramos la confirmación antes de redirigir, para que el usuario la alcance a leer
+  showConfirmation.value = true;
+
+  setTimeout(() => {
+    // Se usa location.href en vez de window.open para evitar bloqueos de popups
+    window.location.href = url;
+  }, 1200);
 }
 </script>
 
@@ -60,6 +69,13 @@ function sendWhatsApp() {
                 <label>Nombre Completo <span class="required">*</span></label>
                 <input v-model="form.nombre" type="text" placeholder="Tu nombre completo" required />
               </div>
+              <div class="form-group">
+                <label>Apellido Completo <span class="required">*</span></label>
+                <input v-model="form.apellido" type="text" placeholder="Tu apellido completo" required />
+              </div>
+            </div>
+
+            <div class="form-row">
               <div class="form-group">
                 <label>Email</label>
                 <input v-model="form.email" type="email" placeholder="tucorreo@email.com" />
@@ -107,6 +123,10 @@ function sendWhatsApp() {
             <button class="send-button" type="button" @click="sendWhatsApp">
               📱 Enviar por WhatsApp
             </button>
+
+            <p v-if="showConfirmation" class="confirmation-message">
+              ✅ ¡Tu solicitud fue enviada! Pronto Ani te atenderá.
+            </p>
           </div>
 
           <!-- INFORMACIÓN -->
@@ -267,25 +287,36 @@ function sendWhatsApp() {
 }
 
 .send-button {
-  @apply mx-3.5 mt-4 mb-4 px-6 py-3.5 
-         font-black text-sm tracking-wide
-         rounded-full border-none cursor-pointer
-         transition-all duration-200
-         hover:scale-105;
+  margin: 4px 0 0;
+  padding: 16px;
+  font-weight: 900;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
   background-color: #FFD200;
   color: #2D3E94;
-  width: calc(100% - 28px);
+  width: 100%;
   box-shadow: 0 4px 14px rgba(255, 210, 0, 0.35);
 }
 
-.product-card--estetica .send-button {
-  background: linear-gradient(135deg, #FF6B9D, #FFD200);
-  color: #2D3E94;
-  font-weight: 900;
+.send-button:hover {
+  transform: scale(1.03);
+  box-shadow: 0 7px 18px rgba(255, 210, 0, 0.5);
 }
 
-.send-button:hover {
-  box-shadow: 0 7px 18px rgba(255, 210, 0, 0.5);
+.confirmation-message {
+  margin: 4px 0 0;
+  padding: 12px 16px;
+  background: rgba(37, 211, 102, 0.12);
+  border: 1px solid rgba(37, 211, 102, 0.4);
+  border-radius: 14px;
+  color: #128C7E;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-align: center;
 }
 
 /* PANEL DERECHO INFO */
@@ -368,10 +399,10 @@ function sendWhatsApp() {
   .form-row {
     flex-direction: column;
   }
-  
+
   .send-button {
-    padding: 10px 8px;
-    font-size: 0.78rem;
+    padding: 14px 8px;
+    font-size: 0.9rem;
   }
 }
 
