@@ -18,6 +18,7 @@ function sendWhatsApp() {
     alert('Por favor completa los campos obligatorios: Nombre, Teléfono y Distrito.');
     return;
   }
+
   const phone = '51975495623';
   const message =
     `¡Hola! Solicito una cotización 🎉\n\n` +
@@ -28,8 +29,11 @@ function sendWhatsApp() {
     `🎉 Tipo de evento: ${form.value.tipoEvento || 'Por definir'}\n` +
     `📅 Fecha: ${form.value.fecha || 'Por definir'}\n` +
     `💬 Comentarios: ${form.value.comentarios || 'Sin comentarios adicionales'}`;
+
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-  window.open(url, '_blank');
+
+  // Se usa location.href en vez de window.open para evitar bloqueos de popups
+  window.location.href = url;
 }
 </script>
 
@@ -42,7 +46,7 @@ function sendWhatsApp() {
     <section class="contact-section">
       <div class="contact-container">
         <div class="contact-badge">¡ESCRÍBENOS HOY!</div>
-        <h1 class="main-title">Solicita tu Cotización 📋</h1>
+        <h1 class="main-title">Contactenos 📋</h1>
         <p class="main-subtitle">
           ¡Hagamos tu fiesta especial! 🎉 Completa el formulario y te contactamos sin compromiso.
           Respondemos por WhatsApp.
@@ -100,9 +104,8 @@ function sendWhatsApp() {
               ></textarea>
             </div>
 
-            <button class="whatsapp-btn" @click="sendWhatsApp">
-              <i class="pi pi-whatsapp"></i>
-              Enviar por WhatsApp
+            <button class="whatsapp-btn" type="button" @click="sendWhatsApp">
+              📱 Enviar por WhatsApp
             </button>
           </div>
 
@@ -284,11 +287,6 @@ function sendWhatsApp() {
 .whatsapp-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(37, 211, 102, 0.45);
-}
-
-.whatsapp-btn .pi {
-  font-size: 1.2rem;
-  color: white;
 }
 
 /* PANEL DERECHO INFO */
