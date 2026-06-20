@@ -104,7 +104,7 @@ function sendWhatsApp() {
               ></textarea>
             </div>
 
-            <button class="whatsapp-btn" type="button" @click="sendWhatsApp">
+            <button class="send-button" type="button" @click="sendWhatsApp">
               📱 Enviar por WhatsApp
             </button>
           </div>
@@ -266,27 +266,26 @@ function sendWhatsApp() {
   box-shadow: 0 0 0 3px rgba(233, 30, 129, 0.1);
 }
 
-.whatsapp-btn {
-  margin-top: 6px;
-  padding: 16px;
-  border-radius: 999px;
-  border: none;
-  background: linear-gradient(135deg, #25D366, #128C7E);
-  color: white;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.35);
+.send-button {
+  @apply mx-3.5 mt-4 mb-4 px-6 py-3.5 
+         font-black text-sm tracking-wide
+         rounded-full border-none cursor-pointer
+         transition-all duration-200
+         hover:scale-105;
+  background-color: #FFD200;
+  color: #2D3E94;
+  width: calc(100% - 28px);
+  box-shadow: 0 4px 14px rgba(255, 210, 0, 0.35);
 }
 
-.whatsapp-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(37, 211, 102, 0.45);
+.product-card--estetica .send-button {
+  background: linear-gradient(135deg, #FF6B9D, #FFD200);
+  color: #2D3E94;
+  font-weight: 900;
+}
+
+.send-button:hover {
+  box-shadow: 0 7px 18px rgba(255, 210, 0, 0.5);
 }
 
 /* PANEL DERECHO INFO */
@@ -368,6 +367,11 @@ function sendWhatsApp() {
 
   .form-row {
     flex-direction: column;
+  }
+  
+  .send-button {
+    padding: 10px 8px;
+    font-size: 0.78rem;
   }
 }
 
