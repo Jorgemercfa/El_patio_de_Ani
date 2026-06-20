@@ -46,7 +46,7 @@ function sendWhatsApp() {
     <section class="contact-section">
       <div class="contact-container">
         <div class="contact-badge">¡ESCRÍBENOS HOY!</div>
-        <h1 class="main-title">Contactenos 📋</h1>
+        <h1 class="main-title">Contactenos</h1>
         <p class="main-subtitle">
           ¡Hagamos tu fiesta especial! 🎉 Completa el formulario y te contactamos sin compromiso.
           Respondemos por WhatsApp.

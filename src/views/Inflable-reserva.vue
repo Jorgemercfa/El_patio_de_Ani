@@ -1079,8 +1079,8 @@ select:focus {
 }
 
 .modal-overlay {
-  position: fixed;
-  inset: 0;
+  /* position: fixed;
+  inset: 0; */
   background: rgba(0, 0, 0, 0.45);
   display: grid;
   place-items: center;
