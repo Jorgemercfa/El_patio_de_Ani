@@ -435,334 +435,356 @@ onMounted(async () => {
 </script>
 
 <template>
-  <header>
-    <Navbar />
-  </header>
+  <div class="page-wrapper">
+    <header>
+      <Navbar />
+    </header>
 
-  <main class="page">
-    <section class="reservation-wrapper">
-      <div class="reservation-card">
-        <h1 class="title">Reserva de Inflables</h1>
+    <main class="page">
+      <section class="reservation-wrapper">
+        <div class="reservation-card">
+          <h1 class="title">Reserva de Inflables</h1>
 
-        <p class="selected-product" v-if="selectedProduct">
-          Inflable seleccionado: <strong>{{ selectedProduct.name }}</strong>
-        </p>
+          <p class="selected-product" v-if="selectedProduct">
+            Inflable seleccionado: <strong>{{ selectedProduct.name }}</strong>
+          </p>
 
-        <template v-if="!isAuthenticated">
-          <div class="warning-panel">
-            <p class="warning-message">¿Eres nuevo con nosotros? ¡Contáctanos por WhatsApp para coordinar tu primera reserva!</p>
-            <a
-              class="whatsapp-cta"
-              :href="firstContactWhatsappUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              💬 Contactar por WhatsApp
-            </a>
-            <p class="secondary-text">
-              ¿Ya eres cliente?
-              <router-link to="/Sign-in">Inicia sesión para reservar directamente</router-link>
-            </p>
-          </div>
-        </template>
-
-        <form v-else class="reservation-form" @submit.prevent="submitReservation">
-          <section class="form-section availability-section">
-            <h2>📅 Disponibilidad</h2>
-
-            <div class="calendar-card">
-              <div class="calendar-header">
-                <button type="button" class="calendar-nav-btn" @click="goToPreviousMonth">◀</button>
-                <p class="calendar-month">{{ calendarMonthLabel }}</p>
-                <button type="button" class="calendar-nav-btn" @click="goToNextMonth">▶</button>
-              </div>
-
-              <div class="calendar-weekdays">
-                <span v-for="weekDay in CALENDAR_WEEK_DAYS" :key="weekDay">{{ weekDay }}</span>
-              </div>
-
-              <div class="calendar-grid">
-                <template v-for="(day, index) in calendarDays" :key="day?.dateString || `empty-${index}`">
-                  <button
-                    v-if="day"
-                    type="button"
-                    class="calendar-day"
-                    :class="{
-                      'is-past': day.isPast,
-                      'is-reserved': day.isReserved,
-                      'is-selected': day.isSelected,
-                    }"
-                    :disabled="!day.isAvailable"
-                    @click="selectCalendarDate(day)"
-                  >
-                    <span>{{ day.dayNumber }}</span>
-                    <small v-if="day.isReserved">Reservado</small>
-                  </button>
-                  <div v-else class="calendar-day is-empty"></div>
-                </template>
-              </div>
-
-              <div class="calendar-legend">
-                <span>⚪ Disponible</span>
-                <span>🔴 Reservado</span>
-                <span>🟡 Seleccionado</span>
-                <span>⬛ Pasado</span>
-              </div>
+          <template v-if="!isAuthenticated">
+            <div class="warning-panel">
+              <p class="warning-message">¿Eres nuevo con nosotros? ¡Contáctanos por WhatsApp para coordinar tu primera reserva!</p>
+              <a
+                class="whatsapp-cta"
+                :href="firstContactWhatsappUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                💬 Contactar por WhatsApp
+              </a>
+              <p class="secondary-text">
+                ¿Ya eres cliente?
+                <router-link to="/Sign-in">Inicia sesión para reservar directamente</router-link>
+              </p>
             </div>
-          </section>
+          </template>
 
-          <section class="form-section">
-            <h2>1️⃣ 🎉 Datos del evento</h2>
-            <div class="section-grid">
+          <form v-else class="reservation-form" @submit.prevent="submitReservation">
+            <section class="form-section availability-section">
+              <h2>📅 Disponibilidad</h2>
+
+              <div class="calendar-card">
+                <div class="calendar-header">
+                  <button type="button" class="calendar-nav-btn" @click="goToPreviousMonth">◀</button>
+                  <p class="calendar-month">{{ calendarMonthLabel }}</p>
+                  <button type="button" class="calendar-nav-btn" @click="goToNextMonth">▶</button>
+                </div>
+
+                <div class="calendar-weekdays">
+                  <span v-for="weekDay in CALENDAR_WEEK_DAYS" :key="weekDay">{{ weekDay }}</span>
+                </div>
+
+                <div class="calendar-grid">
+                  <template v-for="(day, index) in calendarDays" :key="day?.dateString || `empty-${index}`">
+                    <button
+                      v-if="day"
+                      type="button"
+                      class="calendar-day"
+                      :class="{
+                        'is-past': day.isPast,
+                        'is-reserved': day.isReserved,
+                        'is-selected': day.isSelected,
+                      }"
+                      :disabled="!day.isAvailable"
+                      @click="selectCalendarDate(day)"
+                    >
+                      <span>{{ day.dayNumber }}</span>
+                      <small v-if="day.isReserved">Reservado</small>
+                    </button>
+                    <div v-else class="calendar-day is-empty"></div>
+                  </template>
+                </div>
+
+                <div class="calendar-legend">
+                  <span>⚪ Disponible</span>
+                  <span>🔴 Reservado</span>
+                  <span>🟡 Seleccionado</span>
+                  <span>⬛ Pasado</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h2>1️⃣ 🎉 Datos del evento</h2>
+              <div class="section-grid">
+                <div class="field full-width">
+                  <label for="responsibleName">Nombre completo del responsable</label>
+                  <input id="responsibleName" v-model="form.responsibleName" type="text" placeholder="Ej: Ana Torres" />
+                  <p v-if="formErrors.responsibleName" class="error-text">{{ formErrors.responsibleName }}</p>
+                </div>
+
+                <div class="field full-width">
+                  <label for="eventAddress">Dirección completa del evento</label>
+                  <input id="eventAddress" v-model="form.eventAddress" type="text" placeholder="Av./Jr. + referencia" />
+                  <p v-if="formErrors.eventAddress" class="error-text">{{ formErrors.eventAddress }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="district">Distrito</label>
+                  <input id="district" v-model="form.district" type="text" placeholder="Ej: San Borja" />
+                  <p v-if="formErrors.district" class="error-text">{{ formErrors.district }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="eventType">Tipo de evento</label>
+                  <select id="eventType" v-model="form.eventType">
+                    <option value="">Selecciona el tipo de evento</option>
+                    <option value="🎂 Cumpleaños">🎂 Cumpleaños</option>
+                    <option value="👶 Baby Shower">👶 Baby Shower</option>
+                    <option value="🎒 Kermesse Escolar">🎒 Kermesse Escolar</option>
+                    <option value="🏢 Evento Empresarial">🏢 Evento Empresarial</option>
+                    <option value="🌸 Bautizo / Primera Comunión">🌸 Bautizo / Primera Comunión</option>
+                    <option value="🎊 Celebración Familiar">🎊 Celebración Familiar</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                  <p v-if="formErrors.eventType" class="error-text">{{ formErrors.eventType }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="eventDate">Fecha del evento</label>
+                  <input id="eventDate" v-model="form.eventDate" :min="today" type="date" />
+                  <p v-if="formErrors.eventDate" class="error-text">{{ formErrors.eventDate }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="startTime">Horario de inicio</label>
+                  <input id="startTime" v-model="form.startTime" type="time" />
+                  <p v-if="formErrors.startTime" class="error-text">{{ formErrors.startTime }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="endTime">Horario de fin</label>
+                  <input id="endTime" v-model="form.endTime" type="time" />
+                  <p v-if="formErrors.endTime" class="error-text">{{ formErrors.endTime }}</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h2>2️⃣ ⚡ Logística eléctrica</h2>
+              <div class="radios">
+                <label><input v-model="form.electricLogistics" type="radio" value="Sí, cuento con toma de corriente estable ✅" /> Sí, cuento con toma de corriente estable ✅</label>
+                <label><input v-model="form.electricLogistics" type="radio" value="Sí, cuento con grupo electrógeno ✅" /> Sí, cuento con grupo electrógeno ✅</label>
+                <label><input v-model="form.electricLogistics" type="radio" value="no-electricity" /> No cuento con suministro eléctrico ❌</label>
+              </div>
+              <p v-if="formErrors.electricLogistics" class="error-text">{{ formErrors.electricLogistics }}</p>
+
+              <div v-if="showElectricityWarning" class="alert warning-alert">
+                ⚠️ Los inflables requieren conexión eléctrica para funcionar. Sin suministro eléctrico no es posible instalar el servicio. Te recomendamos contactarnos por WhatsApp para evaluar opciones.
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h2>3️⃣ 📐 Dimensiones del espacio</h2>
+              <div class="section-grid">
+                <div class="field">
+                  <label for="spaceLength">Largo disponible (m)</label>
+                  <input id="spaceLength" v-model="form.spaceLength" min="1" type="number" placeholder="Ej: 5" />
+                  <p v-if="formErrors.spaceLength" class="error-text">{{ formErrors.spaceLength }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="spaceWidth">Ancho disponible (m)</label>
+                  <input id="spaceWidth" v-model="form.spaceWidth" min="1" type="number" placeholder="Ej: 4" />
+                  <p v-if="formErrors.spaceWidth" class="error-text">{{ formErrors.spaceWidth }}</p>
+                </div>
+              </div>
+
+              <div v-if="hasSpaceWarning" class="alert error-alert">
+                {{ spaceWarningMessage }}
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h2>4️⃣ 🌱 Tipo de suelo</h2>
               <div class="field full-width">
-                <label for="responsibleName">Nombre completo del responsable</label>
-                <input id="responsibleName" v-model="form.responsibleName" type="text" placeholder="Ej: Ana Torres" />
-                <p v-if="formErrors.responsibleName" class="error-text">{{ formErrors.responsibleName }}</p>
-              </div>
-
-              <div class="field full-width">
-                <label for="eventAddress">Dirección completa del evento</label>
-                <input id="eventAddress" v-model="form.eventAddress" type="text" placeholder="Av./Jr. + referencia" />
-                <p v-if="formErrors.eventAddress" class="error-text">{{ formErrors.eventAddress }}</p>
-              </div>
-
-              <div class="field">
-                <label for="district">Distrito</label>
-                <input id="district" v-model="form.district" type="text" placeholder="Ej: San Borja" />
-                <p v-if="formErrors.district" class="error-text">{{ formErrors.district }}</p>
-              </div>
-
-              <div class="field">
-                <label for="eventType">Tipo de evento</label>
-                <select id="eventType" v-model="form.eventType">
-                  <option value="">Selecciona el tipo de evento</option>
-                  <option value="🎂 Cumpleaños">🎂 Cumpleaños</option>
-                  <option value="👶 Baby Shower">👶 Baby Shower</option>
-                  <option value="🎒 Kermesse Escolar">🎒 Kermesse Escolar</option>
-                  <option value="🏢 Evento Empresarial">🏢 Evento Empresarial</option>
-                  <option value="🌸 Bautizo / Primera Comunión">🌸 Bautizo / Primera Comunión</option>
-                  <option value="🎊 Celebración Familiar">🎊 Celebración Familiar</option>
-                  <option value="Otro">Otro</option>
+                <label for="floorType">Tipo de suelo</label>
+                <select id="floorType" v-model="form.floorType">
+                  <option value="">Selecciona una opción</option>
+                  <option value="Césped (Estacas)">Césped (se instala con estacas)</option>
+                  <option value="Cemento / Asfalto (Bolsas de arena)">Cemento / Asfalto (se instala con bolsas de arena)</option>
+                  <option value="Tierra">Tierra</option>
+                  <option value="Interior (piso duro interior)">Interior (piso duro interior)</option>
                 </select>
-                <p v-if="formErrors.eventType" class="error-text">{{ formErrors.eventType }}</p>
+                <p v-if="formErrors.floorType" class="error-text">{{ formErrors.floorType }}</p>
+              </div>
+              <div class="alert info-alert">{{ floorInfo }}</div>
+            </section>
+
+            <!-- SECCIÓN DE AGUA (solo para inflables acuáticos) -->
+            <section v-if="isWaterInflable" class="form-section water-section">
+              <h2>💧 Conexiones de Agua</h2>
+
+              <div class="water-banner">
+                💧 Este inflable requiere <strong>conexión de agua</strong>. Por favor completa la información sobre las instalaciones disponibles en el lugar del evento.
               </div>
 
-              <div class="field">
-                <label for="eventDate">Fecha del evento</label>
-                <input id="eventDate" v-model="form.eventDate" :min="today" type="date" />
-                <p v-if="formErrors.eventDate" class="error-text">{{ formErrors.eventDate }}</p>
+              <div class="field full-width">
+                <label>¿Con qué conexión de agua cuentas?</label>
+                <div class="radios">
+                  <label>
+                    <input v-model="form.waterConnection" type="radio" value="si-toma" />
+                    🚿 Sí, tengo toma de agua fija (grifo o tubería)
+                  </label>
+                  <label>
+                    <input v-model="form.waterConnection" type="radio" value="si-manguera" />
+                    🚰 Sí, tengo manguera de jardín accesible
+                  </label>
+                  <label>
+                    <input v-model="form.waterConnection" type="radio" value="no-agua" />
+                    ❌ No cuento con conexión de agua
+                  </label>
+                </div>
+                <p v-if="formErrors.waterConnection" class="error-text">{{ formErrors.waterConnection }}</p>
+
+                <div v-if="form.waterConnection === 'no-agua'" class="alert warning-alert">
+                  ⚠️ Sin conexión de agua no es posible instalar este inflable en modalidad acuática. Te recomendamos contactarnos para evaluar alternativas (modalidad seca con pelotitas).
+                </div>
               </div>
 
-              <div class="field">
-                <label for="startTime">Horario de inicio</label>
-                <input id="startTime" v-model="form.startTime" type="time" />
-                <p v-if="formErrors.startTime" class="error-text">{{ formErrors.startTime }}</p>
+              <div class="field full-width">
+                <label>¿Cómo se gestionará el agua utilizada?</label>
+                <div class="radios">
+                  <label>
+                    <input v-model="form.waterDrainType" type="radio" value="tierra" />
+                    🌱 Se absorbe en el jardín / tierra
+                  </label>
+                  <label>
+                    <input v-model="form.waterDrainType" type="radio" value="desague" />
+                    🕳️ Hay desagüe cercano disponible
+                  </label>
+                  <label>
+                    <input v-model="form.waterDrainType" type="radio" value="sin-drenaje" />
+                    ⚠️ No hay sistema de drenaje disponible
+                  </label>
+                </div>
+                <p v-if="formErrors.waterDrainType" class="error-text">{{ formErrors.waterDrainType }}</p>
+
+                <div v-if="form.waterDrainType === 'sin-drenaje'" class="alert warning-alert">
+                  ⚠️ Sin drenaje el agua puede acumularse. Coordinaremos contigo para minimizar el impacto en el espacio.
+                </div>
               </div>
 
-              <div class="field">
-                <label for="endTime">Horario de fin</label>
-                <input id="endTime" v-model="form.endTime" type="time" />
-                <p v-if="formErrors.endTime" class="error-text">{{ formErrors.endTime }}</p>
+              <label class="checkbox-row">
+                <input v-model="form.waterResponsible" type="checkbox" />
+                Entiendo que soy responsable de proporcionar el acceso al agua y de la gestión del agua utilizada durante el evento.
+              </label>
+              <p v-if="formErrors.waterResponsible" class="error-text">{{ formErrors.waterResponsible }}</p>
+            </section>
+
+            <section class="form-section">
+              <h2>5️⃣ 👧 Detalles de los invitados</h2>
+              <div class="section-grid">
+                <div class="field">
+                  <label for="guestCount">Cantidad estimada de niños</label>
+                  <input id="guestCount" v-model="form.guestCount" min="1" :max="MAX_GUEST_COUNT" type="number" placeholder="Ej: 20" />
+                  <p v-if="formErrors.guestCount" class="error-text">{{ formErrors.guestCount }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="ageRange">Rango de edades</label>
+                  <input id="ageRange" v-model="form.ageRange" type="text" placeholder="ej: 3-8 años" />
+                  <p v-if="formErrors.ageRange" class="error-text">{{ formErrors.ageRange }}</p>
+                </div>
               </div>
-            </div>
-          </section>
+              <div class="alert info-alert">{{ ageRecommendation }}</div>
+            </section>
 
-          <section class="form-section">
-            <h2>2️⃣ ⚡ Logística eléctrica</h2>
-            <div class="radios">
-              <label><input v-model="form.electricLogistics" type="radio" value="Sí, cuento con toma de corriente estable ✅" /> Sí, cuento con toma de corriente estable ✅</label>
-              <label><input v-model="form.electricLogistics" type="radio" value="Sí, cuento con grupo electrógeno ✅" /> Sí, cuento con grupo electrógeno ✅</label>
-              <label><input v-model="form.electricLogistics" type="radio" value="no-electricity" /> No cuento con suministro eléctrico ❌</label>
-            </div>
-            <p v-if="formErrors.electricLogistics" class="error-text">{{ formErrors.electricLogistics }}</p>
+            <section class="form-section">
+              <h2>6️⃣ 🚪 Ruta de acceso</h2>
+              <label class="checkbox-row">
+                <input v-model="form.accessConfirmed" type="checkbox" />
+                Confirmo que el camino hacia el área de instalación está libre de escaleras, puertas estrechas y obstáculos que impidan el paso de equipos grandes
+              </label>
+              <p v-if="formErrors.accessConfirmed" class="error-text">{{ formErrors.accessConfirmed }}</p>
+            </section>
 
-            <div v-if="showElectricityWarning" class="alert warning-alert">
-              ⚠️ Los inflables requieren conexión eléctrica para funcionar. Sin suministro eléctrico no es posible instalar el servicio. Te recomendamos contactarnos por WhatsApp para evaluar opciones.
-            </div>
-          </section>
-
-          <section class="form-section">
-            <h2>3️⃣ 📐 Dimensiones del espacio</h2>
-            <div class="section-grid">
-              <div class="field">
-                <label for="spaceLength">Largo disponible (m)</label>
-                <input id="spaceLength" v-model="form.spaceLength" min="1" type="number" placeholder="Ej: 5" />
-                <p v-if="formErrors.spaceLength" class="error-text">{{ formErrors.spaceLength }}</p>
+            <section class="form-section" v-if="requiresMeasureVisit">
+              <h2>7️⃣ 📏 Toma de medidas</h2>
+              <div class="alert warning-alert">
+                📏 Para inflables premium ({{ premiumPriceLabel }}), recomendamos una visita previa de toma de medidas sin costo. ¿Deseas coordinarla?
               </div>
-
-              <div class="field">
-                <label for="spaceWidth">Ancho disponible (m)</label>
-                <input id="spaceWidth" v-model="form.spaceWidth" min="1" type="number" placeholder="Ej: 4" />
-                <p v-if="formErrors.spaceWidth" class="error-text">{{ formErrors.spaceWidth }}</p>
-              </div>
-            </div>
-
-            <div v-if="hasSpaceWarning" class="alert error-alert">
-              {{ spaceWarningMessage }}
-            </div>
-          </section>
-
-          <section class="form-section">
-            <h2>4️⃣ 🌱 Tipo de suelo</h2>
-            <div class="field full-width">
-              <label for="floorType">Tipo de suelo</label>
-              <select id="floorType" v-model="form.floorType">
-                <option value="">Selecciona una opción</option>
-                <option value="Césped (Estacas)">Césped (se instala con estacas)</option>
-                <option value="Cemento / Asfalto (Bolsas de arena)">Cemento / Asfalto (se instala con bolsas de arena)</option>
-                <option value="Tierra">Tierra</option>
-                <option value="Interior (piso duro interior)">Interior (piso duro interior)</option>
-              </select>
-              <p v-if="formErrors.floorType" class="error-text">{{ formErrors.floorType }}</p>
-            </div>
-            <div class="alert info-alert">{{ floorInfo }}</div>
-          </section>
-
-          <!-- SECCIÓN DE AGUA (solo para inflables acuáticos) -->
-          <section v-if="isWaterInflable" class="form-section water-section">
-            <h2>💧 Conexiones de Agua</h2>
-
-            <div class="water-banner">
-              💧 Este inflable requiere <strong>conexión de agua</strong>. Por favor completa la información sobre las instalaciones disponibles en el lugar del evento.
-            </div>
-
-            <div class="field full-width">
-              <label>¿Con qué conexión de agua cuentas?</label>
               <div class="radios">
-                <label>
-                  <input v-model="form.waterConnection" type="radio" value="si-toma" />
-                  🚿 Sí, tengo toma de agua fija (grifo o tubería)
-                </label>
-                <label>
-                  <input v-model="form.waterConnection" type="radio" value="si-manguera" />
-                  🚰 Sí, tengo manguera de jardín accesible
-                </label>
-                <label>
-                  <input v-model="form.waterConnection" type="radio" value="no-agua" />
-                  ❌ No cuento con conexión de agua
-                </label>
+                <label><input v-model="form.measureVisitChoice" type="radio" value="Sí, quiero coordinar visita de medidas" /> Sí, quiero coordinar visita de medidas</label>
+                <label><input v-model="form.measureVisitChoice" type="radio" value="No, confirmo que mi espacio es suficiente" /> No, confirmo que mi espacio es suficiente</label>
               </div>
-              <p v-if="formErrors.waterConnection" class="error-text">{{ formErrors.waterConnection }}</p>
+              <p v-if="formErrors.measureVisitChoice" class="error-text">{{ formErrors.measureVisitChoice }}</p>
 
-              <div v-if="form.waterConnection === 'no-agua'" class="alert warning-alert">
-                ⚠️ Sin conexión de agua no es posible instalar este inflable en modalidad acuática. Te recomendamos contactarnos para evaluar alternativas (modalidad seca con pelotitas).
+              <div class="field" v-if="form.measureVisitChoice === 'Sí, quiero coordinar visita de medidas'">
+                <label for="measureVisitPhone">Teléfono de contacto</label>
+                <input id="measureVisitPhone" v-model="form.measureVisitPhone" type="tel" placeholder="Ej: 987654321" />
+                <p v-if="formErrors.measureVisitPhone" class="error-text">{{ formErrors.measureVisitPhone }}</p>
               </div>
+            </section>
+
+            <div class="note">
+              <h3>📝 Nota</h3>
+              <p>
+                Los servicios se alquilan por 5 horas.
+              </p>
             </div>
 
-            <div class="field full-width">
-              <label>¿Cómo se gestionará el agua utilizada?</label>
-              <div class="radios">
-                <label>
-                  <input v-model="form.waterDrainType" type="radio" value="tierra" />
-                  🌱 Se absorbe en el jardín / tierra
-                </label>
-                <label>
-                  <input v-model="form.waterDrainType" type="radio" value="desague" />
-                  🕳️ Hay desagüe cercano disponible
-                </label>
-                <label>
-                  <input v-model="form.waterDrainType" type="radio" value="sin-drenaje" />
-                  ⚠️ No hay sistema de drenaje disponible
-                </label>
-              </div>
-              <p v-if="formErrors.waterDrainType" class="error-text">{{ formErrors.waterDrainType }}</p>
+            <button class="submit-btn" type="submit">✅ Confirmar Reserva</button>
+          </form>
+        </div>
+      </section>
 
-              <div v-if="form.waterDrainType === 'sin-drenaje'" class="alert warning-alert">
-                ⚠️ Sin drenaje el agua puede acumularse. Coordinaremos contigo para minimizar el impacto en el espacio.
-              </div>
-            </div>
-
-            <label class="checkbox-row">
-              <input v-model="form.waterResponsible" type="checkbox" />
-              Entiendo que soy responsable de proporcionar el acceso al agua y de la gestión del agua utilizada durante el evento.
-            </label>
-            <p v-if="formErrors.waterResponsible" class="error-text">{{ formErrors.waterResponsible }}</p>
-          </section>
-
-          <section class="form-section">
-            <h2>5️⃣ 👧 Detalles de los invitados</h2>
-            <div class="section-grid">
-              <div class="field">
-                <label for="guestCount">Cantidad estimada de niños</label>
-                <input id="guestCount" v-model="form.guestCount" min="1" :max="MAX_GUEST_COUNT" type="number" placeholder="Ej: 20" />
-                <p v-if="formErrors.guestCount" class="error-text">{{ formErrors.guestCount }}</p>
-              </div>
-
-              <div class="field">
-                <label for="ageRange">Rango de edades</label>
-                <input id="ageRange" v-model="form.ageRange" type="text" placeholder="ej: 3-8 años" />
-                <p v-if="formErrors.ageRange" class="error-text">{{ formErrors.ageRange }}</p>
-              </div>
-            </div>
-            <div class="alert info-alert">{{ ageRecommendation }}</div>
-          </section>
-
-          <section class="form-section">
-            <h2>6️⃣ 🚪 Ruta de acceso</h2>
-            <label class="checkbox-row">
-              <input v-model="form.accessConfirmed" type="checkbox" />
-              Confirmo que el camino hacia el área de instalación está libre de escaleras, puertas estrechas y obstáculos que impidan el paso de equipos grandes
-            </label>
-            <p v-if="formErrors.accessConfirmed" class="error-text">{{ formErrors.accessConfirmed }}</p>
-          </section>
-
-          <section class="form-section" v-if="requiresMeasureVisit">
-            <h2>7️⃣ 📏 Toma de medidas</h2>
-            <div class="alert warning-alert">
-              📏 Para inflables premium ({{ premiumPriceLabel }}), recomendamos una visita previa de toma de medidas sin costo. ¿Deseas coordinarla?
-            </div>
-            <div class="radios">
-              <label><input v-model="form.measureVisitChoice" type="radio" value="Sí, quiero coordinar visita de medidas" /> Sí, quiero coordinar visita de medidas</label>
-              <label><input v-model="form.measureVisitChoice" type="radio" value="No, confirmo que mi espacio es suficiente" /> No, confirmo que mi espacio es suficiente</label>
-            </div>
-            <p v-if="formErrors.measureVisitChoice" class="error-text">{{ formErrors.measureVisitChoice }}</p>
-
-            <div class="field" v-if="form.measureVisitChoice === 'Sí, quiero coordinar visita de medidas'">
-              <label for="measureVisitPhone">Teléfono de contacto</label>
-              <input id="measureVisitPhone" v-model="form.measureVisitPhone" type="tel" placeholder="Ej: 987654321" />
-              <p v-if="formErrors.measureVisitPhone" class="error-text">{{ formErrors.measureVisitPhone }}</p>
-            </div>
-          </section>
-
-          <div class="note">
-            <h3>📝 Nota</h3>
-            <p>
-              Los servicios se alquilan por 5 horas.
-            </p>
-          </div>
-
-          <button class="submit-btn" type="submit">✅ Confirmar Reserva</button>
-        </form>
+      <div v-if="showConfirmationModal" class="modal-overlay" @click.self="showConfirmationModal = false">
+        <div class="modal-card">
+          <h3>Reserva lista para confirmar</h3>
+          <p><strong>Inflable:</strong> {{ reservationSummary.producto }}</p>
+          <p><strong>Responsable:</strong> {{ reservationSummary.responsable }}</p>
+          <p><strong>Tipo de evento:</strong> {{ reservationSummary.tipoEvento }}</p>
+          <p><strong>Fecha:</strong> {{ reservationSummary.fecha }}</p>
+          <p><strong>Horario:</strong> {{ reservationSummary.horario }}</p>
+          <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="whatsapp-cta">
+            Enviar confirmación por WhatsApp
+          </a>
+          <button class="secondary-close" @click="showConfirmationModal = false">Cerrar</button>
+        </div>
       </div>
-    </section>
+    </main>
 
-    <div v-if="showConfirmationModal" class="modal-overlay" @click.self="showConfirmationModal = false">
-      <div class="modal-card">
-        <h3>Reserva lista para confirmar</h3>
-        <p><strong>Inflable:</strong> {{ reservationSummary.producto }}</p>
-        <p><strong>Responsable:</strong> {{ reservationSummary.responsable }}</p>
-        <p><strong>Tipo de evento:</strong> {{ reservationSummary.tipoEvento }}</p>
-        <p><strong>Fecha:</strong> {{ reservationSummary.fecha }}</p>
-        <p><strong>Horario:</strong> {{ reservationSummary.horario }}</p>
-        <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="whatsapp-cta">
-          Enviar confirmación por WhatsApp
-        </a>
-        <button class="secondary-close" @click="showConfirmationModal = false">Cerrar</button>
-      </div>
-    </div>
-  </main>
-
-  <footer>
-    <Footer />
-  </footer>
+    <footer>
+      <Footer />
+    </footer>
+  </div>
 </template>
 
 <style scoped>
+/* Contenedor raíz: fuerza un bloque de flujo normal (block formatting context)
+   que NO puede ser interceptado por position:absolute/fixed mal calculado
+   de componentes hijos (Navbar/Footer), ni por floats sueltos. */
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  position: relative; /* ancla cualquier position:absolute mal usado dentro de Navbar/Footer a ESTE contenedor en vez del body */
+  isolation: isolate;  /* crea un nuevo stacking context: nada de afuera puede solaparse encima/debajo por z-index */
+}
+
 .page {
   background: #ffffff;
-  min-height: calc(100vh - 130px);
+  flex: 1 0 auto; /* el main siempre crece para empujar el footer hacia abajo, sin importar la altura del calendario */
+  min-height: 0;
   padding: 24px 14px 42px;
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  overflow: visible; /* evita que contenido dinámico (calendario con filas variables) se recorte o desborde encima del footer */
+}
+
+footer {
+  flex-shrink: 0; /* el footer nunca se comprime ni se superpone, sin importar cuánto crezca el calendario arriba */
+  position: relative;
+  z-index: 1;
 }
 
 .reservation-wrapper {
@@ -1079,8 +1101,8 @@ select:focus {
 }
 
 .modal-overlay {
-  /* position: fixed;
-  inset: 0; */
+  position: fixed;
+  inset: 0;
   background: rgba(0, 0, 0, 0.45);
   display: grid;
   place-items: center;
