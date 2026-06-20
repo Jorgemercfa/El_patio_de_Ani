@@ -5,6 +5,8 @@ import Footer from '@/components/Footer-item.vue';
 import { useCart } from '@/store/cart.js';
 import { useSession } from '@/auth/session';
 
+const MAX_QUANTITY_PER_ITEM = 1;
+
 const router = useRouter();
 const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity } =
   useCart();
@@ -20,6 +22,15 @@ function goToCheckout() {
 
 function getItemPrice(item) {
   return Number(item.discount_price ?? item.price ?? 0);
+}
+
+function increaseQuantity(item) {
+  if (item.quantity >= MAX_QUANTITY_PER_ITEM) return;
+  updateQuantity(item.id, item.quantity + 1);
+}
+
+function decreaseQuantity(item) {
+  updateQuantity(item.id, item.quantity - 1);
 }
 </script>
 
@@ -46,14 +57,17 @@ function getItemPrice(item) {
               <div class="cart-controls">
                 <button
                   class="qty-btn"
-                  @click="updateQuantity(item.id, item.quantity - 1)"
+                  @click="decreaseQuantity(item)"
                 >
                   −
                 </button>
                 <span class="qty-value">{{ item.quantity }}</span>
                 <button
                   class="qty-btn"
-                  @click="updateQuantity(item.id, item.quantity + 1)"
+                  :class="{ 'qty-btn--disabled': item.quantity >= MAX_QUANTITY_PER_ITEM }"
+                  :disabled="item.quantity >= MAX_QUANTITY_PER_ITEM"
+                  :title="item.quantity >= MAX_QUANTITY_PER_ITEM ? 'Cantidad máxima alcanzada' : ''"
+                  @click="increaseQuantity(item)"
                 >
                   +
                 </button>
@@ -220,6 +234,19 @@ function getItemPrice(item) {
 .qty-btn:hover {
   background: #E91E81;
   color: white;
+}
+
+.qty-btn--disabled,
+.qty-btn:disabled {
+  border-color: #ddd;
+  color: #bbb;
+  cursor: not-allowed;
+}
+
+.qty-btn--disabled:hover,
+.qty-btn:disabled:hover {
+  background: white;
+  color: #bbb;
 }
 
 .qty-value {
