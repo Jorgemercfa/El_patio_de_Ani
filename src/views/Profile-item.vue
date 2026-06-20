@@ -1,6 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/firebase';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
@@ -80,10 +82,6 @@ const onLogout = async () => {
   router.push({ name: 'Home' });
 };
 
-const childrenStorageKey = computed(() =>
-  state.user?.id ? `patio-hijos-${state.user.id}` : '',
-);
-
 const createEmptyChild = () => ({
   name: '',
   birthday: '',
@@ -98,47 +96,39 @@ const removeChild = (index) => {
 };
 
 const loadChildren = () => {
-  if (!childrenStorageKey.value) {
-    children.value = [];
-    return;
-  }
-
-  try {
-    const storedChildren = localStorage.getItem(childrenStorageKey.value);
-    if (!storedChildren) {
-      children.value = [];
-      return;
-    }
-
-    const parsedChildren = JSON.parse(storedChildren);
-    children.value = Array.isArray(parsedChildren)
-      ? parsedChildren.map((child) => ({
-          name: typeof child?.name === 'string' ? child.name : '',
-          birthday: typeof child?.birthday === 'string' ? child.birthday : '',
-        }))
-      : [];
-  } catch {
-    children.value = [];
-  }
+  children.value = Array.isArray(state.user?.children)
+    ? state.user.children.map((child) => ({
+        name: typeof child?.name === 'string' ? child.name : '',
+        birthday: typeof child?.birthday === 'string' ? child.birthday : '',
+      }))
+    : [];
 };
 
-const saveChildren = () => {
-  if (!childrenStorageKey.value) return;
+const saveChildren = async () => {
+  if (!state.user?.uid) return;
 
   const sanitizedChildren = children.value.map((child) => ({
     name: (child.name || '').trim(),
     birthday: child.birthday || '',
   }));
 
-  localStorage.setItem(childrenStorageKey.value, JSON.stringify(sanitizedChildren));
-  showChildrenSavedMessage.value = true;
+  try {
+    await updateDoc(doc(db, 'user', state.user.uid), {
+      children: sanitizedChildren,
+    });
 
-  if (childrenStorageTimer.value) {
-    clearTimeout(childrenStorageTimer.value);
+    state.user.children = sanitizedChildren;
+    showChildrenSavedMessage.value = true;
+
+    if (childrenStorageTimer.value) {
+      clearTimeout(childrenStorageTimer.value);
+    }
+    childrenStorageTimer.value = setTimeout(() => {
+      showChildrenSavedMessage.value = false;
+    }, 3000);
+  } catch (error) {
+    console.warn('[Perfil] Error guardando hijos:', error);
   }
-  childrenStorageTimer.value = setTimeout(() => {
-    showChildrenSavedMessage.value = false;
-  }, 3000);
 };
 
 onMounted(() => {

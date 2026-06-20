@@ -46,6 +46,7 @@ function setUser(user) {
     uid: user.uid || user.id,
     name: user.name || '',
     email: user.email || '',
+    children: user.children || [],
   };
   persist();
 }
@@ -85,6 +86,7 @@ function initAuthListener() {
             uid: firebaseUser.uid,
             name: data?.name || firebaseUser.displayName || '',
             email: data?.email || firebaseUser.email || '',
+            children: data?.children || [],
           });
         } else {
           setUser(null);
