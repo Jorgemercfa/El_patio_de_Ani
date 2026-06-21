@@ -1,24 +1,32 @@
 <script setup>
-import { useRouter } from 'vue-router';
+import { computed, ref } from 'vue';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useCart } from '@/store/cart.js';
 import { useSession } from '@/auth/session';
+import { useLoyalty } from '@/store/loyalty';
 
-const MAX_QUANTITY_FOR_SNACKS = 999; // Snacks pueden tener cantidad libre
+const MAX_QUANTITY_PER_SNACK = 10;
+const WHATSAPP_PHONE = '51975495623';
 
-const router = useRouter();
-const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity } =
+const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, checkout } =
   useCart();
-const { isAuthenticated } = useSession();
+const { state: sessionState } = useSession();
+const { getLoyaltyData, getDescuento, addReserva } = useLoyalty();
 
-function goToCheckout() {
-  if (!isAuthenticated.value) {
-    router.push({ name: 'SignIn' });
-    return;
-  }
-  router.push({ name: 'Checkout' });
-}
+const loyaltyData = computed(() =>
+  sessionState.user ? getLoyaltyData(sessionState.user.id) : getLoyaltyData(null),
+);
+const loyaltyDiscount = computed(() =>
+  sessionState.user ? getDescuento(sessionState.user.id) : 0,
+);
+const discountAmount = computed(() => cartTotal.value * (loyaltyDiscount.value / 100));
+const cartTotalWithDiscount = computed(() =>
+  cartTotal.value * (1 - loyaltyDiscount.value / 100),
+);
+
+const showConfirmation = ref(false);
+const submitting = ref(false);
 
 function getItemPrice(item) {
   return Number(item.discount_price ?? item.price ?? 0);
@@ -35,12 +43,21 @@ function isService(item) {
   return serviceCategories.includes(item.category);
 }
 
+/**
+ * Decide si se muestran los controles +/- de cantidad.
+ * Solo aplica a productos que NO son servicios (snacks).
+ * Los servicios siempre quedan con cantidad fija = 1.
+ */
+function shouldShowQuantityControls(item) {
+  return !isService(item);
+}
+
 function increaseQuantity(item) {
   if (isService(item)) {
     // Los servicios siempre tienen cantidad 1, no incrementar
     return;
   }
-  if (item.quantity >= MAX_QUANTITY_FOR_SNACKS) return;
+  if (item.quantity >= MAX_QUANTITY_PER_SNACK) return;
   updateQuantity(item.id, item.quantity + 1);
 }
 
@@ -49,15 +66,49 @@ function decreaseQuantity(item) {
     // Los servicios siempre tienen cantidad 1, no decrementar
     return;
   }
-  // Para snacks, permitir disminuir pero mínimo 1
-  if (item.quantity > 1) {
-    updateQuantity(item.id, item.quantity - 1);
-  }
+  updateQuantity(item.id, item.quantity - 1);
 }
 
-function shouldShowQuantityControls(item) {
-  // Mostrar controles SOLO para snacks/carritos
-  return !isService(item);
+function buildWhatsAppMessage() {
+  const lines = cartItems.value.map(
+    (item) =>
+      `• ${item.name} x${item.quantity} — S/ ${(getItemPrice(item) * item.quantity).toFixed(2)}`,
+  );
+
+  let message = `Hola Ani, quiero reservar lo siguiente 🎉\n\n${lines.join('\n')}\n\n`;
+  message += `Subtotal: S/ ${cartTotal.value.toFixed(2)}\n`;
+
+  if (loyaltyDiscount.value > 0) {
+    message += `🎁 Descuento ${loyaltyData.value.nivel} (-${loyaltyDiscount.value}%): -S/ ${discountAmount.value.toFixed(2)}\n`;
+  }
+
+  message += `Total: S/ ${cartTotalWithDiscount.value.toFixed(2)}`;
+
+  return message;
+}
+
+function confirmReservation() {
+  if (cartCount.value === 0 || submitting.value) return;
+
+  submitting.value = true;
+
+  // Registra la reserva en el carrito
+  checkout();
+
+  // Suma punto de loyalty solo si hay una sesión activa
+  if (sessionState.user?.id) {
+    addReserva(sessionState.user.id);
+  }
+
+  const message = buildWhatsAppMessage();
+  const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
+
+  showConfirmation.value = true;
+
+  setTimeout(() => {
+    // Se usa location.href en vez de window.open para evitar bloqueos de popups
+    window.location.href = url;
+  }, 1200);
 }
 </script>
 
@@ -96,6 +147,8 @@ function shouldShowQuantityControls(item) {
                 <span class="qty-value">{{ item.quantity }}</span>
                 <button
                   class="qty-btn"
+                  :disabled="item.quantity >= MAX_QUANTITY_PER_SNACK"
+                  :class="{ 'qty-btn--disabled': item.quantity >= MAX_QUANTITY_PER_SNACK }"
                   @click="increaseQuantity(item)"
                   title="Aumentar cantidad"
                 >
@@ -121,19 +174,25 @@ function shouldShowQuantityControls(item) {
 
           <div class="cart-summary">
             <h2 class="summary-title">Resumen</h2>
-            <!-- <div class="summary-row">
-              <span>
-                Subtotal ({{ cartCount }} item{{ cartCount !== 1 ? 's' : '' }})
-              </span>
-              <span>S/ {{ cartTotal.toFixed(2) }}</span>
-            </div> -->
-            <div class="summary-total">
-              <span>Total</span>
+            <div class="summary-row">
+              <span>Subtotal</span>
               <span>S/ {{ cartTotal.toFixed(2) }}</span>
             </div>
-            <button class="checkout-btn" @click="goToCheckout">
-              Proceder al pago
+            <div v-if="loyaltyDiscount > 0" class="summary-row discount-row">
+              <span>🎁 Descuento {{ loyaltyData.nivel }} (-{{ loyaltyDiscount }}%)</span>
+              <span>-S/ {{ discountAmount.toFixed(2) }}</span>
+            </div>
+            <div class="summary-total">
+              <span>Total</span>
+              <span>S/ {{ cartTotalWithDiscount.toFixed(2) }}</span>
+            </div>
+            <button class="checkout-btn" :disabled="submitting" @click="confirmReservation">
+              {{ submitting ? 'Enviando...' : '📱 Reservar por WhatsApp' }}
             </button>
+
+            <p v-if="showConfirmation" class="confirmation-message">
+              ✅ ¡Tu reserva fue registrada! Pronto Ani te atenderá.
+            </p>
           </div>
         </div>
 
@@ -363,6 +422,11 @@ function shouldShowQuantityControls(item) {
   margin-bottom: 12px;
 }
 
+.discount-row {
+  color: #1c8c46;
+  font-weight: 700;
+}
+
 .summary-total {
   display: flex;
   justify-content: space-between;
@@ -387,9 +451,26 @@ function shouldShowQuantityControls(item) {
   transition: background 0.25s, transform 0.2s;
 }
 
-.checkout-btn:hover {
+.checkout-btn:hover:not(:disabled) {
   background: #f2c500;
   transform: translateY(-2px);
+}
+
+.checkout-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.confirmation-message {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  background: rgba(37, 211, 102, 0.12);
+  border: 1px solid rgba(37, 211, 102, 0.4);
+  border-radius: 14px;
+  color: #128C7E;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-align: center;
 }
 
 .empty-state {
