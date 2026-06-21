@@ -32,8 +32,23 @@ function getItemPrice(item) {
   return Number(item.discount_price ?? item.price ?? 0);
 }
 
+/**
+ * Determina si un producto es un servicio (juego/inflable/show)
+ * o un producto de stock (snack/carrito).
+ * Categorías de SERVICIOS: Inflables, Juegos, Shows Infantiles, Estética Infantil
+ * Categorías de SNACKS: Carritos Snacks
+ */
+function isService(item) {
+  const serviceCategories = ['Inflables', 'Juegos', 'Shows Infantiles', 'Estética Infantil'];
+  return serviceCategories.includes(item.category);
+}
+
 function increaseQuantity(item) {
-  if (item.quantity >= MAX_QUANTITY_PER_ITEM) return;
+  if (isService(item)) {
+    // Los servicios siempre tienen cantidad 1, no incrementar
+    return;
+  }
+  if (item.quantity >= MAX_QUANTITY_FOR_SNACKS) return;
   updateQuantity(item.id, item.quantity + 1);
 }
 
@@ -104,24 +119,34 @@ function confirmReservation() {
                   S/ {{ getItemPrice(item).toFixed(2) }}
                 </p>
               </div>
-              <div class="cart-controls">
+
+              <!-- CANTIDAD: mostrar controles SOLO para snacks -->
+              <div v-if="shouldShowQuantityControls(item)" class="cart-controls">
                 <button
                   class="qty-btn"
+                  :disabled="item.quantity <= 1"
+                  :class="{ 'qty-btn--disabled': item.quantity <= 1 }"
                   @click="decreaseQuantity(item)"
+                  title="Disminuir cantidad"
                 >
                   −
                 </button>
                 <span class="qty-value">{{ item.quantity }}</span>
                 <button
                   class="qty-btn"
-                  :class="{ 'qty-btn--disabled': item.quantity >= MAX_QUANTITY_PER_ITEM }"
-                  :disabled="item.quantity >= MAX_QUANTITY_PER_ITEM"
-                  :title="item.quantity >= MAX_QUANTITY_PER_ITEM ? 'Cantidad máxima alcanzada' : ''"
                   @click="increaseQuantity(item)"
+                  title="Aumentar cantidad"
                 >
                   +
                 </button>
               </div>
+
+              <!-- Para servicios (juegos/inflables/shows): mostrar cantidad fija sin botones -->
+              <div v-else class="service-quantity">
+                <span class="qty-label">Cantidad:</span>
+                <span class="qty-fixed">{{ item.quantity }}</span>
+              </div>
+
               <button
                 class="remove-btn"
                 @click="removeFromCart(item.id)"
@@ -287,7 +312,7 @@ function confirmReservation() {
   line-height: 1;
 }
 
-.qty-btn:hover {
+.qty-btn:hover:not(:disabled) {
   background: #E91E81;
   color: white;
 }
@@ -309,6 +334,30 @@ function confirmReservation() {
   min-width: 24px;
   text-align: center;
   font-weight: 600;
+  color: #2D3E94;
+}
+
+/* Estilos para servicios (cantidad fija) */
+.service-quantity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  height: 30px;
+  min-width: 90px;
+}
+
+.qty-label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.qty-fixed {
+  font-size: 1rem;
+  font-weight: 700;
   color: #2D3E94;
 }
 
