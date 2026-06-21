@@ -6,8 +6,8 @@ import { useCart } from '@/store/cart.js';
 import { useSession } from '@/auth/session';
 import { useLoyalty } from '@/store/loyalty';
 
-const MAX_QUANTITY_PER_ITEM = 1;
-const WHATSAPP_PHONE = '51975495623';
+const MAX_QUANTITY_FOR_SNACKS = 999; // Snacks pueden tener cantidad libre
+const FIXED_QUANTITY_FOR_SERVICES = 1; // Juegos, inflables, shows siempre cantidad 1
 
 const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, checkout } =
   useCart();
