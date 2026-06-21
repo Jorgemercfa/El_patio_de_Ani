@@ -6,7 +6,6 @@ import { useCart } from '@/store/cart.js';
 import { useSession } from '@/auth/session';
 
 const MAX_QUANTITY_FOR_SNACKS = 999; // Snacks pueden tener cantidad libre
-const FIXED_QUANTITY_FOR_SERVICES = 1; // Juegos, inflables, shows siempre cantidad 1
 
 const router = useRouter();
 const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity } =
