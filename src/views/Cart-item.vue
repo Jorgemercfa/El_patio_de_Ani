@@ -6,8 +6,8 @@ import { useCart } from '@/store/cart.js';
 import { useSession } from '@/auth/session';
 import { useLoyalty } from '@/store/loyalty';
 
-const MAX_QUANTITY_FOR_SNACKS = 999; // Snacks pueden tener cantidad libre
-const FIXED_QUANTITY_FOR_SERVICES = 1; // Juegos, inflables, shows siempre cantidad 1
+const MAX_QUANTITY_PER_SNACK = 10;
+const WHATSAPP_PHONE = '51975495623';
 
 const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, checkout } =
   useCart();
@@ -43,16 +43,29 @@ function isService(item) {
   return serviceCategories.includes(item.category);
 }
 
+/**
+ * Decide si se muestran los controles +/- de cantidad.
+ * Solo aplica a productos que NO son servicios (snacks).
+ * Los servicios siempre quedan con cantidad fija = 1.
+ */
+function shouldShowQuantityControls(item) {
+  return !isService(item);
+}
+
 function increaseQuantity(item) {
   if (isService(item)) {
     // Los servicios siempre tienen cantidad 1, no incrementar
     return;
   }
-  if (item.quantity >= MAX_QUANTITY_FOR_SNACKS) return;
+  if (item.quantity >= MAX_QUANTITY_PER_SNACK) return;
   updateQuantity(item.id, item.quantity + 1);
 }
 
 function decreaseQuantity(item) {
+  if (isService(item)) {
+    // Los servicios siempre tienen cantidad 1, no decrementar
+    return;
+  }
   updateQuantity(item.id, item.quantity - 1);
 }
 
@@ -134,6 +147,8 @@ function confirmReservation() {
                 <span class="qty-value">{{ item.quantity }}</span>
                 <button
                   class="qty-btn"
+                  :disabled="item.quantity >= MAX_QUANTITY_PER_SNACK"
+                  :class="{ 'qty-btn--disabled': item.quantity >= MAX_QUANTITY_PER_SNACK }"
                   @click="increaseQuantity(item)"
                   title="Aumentar cantidad"
                 >
