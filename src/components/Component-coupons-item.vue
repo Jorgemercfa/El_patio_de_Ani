@@ -14,7 +14,7 @@ import { PREMIUM_INFLABLE_PRICE, WHATSAPP_BUSINESS_NUMBER } from '@/constants/in
 const route = useRoute();
 const router = useRouter();
 const { addToCart } = useCart();
-const { state: sessionState } = useSession();
+const { state: sessionState, isAuthenticated } = useSession();
 const { isDateAvailable } = useReservasServicio();
 const { fetchReviews, addReview, getAverageRating, reviewsCache } = useReviews();
 
@@ -39,8 +39,8 @@ async function submitReview() {
   try {
     await addReview(
       route.params.id,
-      state.user.uid,
-      state.user.name || state.user.email,
+      sessionState.user.uid,
+      sessionState.user.name || sessionState.user.email,
       reviewForm.value.rating,
       reviewForm.value.comment,
     );
