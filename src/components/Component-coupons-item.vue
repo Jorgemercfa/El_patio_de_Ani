@@ -14,7 +14,7 @@ import { PREMIUM_INFLABLE_PRICE, WHATSAPP_BUSINESS_NUMBER } from '@/constants/in
 const route = useRoute();
 const router = useRouter();
 const { addToCart } = useCart();
-const { state, isAuthenticated } = useSession();
+const { state: sessionState } = useSession();
 const { isDateAvailable } = useReservasServicio();
 const { fetchReviews, addReview, getAverageRating, reviewsCache } = useReviews();
 
@@ -105,6 +105,10 @@ const isInflable = computed(() =>
   product.value?.category === 'Inflables',
 );
 
+const isSnack = computed(() =>
+  product.value?.category === 'Carritos Snacks',
+);
+
 const inflableSubcategory = computed(() => {
   const sub = product.value?.subcategory?.toLowerCase() || '';
   if (sub.includes('bebé') || sub.includes('bebe') || sub.includes('baby')) return 'bebes';
@@ -142,7 +146,21 @@ const availabilityLabel = computed(() => {
   return isSelectedDateAvailable.value ? '✅ Fecha disponible' : '🔴 Fecha reservada';
 });
 
-function handleAddToCart() {
+function handleAddToCartSnack() {
+  if (!isAuthenticated.value) {
+    router.push({ name: 'SignIn' });
+    return;
+  }
+  // Para snacks: agregar directo sin fecha
+  reservationError.value = '';
+  addToCart(product.value.id, null); // null = sin fecha de reserva
+  addedFeedback.value = true;
+  setTimeout(() => {
+    addedFeedback.value = false;
+  }, 1500);
+}
+
+function handleAddToCartService() {
   if (!isAuthenticated.value) {
     router.push({ name: 'SignIn' });
     return;
@@ -307,6 +325,7 @@ watch(
           <p class="terms-text">{{ product.Terms_of_use }}</p>
         </div>
 
+        <!-- ===== INFLABLES: Botón especial ===== -->
         <div v-if="isInflable" class="inflable-actions">
           <button
             v-if="isAuthenticated"
@@ -326,6 +345,24 @@ watch(
           </template>
         </div>
 
+        <!-- ===== SNACKS: Agregar directo sin fecha ===== -->
+        <div v-else-if="isSnack" class="snack-actions">
+          <button
+            v-if="isAuthenticated"
+            class="buy-button primary-action-btn"
+            @click="handleAddToCartSnack"
+          >
+            {{ addedFeedback ? '✓ Agregado al carrito' : '🛒 Agregar al carrito' }}
+          </button>
+
+          <template v-else>
+            <button class="secondary-login-button" @click="router.push('/Sign-in')">
+              🔑 Inicia sesión para comprar
+            </button>
+          </template>
+        </div>
+
+        <!-- ===== OTROS SERVICIOS: Con selector de fecha ===== -->
         <template v-else>
           <div class="reservation-date-section">
             <label class="label" for="reservation-date">📅 Fecha del evento</label>
@@ -359,7 +396,7 @@ watch(
             :disabled="!reservationDate || isSelectedDateAvailable !== true"
             :title="!reservationDate || isSelectedDateAvailable !== true ? 'Selecciona una fecha disponible para agregar al carrito' : 'Agregar al carrito'"
             aria-label="Agregar al carrito"
-            @click="handleAddToCart"
+            @click="handleAddToCartService"
           >
             {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
           </button>
@@ -689,7 +726,8 @@ watch(
   color: #b00020;
 }
 
-.inflable-actions {
+.inflable-actions,
+.snack-actions {
   display: grid;
   gap: 12px;
 }
@@ -774,6 +812,23 @@ watch(
   font-size: 1.2rem;
   color: #2D3E94;
   opacity: 0.6;
+}
+
+.login-cart-hint {
+  text-align: center;
+  font-size: 0.95rem;
+  color: #2D3E94;
+  margin: 4px 0 0;
+}
+
+.login-cart-link {
+  color: #E91E81;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.login-cart-link:hover {
+  opacity: 0.8;
 }
 
 @media (max-width: 700px) {
@@ -948,21 +1003,4 @@ watch(
 .review-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .review-login-prompt { color: #2D3E94; font-size: 0.95rem; }
 .review-login-link { color: #E91E81; font-weight: 700; }
-
-.login-cart-hint {
-  text-align: center;
-  font-size: 0.95rem;
-  color: #2D3E94;
-  margin: 4px 0 0;
-}
-
-.login-cart-link {
-  color: #E91E81;
-  font-weight: 700;
-  text-decoration: underline;
-}
-
-.login-cart-link:hover {
-  opacity: 0.8;
-}
 </style>
