@@ -246,6 +246,23 @@ watch(
     }
   },
 );
+
+function goBack() {
+  const prev = router.options.history.state?.back;
+  if (prev) {
+    router.back();
+  } else {
+    // Fallback: si tiene categoría conocida, va a ella; si no, a todos
+    const category = product.value?.category;
+    if (category === 'Inflables') {
+      router.push({ path: '/product-item', query: { category: 'Inflables' } });
+    } else if (category === 'Carritos Snacks') {
+      router.push({ path: '/product-item', query: { category: 'Carritos Snacks' } });
+    } else {
+      router.push('/product-item');
+    }
+  }
+}
 </script>
 
 <template>
@@ -256,7 +273,7 @@ watch(
   <main class="container">
     <div v-if="product" class="product-wrapper">
       <router-link to="/product-item" class="return-area">
-        <button class="card-button">Regresar</button>
+        <button class="card-button return-area" @click="goBack()">Regresar</button>
       </router-link>
 
       <h1 class="title">{{ product.name }}</h1>

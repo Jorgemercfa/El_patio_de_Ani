@@ -1,13 +1,12 @@
 <script setup>
-// ✅ Un solo import con todo lo necesario
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter, useRoute } from 'vue-router'  // ← agregar useRoute
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo'
 
 const router = useRouter()
-const route = useRoute()  // ← declarar route
+const route = useRoute()
 
 const ESTETICA_INFANTIL_CATEGORY = 'Estética Infantil'
 const FILTER_SCROLL_DELAY = 100
@@ -17,14 +16,16 @@ const productsContainerRef = ref(null)
 const categories = ['Todos', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', ESTETICA_INFANTIL_CATEGORY]
 const activeFilter = ref('Todos')
 const activeSubcategory = ref('')
+const isRestoringFromUrl = ref(true) // ← bandera para evitar scroll al restaurar
 
-// ✅ Eliminar activeCategory duplicado, usar activeFilter directamente
 onMounted(async () => {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   await fetchCompanyproducts()
   if (route.query.category) {
-    activeFilter.value = route.query.category  // ← conectar al filtro real
+    activeFilter.value = route.query.category
   }
+  await nextTick()
+  isRestoringFromUrl.value = false // ← restauración terminada
 })
 
 const subcategoryMap = {
@@ -41,11 +42,18 @@ const activeSubcategories = computed(() =>
 
 const filterScrollTimeout = ref(null)
 
-watch(activeFilter, () => {
+watch(activeFilter, (newCat) => {
+  // ✅ Sincronizar URL para que "Regresar" vuelva a la categoría correcta
+  router.replace({
+    query: newCat !== 'Todos' ? { category: newCat } : {}
+  })
+
   activeSubcategory.value = ''
 
-  if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
+  // ✅ No hacer scroll si estamos restaurando desde la URL al montar
+  if (isRestoringFromUrl.value) return
 
+  if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
   filterScrollTimeout.value = setTimeout(() => {
     if (productsContainerRef.value) {
       productsContainerRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -75,11 +83,7 @@ const getSubcategory = (product) => product.subcategory || ''
 
 const parsePrice = (value) => {
   if (value === null || value === undefined || value === '') return null
-
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : null
-  }
-
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
   if (typeof value !== 'string') return null
 
   const cleaned = value.trim().replace(/[^\d.,-]/g, '')

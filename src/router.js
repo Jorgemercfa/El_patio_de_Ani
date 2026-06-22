@@ -214,10 +214,12 @@ router.beforeEach((to) => {
   return true;
 });
 
-// ✅ Asegurar scroll en navegación
-router.afterEach(() => {
+router.afterEach((to, from) => {
+  // ✅ No hacer scroll si viene de presionar Atrás en el detalle de producto
+  const isBackFromDetail = from.name === 'productsDetails'
+  if (isBackFromDetail) return;
+
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  // Segundo intento para vistas con contenido dinámico que terminan de montar tras la navegación.
   setTimeout(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, DYNAMIC_CONTENT_SCROLL_DELAY);
