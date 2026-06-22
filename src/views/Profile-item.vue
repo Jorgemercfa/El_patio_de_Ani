@@ -226,7 +226,7 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div class="form-group">
-                  <label :for="`child-birthday-${index}`">Fecha de cumpleaños</label>
+                  <label :for="`child-birthday-${index}`">Fecha de nacimiento</label>
                   <input :id="`child-birthday-${index}`" v-model="child.birthday" type="date" />
                 </div>
               </div>
