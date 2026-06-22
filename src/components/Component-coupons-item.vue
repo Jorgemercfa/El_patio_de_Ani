@@ -272,9 +272,7 @@ function goBack() {
 
   <main class="container">
     <div v-if="product" class="product-wrapper">
-      <router-link to="/product-item" class="return-area">
-        <button class="card-button return-area" @click="goBack()">Regresar</button>
-      </router-link>
+      <button class="card-button return-area" @click="goBack()">Regresar</button>
 
       <h1 class="title">{{ product.name }}</h1>
 
