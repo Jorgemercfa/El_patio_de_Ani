@@ -12,16 +12,11 @@ const { isAuthenticated } = useSession();
    CARRUSEL PRINCIPAL DE VIDEOS (LOCALES)
 ============================= */
 
-// Importa aquí cada video. Renombra los archivos según tus nombres reales.
-// Si el archivo es .mov, escribe video1.MOV, etc.
 import video1 from '@/assets/videos/video1.mp4';
 import video2 from '@/assets/videos/video2.mp4';
 import video3 from '@/assets/videos/video3.mp4';
 import video4 from '@/assets/videos/video4.mp4';
 import video5 from '@/assets/videos/video5.mp4';
-
-// Si alguno es .mov, cámbialo así:
-// import video1 from '@/assets/videos/video1.mov';
 
 const videos = [video1, video2, video3, video4, video5];
 const VIDEO_AUTO_ADVANCE_INTERVAL = 20000;
@@ -30,7 +25,7 @@ const VIDEO_ENDED_DELAY = 4000;
 const currentVideoIndex = ref(0);
 const totalVideos = videos.length;
 const videoIntervalId = ref(null);
-const videoRef = ref(null); // referencia al elemento <video>
+const videoRef = ref(null);
 const videoEndedTimeout = ref(null);
 
 const currentVideoSrc = computed(() => videos[currentVideoIndex.value]);
@@ -38,10 +33,6 @@ const currentVideoSrc = computed(() => videos[currentVideoIndex.value]);
 const nextVideo = () => {
   currentVideoIndex.value = (currentVideoIndex.value + 1) % totalVideos;
 };
-
-// const prevVideo = () => {
-//   currentVideoIndex.value = (currentVideoIndex.value - 1 + totalVideos) % totalVideos;
-// };
 
 const goToVideo = (index) => {
   currentVideoIndex.value = index;
@@ -64,10 +55,8 @@ const restartVideoTimer = () => {
   startVideoTimer();
 };
 
-// Cuando el video termina, pasa al siguiente automáticamente
 const onVideoEnded = () => {
   clearTimeout(videoEndedTimeout.value);
-
   videoEndedTimeout.value = setTimeout(() => {
     nextVideo();
     restartVideoTimer();
@@ -168,15 +157,6 @@ const tarifas = [
   { distrito: 'Callao', precio: 120 },
   { distrito: 'Chaclacayo / Lurin', precio: 170 },
 ];
-
-// const eventTypeCards = [
-//   { icon: '🎂', name: 'Cumpleaños' },
-//   { icon: '👶', name: 'Baby Shower' },
-//   { icon: '🎒', name: 'Kermesse Escolar' },
-//   { icon: '🏢', name: 'Evento Empresarial' },
-//   { icon: '🌸', name: 'Bautizo / Primera Comunión' },
-//   { icon: '🎊', name: 'Celebración Familiar' },
-// ];
 </script>
 
 <template>
@@ -192,8 +172,6 @@ const tarifas = [
         <h1 class="main-video-title">Productora de eventos infantiles</h1>
       </div>
 
-    
-
       <div class="main-video-wrapper">
         <video
           ref="videoRef"
@@ -203,7 +181,7 @@ const tarifas = [
           autoplay
           muted
           playsinline
-          preload="none"
+          preload="metadata"
           @ended="onVideoEnded"
         ></video>
       </div>
@@ -290,47 +268,32 @@ const tarifas = [
     <h1 class="title-home">Nuestros Servicios</h1>
 
     <div class="services-grid">
-  <router-link :to="{ path: '/Product-item', query: { category: 'Shows Infantiles' } }" class="service-card service-card-shows">
-    <span class="service-icon">🎭</span>
-    <h3 class="service-name">Shows Infantiles</h3>
-    <p class="service-desc">Animación, magia y mucha diversión</p>
-  </router-link>
-  <router-link :to="{ path: '/Product-item', query: { category: 'Inflables' } }" class="service-card service-card-games">
-    <span class="service-icon">🎪</span>
-    <h3 class="service-name">Inflables</h3>
-    <p class="service-desc">Inflables para bebés, medianos y grandes</p>
-  </router-link>
-  <router-link :to="{ path: '/Product-item', query: { category: 'Juegos' } }" class="service-card service-card-juegos">
-    <span class="service-icon">🎠</span>
-    <h3 class="service-name">Juegos</h3>
-    <p class="service-desc">Little Tikes, trampolines y juegos para bebés</p>
-  </router-link>
-  <router-link :to="{ path: '/Product-item', query: { category: 'Carritos Snacks' } }" class="service-card service-card-snacks">
-    <span class="service-icon">🍿</span>
-    <h3 class="service-name">Carritos Snacks</h3>
-    <p class="service-desc">Delicias saladas, dulces y combos</p>
-  </router-link>
-  <router-link :to="{ path: '/Product-item', query: { category: 'Estética Infantil' } }" class="service-card service-card-estetica">
-    <span class="service-icon">🎨</span>
-    <h3 class="service-name">Pintacaritas</h3>
-    <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
-  </router-link>
-</div>
-
-    <!-- <section class="event-types-section">
-      <h2 class="title-home">¿Para qué tipo de evento?</h2>
-      <div class="event-types-grid">
-        <router-link
-          v-for="event in eventTypeCards"
-          :key="event.name"
-          to=""
-          class="event-type-card"
-        >
-          <span class="event-type-icon">{{ event.icon }}</span>
-          <span class="event-type-name">{{ event.name }}</span>
-        </router-link>
-      </div>
-    </section> -->
+      <router-link :to="{ path: '/Product-item', query: { category: 'Shows Infantiles' } }" class="service-card service-card-shows">
+        <span class="service-icon">🎭</span>
+        <h3 class="service-name">Shows Infantiles</h3>
+        <p class="service-desc">Animación, magia y mucha diversión</p>
+      </router-link>
+      <router-link :to="{ path: '/Product-item', query: { category: 'Inflables' } }" class="service-card service-card-games">
+        <span class="service-icon">🎪</span>
+        <h3 class="service-name">Inflables</h3>
+        <p class="service-desc">Inflables para bebés, medianos y grandes</p>
+      </router-link>
+      <router-link :to="{ path: '/Product-item', query: { category: 'Juegos' } }" class="service-card service-card-juegos">
+        <span class="service-icon">🎠</span>
+        <h3 class="service-name">Juegos</h3>
+        <p class="service-desc">Little Tikes, trampolines y juegos para bebés</p>
+      </router-link>
+      <router-link :to="{ path: '/Product-item', query: { category: 'Carritos Snacks' } }" class="service-card service-card-snacks">
+        <span class="service-icon">🍿</span>
+        <h3 class="service-name">Carritos Snacks</h3>
+        <p class="service-desc">Delicias saladas, dulces y combos</p>
+      </router-link>
+      <router-link :to="{ path: '/Product-item', query: { category: 'Estética Infantil' } }" class="service-card service-card-estetica">
+        <span class="service-icon">🎨</span>
+        <h3 class="service-name">Pintacaritas</h3>
+        <p class="service-desc">Pintacaritas y glitter bar para los peques</p>
+      </router-link>
+    </div>
 
     <h1 class="title-home">Más populares</h1>
 
@@ -419,7 +382,6 @@ const tarifas = [
       </div>
     </section>
 
-    
   </div>
 
   <footer>
@@ -473,17 +435,19 @@ const tarifas = [
   pointer-events: none;
 }
 
+/* ✅ FIX: fondo degradado mientras carga el video */
 .main-video-wrapper {
   position: relative;
   width: 100%;
   height: 80vh;
   min-height: 500px;
+  background: linear-gradient(135deg, #2D3E94, #E91E81);
 }
 
 .main-video-player {
   width: 100%;
   height: 100%;
-  object-fit: cover;     /* igual que las imágenes anteriores */
+  object-fit: cover;
   object-position: center;
   display: block;
 }
@@ -712,7 +676,6 @@ const tarifas = [
   box-shadow: 0 2px 8px rgba(255, 152, 0, 0.35);
 }
 
-
 .wave-divider {
   position: relative;
   margin-top: -2px;
@@ -768,12 +731,14 @@ const tarifas = [
   flex-wrap: wrap;
 }
 
+/* ✅ FIX: evita compresión y corte de texto en móvil */
 .hero-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 6px;
+  min-width: 110px;
 }
 
 .hero-stat-number {
@@ -783,7 +748,12 @@ const tarifas = [
   line-height: 1;
 }
 
-.hero-stat-label { font-size: 0.9rem; opacity: 0.9; }
+/* ✅ FIX: evita corte de texto en móvil */
+.hero-stat-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  white-space: nowrap;
+}
 
 /* ===== BENEFICIOS DE CUENTA ===== */
 .beneficios-section {
@@ -933,16 +903,8 @@ const tarifas = [
   transform: translateY(-3px);
 }
 
-.event-type-icon {
-  font-size: 3rem;
-  line-height: 1;
-}
-
-.event-type-name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #2D3E94;
-}
+.event-type-icon { font-size: 3rem; line-height: 1; }
+.event-type-name { font-size: 1rem; font-weight: 700; color: #2D3E94; }
 
 /* ===== TARIFAS DE MOVILIDAD ===== */
 .movilidad-section { background: #ffffff; border-radius: 32px; margin: 0 40px 80px; padding: 60px; text-align: center; }
@@ -992,21 +954,9 @@ const tarifas = [
 .movilidad-precio { font-size: 1.2rem; font-weight: 800; color: #E91E81; margin: 0; white-space: nowrap; margin-left: 12px; }
 .movilidad-nota { margin-top: 24px; font-size: 0.82rem; color: #aaa; }
 
-.faq-cta {
-  margin-top: 18px;
-  font-size: 0.95rem;
-  color: #2D3E94;
-}
-
-.faq-cta a {
-  color: #E91E81;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.faq-cta a:hover {
-  text-decoration: underline;
-}
+.faq-cta { margin-top: 18px; font-size: 0.95rem; color: #2D3E94; }
+.faq-cta a { color: #E91E81; font-weight: 700; text-decoration: none; }
+.faq-cta a:hover { text-decoration: underline; }
 
 .empty-carousel { padding: 40px 20px; color: #2D3E94; opacity: 0.5; font-size: 0.95rem; }
 
@@ -1083,5 +1033,4 @@ const tarifas = [
 }
 
 /* ===== REVIEWS ===== */
-
 </style>
