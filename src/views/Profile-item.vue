@@ -84,6 +84,7 @@ const onLogout = async () => {
 
 const createEmptyChild = () => ({
   name: '',
+  lastname: '',
   birthday: '',
 });
 
@@ -99,6 +100,7 @@ const loadChildren = () => {
   children.value = Array.isArray(state.user?.children)
     ? state.user.children.map((child) => ({
         name: typeof child?.name === 'string' ? child.name : '',
+        lastname: typeof child?.lastname === 'string' ? child.lastname : '',
         birthday: typeof child?.birthday === 'string' ? child.birthday : '',
       }))
     : [];
@@ -109,6 +111,7 @@ const saveChildren = async () => {
 
   const sanitizedChildren = children.value.map((child) => ({
     name: (child.name || '').trim(),
+    lastname: (child.lastname || '').trim(),
     birthday: child.birthday || '',
   }));
 
@@ -222,6 +225,16 @@ onBeforeUnmount(() => {
                     v-model="child.name"
                     type="text"
                     placeholder="Ej: Lucía"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label :for="`child-lastname-${index}`">Apellido del hijo</label>
+                  <input
+                    :id="`child-lastname-${index}`"
+                    v-model="child.lastname"
+                    type="text"
+                    placeholder="Ej: García"
                   />
                 </div>
 
