@@ -12,12 +12,6 @@ const { isAuthenticated } = useSession();
    CARRUSEL PRINCIPAL DE VIDEOS (LOCALES)
 ============================= */
 
-// import video1 from '@/assets/videos/video1.mp4';
-// import video2 from '@/assets/videos/video2.mp4';
-// import video3 from '@/assets/videos/video3.mp4';
-// import video4 from '@/assets/videos/video4.mp4';
-// import video5 from '@/assets/videos/video5.mp4';
-
 const videos = [
   new URL('@/assets/videos/video1.mp4', import.meta.url).href, 
   new URL('@/assets/videos/video2.mp4', import.meta.url).href, 
@@ -26,7 +20,7 @@ const videos = [
   new URL('@/assets/videos/video5.mp4', import.meta.url).href
 ];
 const VIDEO_AUTO_ADVANCE_INTERVAL = 20000;
-const VIDEO_ENDED_DELAY = 4000;
+const VIDEO_ENDED_DELAY = 1000;
 
 const currentVideoIndex = ref(0);
 const totalVideos = videos.length;
