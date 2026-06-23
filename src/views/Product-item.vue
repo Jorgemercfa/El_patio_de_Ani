@@ -16,16 +16,18 @@ const productsContainerRef = ref(null)
 const categories = ['Todos', 'Shows Infantiles', 'Inflables', 'Juegos', 'Carritos Snacks', ESTETICA_INFANTIL_CATEGORY]
 const activeFilter = ref('Todos')
 const activeSubcategory = ref('')
-const isRestoringFromUrl = ref(true) // ← bandera para evitar scroll al restaurar
+const isRestoringFromUrl = ref(true)
+const isLoading = ref(true) // ✅ skeleton loader
 
 onMounted(async () => {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   await fetchCompanyproducts()
+  isLoading.value = false // ✅ apagar skeleton
   if (route.query.category) {
     activeFilter.value = route.query.category
   }
   await nextTick()
-  isRestoringFromUrl.value = false // ← restauración terminada
+  isRestoringFromUrl.value = false
 })
 
 const subcategoryMap = {
@@ -43,16 +45,11 @@ const activeSubcategories = computed(() =>
 const filterScrollTimeout = ref(null)
 
 watch(activeFilter, (newCat) => {
-  // ✅ Sincronizar URL para que "Regresar" vuelva a la categoría correcta
   router.replace({
     query: newCat !== 'Todos' ? { category: newCat } : {}
   })
-
   activeSubcategory.value = ''
-
-  // ✅ No hacer scroll si estamos restaurando desde la URL al montar
   if (isRestoringFromUrl.value) return
-
   if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
   filterScrollTimeout.value = setTimeout(() => {
     if (productsContainerRef.value) {
@@ -69,7 +66,6 @@ const products = computed(() => {
   let list = activeFilter.value === 'Todos'
     ? allProducts.value
     : allProducts.value.filter((p) => p.category === activeFilter.value)
-
   if (activeSubcategory.value) {
     list = list.filter((p) => p.subcategory === activeSubcategory.value)
   }
@@ -85,21 +81,15 @@ const parsePrice = (value) => {
   if (value === null || value === undefined || value === '') return null
   if (typeof value === 'number') return Number.isFinite(value) ? value : null
   if (typeof value !== 'string') return null
-
   const cleaned = value.trim().replace(/[^\d.,-]/g, '')
   if (!cleaned) return null
-
   const lastComma = cleaned.lastIndexOf(',')
   const lastDot = cleaned.lastIndexOf('.')
   const decimalIndex = Math.max(lastComma, lastDot)
-
   const normalizedValue =
     decimalIndex >= 0
-      ? `${cleaned.slice(0, decimalIndex).replace(/[.,]/g, '')}.${cleaned
-          .slice(decimalIndex + 1)
-          .replace(/[.,]/g, '')}`
+      ? `${cleaned.slice(0, decimalIndex).replace(/[.,]/g, '')}.${cleaned.slice(decimalIndex + 1).replace(/[.,]/g, '')}`
       : cleaned.replace(/[.,]/g, '')
-
   const parsed = Number(normalizedValue)
   return Number.isFinite(parsed) ? parsed : null
 }
@@ -107,16 +97,12 @@ const parsePrice = (value) => {
 const getProductPrice = (product) => {
   const directPrice = parsePrice(product.price)
   if (directPrice !== null) return directPrice
-
   const originalPrice = parsePrice(product.originalPrice)
   if (originalPrice !== null) return originalPrice
-
   const discountPrice = parsePrice(product.discount_price)
   if (discountPrice !== null) return discountPrice
-
   const tributoPrice = parsePrice(product.tributo)
   if (tributoPrice !== null) return tributoPrice
-
   return null
 }
 
@@ -148,7 +134,7 @@ const formatPrice = (product) => {
       </button>
     </div>
 
-    <!-- Filtro de subcategorías (solo cuando hay categoría activa) -->
+    <!-- Filtro de subcategorías -->
     <div v-if="activeSubcategories.length > 0" class="filter-subcategory-wrapper">
       <span class="filter-subcategory-label">↳ Subcategoría:</span>
       <div class="filter-pills filter-pills-sub">
@@ -171,7 +157,17 @@ const formatPrice = (product) => {
       </div>
     </div>
 
-    <div ref="productsContainerRef" class="products-container">
+    <!-- ✅ Skeleton loader mientras carga -->
+    <div v-if="isLoading" class="products-container">
+      <div v-for="n in 6" :key="n" class="skeleton-card">
+        <div class="skeleton-img"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    </div>
+
+    <!-- Productos reales -->
+    <div v-else ref="productsContainerRef" class="products-container">
       <div
         v-for="product in products"
         :key="product.id"
@@ -185,7 +181,6 @@ const formatPrice = (product) => {
           class="product-image"
           loading="lazy"
         />
-
         <div class="product-content">
           <div class="product-badges" v-if="getCategory(product)">
             <span class="badge-category">{{ getCategory(product) }}</span>
@@ -193,16 +188,12 @@ const formatPrice = (product) => {
               {{ getSubcategory(product) }}
             </span>
           </div>
-
           <h2 class="product-title">{{ getProductName(product) }}</h2>
-
           <p class="product-description" v-if="getShortDescription(product)">
             {{ getShortDescription(product) }}
           </p>
-
           <p class="product-price">{{ formatPrice(product) }}</p>
         </div>
-
         <button
           class="details-button"
           @click="router.push({ name: 'productsDetails', params: { id: product.id } })"
@@ -315,16 +306,58 @@ const formatPrice = (product) => {
   @apply text-white;
 }
 
+/* ✅ FIX CLS: altura mínima para evitar colapso brusco al filtrar */
 .products-container {
   @apply grid grid-cols-1 gap-6 items-stretch justify-center;
+  min-height: 400px;
 }
 
+/* ✅ FIX CLS: animación suave al aparecer tarjetas */
 .product-card {
   @apply flex flex-col justify-between bg-white rounded-3xl 
          overflow-hidden shadow-md
          transition-all duration-200 hover:-translate-y-1 
          hover:shadow-xl;
   color: #2D3E94;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ✅ SKELETON LOADER */
+.skeleton-card {
+  background: #fff;
+  border-radius: 24px;
+  overflow: hidden;
+  padding: 14px;
+}
+
+.skeleton-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 8px;
+  margin-top: 12px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton-line.short { width: 60%; }
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .product-image {
@@ -410,7 +443,6 @@ const formatPrice = (product) => {
   font-weight: 900;
 }
 
-/* Oculto por defecto para mostrarlo solo en mobile. */
 .sticky-cta-bar {
   display: none;
 }
@@ -419,38 +451,57 @@ const formatPrice = (product) => {
   box-shadow: 0 7px 18px rgba(255, 210, 0, 0.5);
 }
 
+/* ✅ MÓVIL: scroll horizontal en filtros */
 @media (max-width: 600px) {
   .filter-pills {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     gap: 8px;
-    overflow-x: visible;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .filter-pills::-webkit-scrollbar {
+    display: none;
   }
   .filter-pill {
-    width: 100%;
-    text-align: center;
-    padding: 10px 8px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 10px 16px;
     font-size: 0.82rem;
+    width: auto;
+    text-align: center;
   }
   .filter-subcategory-wrapper {
     padding: 8px 10px;
     gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .filter-subcategory-label {
-    width: 100%;
-    margin-bottom: 4px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+    width: auto;
   }
   .filter-pills-sub {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     gap: 6px;
-    overflow-x: visible;
+    scrollbar-width: none;
+  }
+  .filter-pills-sub::-webkit-scrollbar {
+    display: none;
   }
   .filter-pill-sub {
-    width: 100%;
-    text-align: center;
+    flex: 0 0 auto;
+    white-space: nowrap;
     font-size: 0.75rem;
-    padding: 8px 6px;
+    padding: 8px 12px;
+    width: auto;
+    text-align: center;
   }
 }
 
