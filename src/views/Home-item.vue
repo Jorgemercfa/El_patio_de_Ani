@@ -12,13 +12,19 @@ const { isAuthenticated } = useSession();
    CARRUSEL PRINCIPAL DE VIDEOS (LOCALES)
 ============================= */
 
-import video1 from '@/assets/videos/video1.mp4';
-import video2 from '@/assets/videos/video2.mp4';
-import video3 from '@/assets/videos/video3.mp4';
-import video4 from '@/assets/videos/video4.mp4';
-import video5 from '@/assets/videos/video5.mp4';
+// import video1 from '@/assets/videos/video1.mp4';
+// import video2 from '@/assets/videos/video2.mp4';
+// import video3 from '@/assets/videos/video3.mp4';
+// import video4 from '@/assets/videos/video4.mp4';
+// import video5 from '@/assets/videos/video5.mp4';
 
-const videos = [video1, video2, video3, video4, video5];
+const videos = [
+  new URL('@/assets/videos/video1.mp4', import.meta.url).href, 
+  new URL('@/assets/videos/video2.mp4', import.meta.url).href, 
+  new URL('@/assets/videos/video3.mp4', import.meta.url).href, 
+  new URL('@/assets/videos/video4.mp4', import.meta.url).href, 
+  new URL('@/assets/videos/video5.mp4', import.meta.url).href
+];
 const VIDEO_AUTO_ADVANCE_INTERVAL = 20000;
 const VIDEO_ENDED_DELAY = 4000;
 
@@ -173,17 +179,33 @@ const tarifas = [
       </div>
 
       <div class="main-video-wrapper">
-        <video
-          ref="videoRef"
-          :key="currentVideoIndex"
-          :src="currentVideoSrc"
-          class="main-video-player"
-          autoplay
-          muted
-          playsinline
-          preload="metadata"
-          @ended="onVideoEnded"
-        ></video>
+        <transition name="fade-video">
+          <video
+            v-if="currentVideoIndex % 2 === 0"
+            ref="videoRef"
+            :src="currentVideoSrc"
+            class="main-video-player"
+            autoplay
+            muted
+            playsinline
+            preload="auto"
+            @ended="onVideoEnded"
+          ></video>
+        </transition>
+
+        <transition name="fade-video">
+          <video
+            v-if="currentVideoIndex % 2 !== 0"
+            ref="videoRef"
+            :src="currentVideoSrc"
+            class="main-video-player"
+            autoplay
+            muted
+            playsinline
+            preload="auto"
+            @ended="onVideoEnded"
+          ></video>
+        </transition>
       </div>
 
       <div class="main-video-dots">
@@ -506,6 +528,28 @@ const tarifas = [
 .main-video-dots .active {
   background: #FFD200;
   transform: scale(1.2);
+}
+
+/* Transición de fundido suave entre videos */
+.fade-video-enter-active,
+.fade-video-leave-active {
+  transition: opacity 0.6s ease-in-out;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.fade-video-enter-from,
+.fade-video-leave-to {
+  opacity: 0;
+}
+
+/* Asegurar que el contenedor mantenga posición relativa para el absolute */
+.main-video-wrapper {
+  position: relative;
+  overflow: hidden;
 }
 
 /* ===== RESTO ===== */
