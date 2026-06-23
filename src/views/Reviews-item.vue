@@ -70,6 +70,14 @@ import Footer from '@/components/Footer-item.vue';
             <span class="review-name">Cliente verificado</span>
           </div>
         </div>
+        <div class="review-card">
+          <div class="review-stars" aria-label="5 de 5 estrellas">⭐⭐⭐⭐⭐</div>
+          <p class="review-text">"Quería darte las gracias por toda la gestión , los juegos A 1 y las personas encargadas fueron lo máximo con su trato. Los niños han estado tan emocionados con los juegos que dejaron de lado el show y a la animadora 🤭, fue un boom el juego inflable y el saltarín. Gracias “El  patio de Ani” , sin duda estarán para mí próximo evento."</p>
+          <div class="review-author">
+            <div class="review-avatar">C</div>
+            <span class="review-name">Cliente verificado</span>
+          </div>
+        </div>
       </div>
     </section>
 
