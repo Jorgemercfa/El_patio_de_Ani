@@ -52,28 +52,28 @@ function decreaseQuantity(item) {
   updateQuantity(item.id, item.quantity - 1);
 }
 
-function buildWhatsAppMessage() {
-  const lines = cartItems.value.map(
+function buildWhatsAppMessage(items, total, totalWithDiscount, discount, discountAmt, loyalty) {
+  // Recibe todos los valores como parámetros (snapshot) para evitar
+  // que computed reactivos se lean DESPUÉS de que checkout() limpie el carrito
+  const lines = items.map(
     (item) =>
-      `* ${item.name} x${item.quantity} - S/ ${(getItemPrice(item) * item.quantity).toFixed(2)}`,
+      `- ${item.name} x${item.quantity}: S/ ${(getItemPrice(item) * item.quantity).toFixed(2)}`,
   );
 
-  const parts = [];
-  parts.push('Hola Ani, quiero reservar lo siguiente:');
-  parts.push('');
-  parts.push(...lines);
-  parts.push('');
-  parts.push(`Subtotal: S/ ${cartTotal.value.toFixed(2)}`);
+  const parts = [
+    'Hola Ani, quiero reservar lo siguiente:',
+    '',
+    ...lines,
+    '',
+    `Subtotal: S/ ${total.toFixed(2)}`,
+  ];
 
-  if (loyaltyDiscount.value > 0) {
-    parts.push(
-      `Descuento ${loyaltyData.value.nivel} (-${loyaltyDiscount.value}%): -S/ ${discountAmount.value.toFixed(2)}`,
-    );
+  if (discount > 0) {
+    parts.push(`Descuento ${loyalty.nivel} (-${discount}%): -S/ ${discountAmt.toFixed(2)}`);
   }
 
-  parts.push(`Total: S/ ${cartTotalWithDiscount.value.toFixed(2)}`);
+  parts.push(`Total: S/ ${totalWithDiscount.toFixed(2)}`);
 
-  // Unir con salto de línea real y encodear TODO el mensaje de una sola vez
   return parts.join('\n');
 }
 
@@ -82,16 +82,25 @@ function confirmReservation() {
 
   submitting.value = true;
 
-  // Capturar el mensaje ANTES de llamar a checkout()
-  const message = buildWhatsAppMessage();
+  // ─── 1. Tomar SNAPSHOT de todos los valores ANTES de tocar el carrito ───
+  const itemsSnapshot = cartItems.value.map((item) => ({ ...item }));
+  const totalSnapshot = cartTotal.value;
+  const totalWithDiscountSnapshot = cartTotalWithDiscount.value;
+  const discountSnapshot = loyaltyDiscount.value;
+  const discountAmtSnapshot = discountAmount.value;
+  const loyaltySnapshot = { ...loyaltyData.value };
 
-  checkout();
+  // ─── 2. Construir el mensaje con el snapshot ───
+  const message = buildWhatsAppMessage(
+    itemsSnapshot,
+    totalSnapshot,
+    totalWithDiscountSnapshot,
+    discountSnapshot,
+    discountAmtSnapshot,
+    loyaltySnapshot,
+  );
 
-  if (sessionState.user?.id) {
-    addReserva(sessionState.user.id);
-  }
-
-  // Encodear correctamente: reemplazar \n por %0A explícitamente
+  // ─── 3. Encodear línea por línea para que WhatsApp respete los saltos ───
   const encoded = message
     .split('\n')
     .map((line) => encodeURIComponent(line))
@@ -99,10 +108,19 @@ function confirmReservation() {
 
   const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encoded}`;
 
+  // ─── 4. Ahora sí limpiar el carrito y registrar loyalty ───
+  checkout();
+
+  if (sessionState.user?.id) {
+    addReserva(sessionState.user.id);
+  }
+
   showConfirmation.value = true;
 
+  // ─── 5. Abrir WhatsApp en nueva pestaña ───
   setTimeout(() => {
     window.open(url, '_blank');
+    submitting.value = false;
   }, 1200);
 }
 </script>
@@ -128,7 +146,6 @@ function confirmReservation() {
                 </p>
               </div>
 
-              <!-- CANTIDAD: mostrar controles SOLO para snacks -->
               <div v-if="shouldShowQuantityControls(item)" class="cart-controls">
                 <button
                   class="qty-btn"
@@ -151,7 +168,6 @@ function confirmReservation() {
                 </button>
               </div>
 
-              <!-- Para servicios (juegos/inflables/shows): mostrar cantidad fija sin botones -->
               <div v-else class="service-quantity">
                 <span class="qty-label">Cantidad:</span>
                 <span class="qty-fixed">{{ item.quantity }}</span>
@@ -174,7 +190,7 @@ function confirmReservation() {
               <span>S/ {{ cartTotal.toFixed(2) }}</span>
             </div>
             <div v-if="loyaltyDiscount > 0" class="summary-row discount-row">
-              <span>🎁 Descuento {{ loyaltyData.nivel }} (-{{ loyaltyDiscount }}%)</span>
+              <span>Descuento {{ loyaltyData.nivel }} (-{{ loyaltyDiscount }}%)</span>
               <span>-S/ {{ discountAmount.toFixed(2) }}</span>
             </div>
             <div class="summary-total">
@@ -182,11 +198,11 @@ function confirmReservation() {
               <span>S/ {{ cartTotalWithDiscount.toFixed(2) }}</span>
             </div>
             <button class="checkout-btn" :disabled="submitting" @click="confirmReservation">
-              {{ submitting ? 'Enviando...' : '📱 Reservar por WhatsApp' }}
+              {{ submitting ? 'Enviando...' : 'Reservar por WhatsApp' }}
             </button>
 
             <p v-if="showConfirmation" class="confirmation-message">
-              ✅ ¡Tu reserva fue registrada! Pronto Ani te atenderá.
+              Tu reserva fue registrada. Pronto Ani te atenderá.
             </p>
           </div>
         </div>
@@ -347,7 +363,6 @@ function confirmReservation() {
   color: #2D3E94;
 }
 
-/* Estilos para servicios (cantidad fija) */
 .service-quantity {
   display: flex;
   align-items: center;
@@ -369,14 +384,6 @@ function confirmReservation() {
   font-size: 1rem;
   font-weight: 700;
   color: #2D3E94;
-}
-
-.item-subtotal {
-  font-weight: 700;
-  color: #325bcd;
-  min-width: 70px;
-  text-align: right;
-  margin: 0;
 }
 
 .remove-btn {
