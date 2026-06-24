@@ -5,7 +5,7 @@ import Footer from '@/components/Footer-item.vue';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
-
+import { getGlobalReviews, fetchGlobalReviews } from '@/services/reviews';
 const { isAuthenticated } = useSession();
 
 /* =============================
@@ -141,6 +141,40 @@ const scrollRestaurantsBy2 = (direction) => {
 
 const scrollRestaurantsLeft2 = () => scrollRestaurantsBy2(-1);
 const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
+
+/* =============================
+   CARRUSEL TESTIMONIOS (scroll)
+============================= */
+
+// ─── Referencia para el Scroll del Carrusel ────────────────────────
+const reviewsTrackRef = ref(null);
+
+// ─── Estado de las Reseñas (Leídas desde Firestore) ────────────────
+const reviews = computed(() => getGlobalReviews());
+
+// Disparamos la carga asíncrona cuando el componente se monta
+onMounted(() => {
+  fetchGlobalReviews();
+});
+
+// ─── Lógica de Scroll (Igual a la de tus productos) ────────────────
+const scrollReviewsLeft = () => {
+  if (reviewsTrackRef.value) {
+    reviewsTrackRef.value.scrollBy({ left: -320, behavior: 'smooth' });
+  }
+};
+
+const scrollReviewsRight = () => {
+  if (reviewsTrackRef.value) {
+    reviewsTrackRef.value.scrollBy({ left: 320, behavior: 'smooth' });
+  }
+};
+
+// ─── Helper para formatear la fecha de JS de forma limpia ──────────
+const formatDate = (date) => {
+  if (!date) return '';
+  return new Intl.DateTimeFormat('es-PE', { year: 'numeric', month: 'short' }).format(date);
+};
 
 /* =============================
    TARIFAS DE MOVILIDAD
@@ -382,6 +416,57 @@ const tarifas = [
       </div>
       <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollRestaurantsRight2">›</button>
     </div>
+
+    <!-- Reviews caroucel -->
+
+    <section class="reviews-section">
+    <h2 class="section-title">Lo que dicen nuestros clientes</h2>
+    
+    <div class="our-products-wrapper">
+      <button 
+        class="products-nav products-nav-left" 
+        type="button" 
+        aria-label="Anterior" 
+        @click="scrollReviewsLeft"
+      >
+        ‹
+      </button>
+
+      <div class="our-products" ref="reviewsTrackRef">
+        <div
+          v-for="review in reviews"
+          :key="review._docId"
+          class="logs-item review-card"
+        >
+          <div class="review-stars">
+            <span v-for="star in review.stars" :key="star" class="star-icon">⭐</span>
+          </div>
+
+          <p class="review-text">"{{ review.text }}"</p>
+          
+          <div class="product-mini-info review-meta">
+            <h4 class="product-mini-title review-author">{{ review.author }}</h4>
+            <span v-if="review.createdAt" class="review-date">
+              {{ formatDate(review.createdAt) }}
+            </span>
+          </div>
+        </div>
+
+        <div v-if="reviews.length === 0" class="empty-carousel">
+          No hay testimonios todavía.
+        </div>
+      </div>
+
+      <button 
+        class="products-nav products-nav-right" 
+        type="button" 
+        aria-label="Siguiente" 
+        @click="scrollReviewsRight"
+      >
+        ›
+      </button>
+    </div>
+  </section>
 
     <!-- ===== TARIFAS DE MOVILIDAD ===== -->
     <section class="movilidad-section">
@@ -963,6 +1048,66 @@ const tarifas = [
 
 .event-type-icon { font-size: 3rem; line-height: 1; }
 .event-type-name { font-size: 1rem; font-weight: 700; color: #2D3E94; }
+
+/* ===== Reviews styles ===== */
+
+.review-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 280px; /* Tamaño ideal de tarjeta para reviews */
+  max-width: 320px;
+  padding: 1.25rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  color: inherit;
+}
+
+.review-stars {
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.review-text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #4a4a4a;
+  font-style: italic;
+  margin: 0 0 1rem 0;
+  flex-grow: 1; /* Hace que el texto empuje el autor hacia abajo uniformemente */
+}
+
+.review-meta {
+  margin-top: auto;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.review-author {
+  font-weight: 600;
+  color: #222222;
+}
+
+.review-date {
+  font-size: 0.8rem;
+  color: #999999;
+}
+
+.reviews-section {
+  padding: 3rem 1rem;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+  color: #333;
+}
 
 /* ===== TARIFAS DE MOVILIDAD ===== */
 .movilidad-section { background: #ffffff; border-radius: 32px; margin: 0 40px 80px; padding: 60px; text-align: center; }
