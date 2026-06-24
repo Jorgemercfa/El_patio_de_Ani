@@ -19,7 +19,7 @@ const reviewsState = ref([]);
 const hasLoadedState = ref(false);
 const loadingState = ref(false);
 
-// ─── Normalización ─────────────────────────────────────────────────
+// ─── Normalización Blindada ────────────────────────────────────────
 function normalizeReview(data, docId = '') {
   let dateValue = data?.createdAt;
   
@@ -30,7 +30,8 @@ function normalizeReview(data, docId = '') {
 
   return {
     _docId: docId || data?._docId || '',
-    stars: Number(data?.stars ?? 5),
+    // Soporta tanto 'stars' como el 'start' que tienes actualmente en la DB
+    stars: Number(data?.stars ?? data?.start ?? 5),
     text: String(data?.text || '').trim(),
     author: String(data?.author || 'Cliente verificado').trim(),
     createdAt: dateValue || null,
