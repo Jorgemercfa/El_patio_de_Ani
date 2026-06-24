@@ -4,33 +4,25 @@ import {
   deleteDoc,
   doc,
   getDocs,
-  orderBy,
-  query,
   serverTimestamp,
 } from 'firebase/firestore';
 import { ref } from 'vue';
 import { db, isFirebaseConfigured } from '@/firebase';
 
-// ─── Colección en Firestore ────────────────────────────────────────
 const REVIEWS_COLLECTION = 'review';
 
-// ─── Estado reactivo global ────────────────────────────────────────
 const reviewsState = ref([]);
 const hasLoadedState = ref(false);
 const loadingState = ref(false);
 
-// ─── Normalización Blindada ────────────────────────────────────────
 function normalizeReview(data, docId = '') {
   let dateValue = data?.createdAt;
-  
-  // Si viene de Firestore como Timestamp, lo transformamos a un objeto Date de JS
   if (dateValue && typeof dateValue.toDate === 'function') {
     dateValue = dateValue.toDate();
   }
 
   return {
     _docId: docId || data?._docId || '',
-    // Soporta tanto 'stars' como el 'start' que tienes actualmente en la DB
     stars: Number(data?.stars ?? data?.start ?? 5),
     text: String(data?.text || '').trim(),
     author: String(data?.author || 'Cliente verificado').trim(),
@@ -38,9 +30,7 @@ function normalizeReview(data, docId = '') {
   };
 }
 
-// ─── LEER reviews desde Firestore ──────────────────────────────────
 export async function fetchGlobalReviews(force = false) {
-  // Fallback si Firebase no está listo: evita romper la app y retorna array vacío
   if (!isFirebaseConfigured || !db) {
     if (!hasLoadedState.value) {
       reviewsState.value = [];
@@ -54,17 +44,16 @@ export async function fetchGlobalReviews(force = false) {
 
   loadingState.value = true;
   try {
-    const q = query(
-      collection(db, REVIEWS_COLLECTION),
-      orderBy('createdAt', 'desc'), // Trae los testimonios más recientes primero
-    );
-    const snapshot = await getDocs(q);
+    // Sin orderBy: evita el error silencioso cuando los documentos
+    // no tienen el campo createdAt (como ocurre en la DB actual)
+    const snapshot = await getDocs(collection(db, REVIEWS_COLLECTION));
     reviewsState.value = snapshot.docs.map((d) => normalizeReview(d.data(), d.id));
     hasLoadedState.value = true;
     return reviewsState.value;
   } catch (error) {
     console.error('[Reviews] Error al traer reseñas desde Firestore:', error);
-    throw error;
+    reviewsState.value = [];
+    return reviewsState.value;
   } finally {
     loadingState.value = false;
   }
@@ -79,7 +68,6 @@ export function getGlobalReviews() {
   return reviewsState.value;
 }
 
-// ─── AGREGAR review desde panel admin ──────────────────────────────
 export async function addGlobalReview({ stars, text, author }) {
   const payload = {
     stars: Number(stars ?? 5),
@@ -96,13 +84,10 @@ export async function addGlobalReview({ stars, text, author }) {
 
   const docRef = await addDoc(collection(db, REVIEWS_COLLECTION), payload);
   const newReview = normalizeReview({ ...payload, createdAt: new Date() }, docRef.id);
-  
-  // Lo añadimos al inicio del estado local para que se refleje de inmediato en la UI
-  reviewsState.value = [newReview, ...reviewsState.value]; 
+  reviewsState.value = [newReview, ...reviewsState.value];
   return newReview;
 }
 
-// ─── ELIMINAR review desde panel admin ─────────────────────────────
 export async function deleteGlobalReview(docId) {
   if (!docId) throw new Error('Se requiere el ID del documento para eliminar.');
 

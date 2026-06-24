@@ -66,6 +66,7 @@ const onVideoEnded = () => {
 onMounted(async () => {
   await fetchCompanyproducts();
   startVideoTimer();
+  reviews.value = await fetchGlobalReviews();
 });
 
 onBeforeUnmount(() => {
@@ -149,14 +150,7 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 // ─── Referencia para el Scroll del Carrusel ────────────────────────
 const reviewsTrackRef = ref(null);
 
-// ✅ CORRECCIÓN: Llamamos directamente a fetchGlobalReviews en el ciclo onMounted
-// e igualamos el computed para capturar el retorno reactivo.
 const reviews = ref([]);
-
-onMounted(async () => {
-  // Disparamos la carga y asignamos el resultado de Firestore a nuestra referencia local
-  reviews.value = await fetchGlobalReviews();
-});
 
 // ─── Lógica de Scroll (Igual a la de tus productos) ────────────────
 const scrollReviewsLeft = () => {
