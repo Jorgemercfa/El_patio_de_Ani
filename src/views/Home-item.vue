@@ -5,7 +5,7 @@ import Footer from '@/components/Footer-item.vue';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
-import { getGlobalReviews, fetchGlobalReviews } from '@/auth/reviewServicesRepo';
+import { fetchGlobalReviews } from '@/auth/reviewServicesRepo';
 const { isAuthenticated } = useSession();
 
 /* =============================
@@ -149,12 +149,13 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 // ─── Referencia para el Scroll del Carrusel ────────────────────────
 const reviewsTrackRef = ref(null);
 
-// ─── Estado de las Reseñas (Leídas desde Firestore) ────────────────
-const reviews = computed(() => getGlobalReviews());
+// ✅ CORRECCIÓN: Llamamos directamente a fetchGlobalReviews en el ciclo onMounted
+// e igualamos el computed para capturar el retorno reactivo.
+const reviews = ref([]);
 
-// Disparamos la carga asíncrona cuando el componente se monta
-onMounted(() => {
-  fetchGlobalReviews();
+onMounted(async () => {
+  // Disparamos la carga y asignamos el resultado de Firestore a nuestra referencia local
+  reviews.value = await fetchGlobalReviews();
 });
 
 // ─── Lógica de Scroll (Igual a la de tus productos) ────────────────
@@ -420,53 +421,56 @@ const tarifas = [
     <!-- Reviews caroucel -->
 
     <section class="reviews-section">
-    <h2 class="section-title">Lo que dicen nuestros clientes</h2>
-    
-    <div class="our-products-wrapper">
-      <button 
-        class="products-nav products-nav-left" 
-        type="button" 
-        aria-label="Anterior" 
-        @click="scrollReviewsLeft"
-      >
-        ‹
-      </button>
-
-      <div class="our-products" ref="reviewsTrackRef">
-        <div
-          v-for="review in reviews"
-          :key="review._docId"
-          class="logs-item review-card"
+      <h2 class="section-title" style="text-align: center; font-size: 32px; font-weight: 800; color: #2D3E94; margin-bottom: 40px;">
+        Lo que dicen nuestros clientes
+      </h2>
+      
+      <div class="our-products-wrapper">
+        <button 
+          class="products-nav products-nav-left" 
+          type="button" 
+          aria-label="Anterior" 
+          @click="scrollReviewsLeft"
         >
-          <div class="review-stars">
-            <span v-for="star in review.stars" :key="star" class="star-icon">⭐</span>
+          ‹
+        </button>
+
+        <div class="our-products" ref="reviewsTrackRef">
+          <div
+            v-for="review in reviews"
+            :key="review._docId"
+            class="logs-item review-card"
+            style="flex: 0 0 280px; min-width: 280px; max-width: 320px; text-align: left;"
+          >
+            <div class="review-stars">
+              <span v-for="star in review.stars" :key="star" class="star-icon">⭐</span>
+            </div>
+
+            <p class="review-text">"{{ review.text }}"</p>
+            
+            <div class="product-mini-info review-meta">
+              <h4 class="product-mini-title review-author" style="margin: 0;">{{ review.author }}</h4>
+              <span v-if="review.createdAt" class="review-date">
+                {{ formatDate(review.createdAt) }}
+              </span>
+            </div>
           </div>
 
-          <p class="review-text">"{{ review.text }}"</p>
-          
-          <div class="product-mini-info review-meta">
-            <h4 class="product-mini-title review-author">{{ review.author }}</h4>
-            <span v-if="review.createdAt" class="review-date">
-              {{ formatDate(review.createdAt) }}
-            </span>
+          <div v-if="reviews.length === 0" class="empty-carousel">
+            No hay testimonios todavía.
           </div>
         </div>
 
-        <div v-if="reviews.length === 0" class="empty-carousel">
-          No hay testimonios todavía.
-        </div>
+        <button 
+          class="products-nav products-nav-right" 
+          type="button" 
+          aria-label="Siguiente" 
+          @click="scrollReviewsRight"
+        >
+          ›
+        </button>
       </div>
-
-      <button 
-        class="products-nav products-nav-right" 
-        type="button" 
-        aria-label="Siguiente" 
-        @click="scrollReviewsRight"
-      >
-        ›
-      </button>
-    </div>
-  </section>
+    </section>
 
     <!-- ===== TARIFAS DE MOVILIDAD ===== -->
     <section class="movilidad-section">
