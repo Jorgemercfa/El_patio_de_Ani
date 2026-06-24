@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from './views/Home-item.vue';
 import products from './views/Product-item.vue';
 import productsDetails from './components/Component-coupons-item.vue';
+import Proms from './views/Promotions-item.vue';
 import Reviews from './views/Reviews-item.vue';
 import About from './views/About-item.vue';
 import SignIn from './views/Sign-in.vue';
@@ -40,6 +41,7 @@ const routes = [
   { path: '/Product-item', name: 'product', component: products, meta: { title: 'Servicios | El patio de Ani' }, },
   { path: '/Contact-item', name: 'Contact', component: Contact, meta: { title: 'Contacto | El patio de Ani' }, },
   { path: '/product/:id', name: 'productsDetails', component: productsDetails, meta: { title: 'Detalles del Servicio | El patio de Ani' } },
+  { path: '/Promotions-item', name: 'Promotions', component: Proms, meta: { title: 'Promociones | El patio de Ani' } },
   { path: '/Reviews-item', name: 'Reviews', component: Reviews, meta: { title: 'Reseñas | El patio de Ani' } },
   { path: '/About-item', name: 'About', component: About, meta: { title: 'Sobre About | El patio de Ani' } },
   // USUARIO

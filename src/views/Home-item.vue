@@ -222,6 +222,9 @@ const tarifas = [
     <div class="text-home">
       Encuentra todo lo que necesitas para una celebración inolvidable: desde shows mágicos y juegos inflables hasta deliciosos carritos de snacks. Nos encargamos de la diversión para que tú disfrutes cada momento especial.
     </div>
+    <div class="proms-area">
+    <button @click="$router.push('/Promotions-item')" class="prom-access-button">Promociones</button>
+    </div>
 
     <!-- ===== HERO SECTION ===== -->
     <section class="hero-section">
@@ -578,6 +581,23 @@ const tarifas = [
   left: 50%;
   transform: translateX(-50%);
   border-radius: 5px;
+}
+
+.proms-area {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.prom-access-button{
+  background: linear-gradient(135deg, #E91E81, #2D3E94);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .our-products-wrapper {
