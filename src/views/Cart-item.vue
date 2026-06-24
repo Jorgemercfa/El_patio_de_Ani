@@ -32,59 +32,49 @@ function getItemPrice(item) {
   return Number(item.discount_price ?? item.price ?? 0);
 }
 
-/**
- * Determina si un producto es un servicio (juego/inflable/show)
- * o un producto de stock (snack/carrito).
- * Categorías de SERVICIOS: Inflables, Juegos, Shows Infantiles, Estética Infantil
- * Categorías de SNACKS: Carritos Snacks
- */
 function isService(item) {
   const serviceCategories = ['Inflables', 'Juegos', 'Shows Infantiles', 'Estética Infantil'];
   return serviceCategories.includes(item.category);
 }
 
-/**
- * Decide si se muestran los controles +/- de cantidad.
- * Solo aplica a productos que NO son servicios (snacks).
- * Los servicios siempre quedan con cantidad fija = 1.
- */
 function shouldShowQuantityControls(item) {
   return !isService(item);
 }
 
 function increaseQuantity(item) {
-  if (isService(item)) {
-    // Los servicios siempre tienen cantidad 1, no incrementar
-    return;
-  }
+  if (isService(item)) return;
   if (item.quantity >= MAX_QUANTITY_PER_SNACK) return;
   updateQuantity(item.id, item.quantity + 1);
 }
 
 function decreaseQuantity(item) {
-  if (isService(item)) {
-    // Los servicios siempre tienen cantidad 1, no decrementar
-    return;
-  }
+  if (isService(item)) return;
   updateQuantity(item.id, item.quantity - 1);
 }
 
 function buildWhatsAppMessage() {
   const lines = cartItems.value.map(
     (item) =>
-      `• ${item.name} x${item.quantity} — S/ ${(getItemPrice(item) * item.quantity).toFixed(2)}`,
+      `* ${item.name} x${item.quantity} - S/ ${(getItemPrice(item) * item.quantity).toFixed(2)}`,
   );
 
-  let message = `Hola Ani, quiero reservar lo siguiente!\n\n${lines.join('\n')}\n\n`;
-  message += `Subtotal: S/ ${cartTotal.value.toFixed(2)}\n`;
+  const parts = [];
+  parts.push('Hola Ani, quiero reservar lo siguiente:');
+  parts.push('');
+  parts.push(...lines);
+  parts.push('');
+  parts.push(`Subtotal: S/ ${cartTotal.value.toFixed(2)}`);
 
   if (loyaltyDiscount.value > 0) {
-    message += `Descuento ${loyaltyData.value.nivel} (-${loyaltyDiscount.value}%): -S/ ${discountAmount.value.toFixed(2)}\n`;
+    parts.push(
+      `Descuento ${loyaltyData.value.nivel} (-${loyaltyDiscount.value}%): -S/ ${discountAmount.value.toFixed(2)}`,
+    );
   }
 
-  message += `Total: S/ ${cartTotalWithDiscount.value.toFixed(2)}`;
+  parts.push(`Total: S/ ${cartTotalWithDiscount.value.toFixed(2)}`);
 
-  return message;
+  // Unir con salto de línea real y encodear TODO el mensaje de una sola vez
+  return parts.join('\n');
 }
 
 function confirmReservation() {
@@ -92,22 +82,27 @@ function confirmReservation() {
 
   submitting.value = true;
 
+  // Capturar el mensaje ANTES de llamar a checkout()
+  const message = buildWhatsAppMessage();
+
   checkout();
 
   if (sessionState.user?.id) {
     addReserva(sessionState.user.id);
   }
 
-  const message = buildWhatsAppMessage();
-  
-  // Reemplaza \n por %0A manualmente antes de encodear
-  const encodedMessage = encodeURIComponent(message).replace(/%0A/g, '%0A');
-  const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodedMessage}`;
+  // Encodear correctamente: reemplazar \n por %0A explícitamente
+  const encoded = message
+    .split('\n')
+    .map((line) => encodeURIComponent(line))
+    .join('%0A');
+
+  const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encoded}`;
 
   showConfirmation.value = true;
 
   setTimeout(() => {
-    window.location.href = url;
+    window.open(url, '_blank');
   }, 1200);
 }
 </script>
