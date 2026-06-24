@@ -23,7 +23,8 @@ function normalizeReview(data, docId = '') {
 
   return {
     _docId: docId || data?._docId || '',
-    stars: Number(data?.stars ?? data?.start ?? 5),
+    stars: data?.stars !== undefined ? Number(data.stars) :
+           data?.start !== undefined ? Number(data.start) : 5,
     text: String(data?.text || '').trim(),
     author: String(data?.author || 'Cliente verificado').trim(),
     createdAt: dateValue || null,
@@ -47,7 +48,15 @@ export async function fetchGlobalReviews(force = false) {
     // Sin orderBy: evita el error silencioso cuando los documentos
     // no tienen el campo createdAt (como ocurre en la DB actual)
     const snapshot = await getDocs(collection(db, REVIEWS_COLLECTION));
-    reviewsState.value = snapshot.docs.map((d) => normalizeReview(d.data(), d.id));
+    const normalized = snapshot.docs.map((d) => normalizeReview(d.data(), d.id));
+    // Ordenar en cliente: las que tienen createdAt primero (más recientes),
+    // las que no tienen createdAt (documentos viejos) al final
+    reviewsState.value = normalized.sort((a, b) => {
+      if (!a.createdAt && !b.createdAt) return 0;
+      if (!a.createdAt) return 1;
+      if (!b.createdAt) return -1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
     hasLoadedState.value = true;
     return reviewsState.value;
   } catch (error) {

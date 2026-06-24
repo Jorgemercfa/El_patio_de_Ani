@@ -9,6 +9,7 @@ import About from './views/About-item.vue';
 import SignIn from './views/Sign-in.vue';
 import SignUp from './views/Sign-up.vue';
 import ForgetPassword from './views/Forget-Password.vue';
+import ReviewsCompany from './components/Reviews-companies.vue';
 const Contact = () => import('./views/Contact-item.vue');
 const Profile = () => import('./views/Profile-item.vue');
 const InflableReserva = () => import('./views/Inflable-reserva.vue');
@@ -52,6 +53,7 @@ const routes = [
     name: 'ForgetPassword',
     component: ForgetPassword,
   },
+  {path: '/Reviews-companies', name: 'ReviewsCompany', component: ReviewsCompany, meta: { title: 'Reseñas | El patio de Ani' } },
   {
     path: '/Profile',
     name: 'Profile',
