@@ -75,11 +75,11 @@ function buildWhatsAppMessage() {
       `• ${item.name} x${item.quantity} — S/ ${(getItemPrice(item) * item.quantity).toFixed(2)}`,
   );
 
-  let message = `Hola Ani, quiero reservar lo siguiente 🎉\n\n${lines.join('\n')}\n\n`;
+  let message = `Hola Ani, quiero reservar lo siguiente!\n\n${lines.join('\n')}\n\n`;
   message += `Subtotal: S/ ${cartTotal.value.toFixed(2)}\n`;
 
   if (loyaltyDiscount.value > 0) {
-    message += `🎁 Descuento ${loyaltyData.value.nivel} (-${loyaltyDiscount.value}%): -S/ ${discountAmount.value.toFixed(2)}\n`;
+    message += `Descuento ${loyaltyData.value.nivel} (-${loyaltyDiscount.value}%): -S/ ${discountAmount.value.toFixed(2)}\n`;
   }
 
   message += `Total: S/ ${cartTotalWithDiscount.value.toFixed(2)}`;
@@ -92,21 +92,21 @@ function confirmReservation() {
 
   submitting.value = true;
 
-  // Registra la reserva en el carrito
   checkout();
 
-  // Suma punto de loyalty solo si hay una sesión activa
   if (sessionState.user?.id) {
     addReserva(sessionState.user.id);
   }
 
   const message = buildWhatsAppMessage();
-  const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
+  
+  // Reemplaza \n por %0A manualmente antes de encodear
+  const encodedMessage = encodeURIComponent(message).replace(/%0A/g, '%0A');
+  const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodedMessage}`;
 
   showConfirmation.value = true;
 
   setTimeout(() => {
-    // Se usa location.href en vez de window.open para evitar bloqueos de popups
     window.location.href = url;
   }, 1200);
 }
