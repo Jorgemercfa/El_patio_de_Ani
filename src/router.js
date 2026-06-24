@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 // Usuarios
 import Home from './views/Home-item.vue';
 import products from './views/Product-item.vue';
@@ -172,7 +172,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(process.env.NODE_ENV === 'production' ? '/El_patio_de_Ani/' : '/'),
+  history: createWebHashHistory(process.env.NODE_ENV === 'production' ? '/El_patio_de_Ani/' : '/'),
   routes,
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) return savedPosition;
