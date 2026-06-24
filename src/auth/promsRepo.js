@@ -7,11 +7,11 @@ import {
   deleteDoc,
   doc,
   query,
-  where,
+//   where,
   orderBy,
 } from 'firebase/firestore';
 
-const COLLECTION = 'promotions';
+const COLLECTION = 'proms';
 
 /**
  * Obtiene todas las promociones activas ordenadas por `order`.
@@ -20,11 +20,12 @@ const COLLECTION = 'promotions';
 export const getActivePromotions = async () => {
   const q = query(
     collection(db, COLLECTION),
-    where('active', '==', true),
     orderBy('order', 'asc'),
   );
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  return snapshot.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((promo) => promo.active === true);
 };
 
 /**
