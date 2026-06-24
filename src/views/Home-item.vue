@@ -5,7 +5,7 @@ import Footer from '@/components/Footer-item.vue';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
-import { getGlobalReviews, fetchGlobalReviews } from '@/services/reviews';
+import { getGlobalReviews, fetchGlobalReviews } from '@/auth/reviewServicesRepo';
 const { isAuthenticated } = useSession();
 
 /* =============================
