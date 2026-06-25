@@ -23,9 +23,8 @@ async function closeSession() {
         <router-link to="/Home-companies" class="admin-link">Inicio</router-link>
         <router-link to="/Services-admin" class="admin-link">Servicios</router-link>
         <router-link to="/Orders-companies" class="admin-link">Pedidos</router-link>
-        <router-link to="/Create-products" class="admin-link"
-          >Crear servicio</router-link
-        >
+        <router-link to="/Create-products" class="admin-link">Crear servicio</router-link>
+        <router-link to="/Promotions-companies" class="admin-link">Crear promociones</router-link>
         <router-link to="/Company-profile" class="admin-link">Perfil</router-link>
         <router-link to="/Sign-up-companies" class="admin-link">Registrar admin</router-link>
         <button class="logout-btn" type="button" @click="closeSession">

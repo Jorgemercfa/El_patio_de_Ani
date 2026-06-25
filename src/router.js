@@ -30,6 +30,7 @@ const Createproducts = () => import('./views/views_companies/Create-product-item
 const ServicesAdmin = () => import('./views/views_companies/Services-admin.vue');
 const EditServiceItem = () => import('./views/views_companies/Edit-service-item.vue');
 const OrdersCompanies = () => import('./views/views_companies/Orders-companies.vue');
+const PromotionsCompanies = () => import('./views/views_companies/Promotions-admin.vue');
 const CompanyProfile = () => import('./views/views_companies/Company-profile-companies.vue');
 import { useSession } from './auth/session';
 import { useSessionCompany } from './auth/session_companies';
@@ -162,6 +163,12 @@ const routes = [
     path: '/Orders-companies',
     name: 'OrdersCompanies',
     component: OrdersCompanies,
+    meta: { requiresCompanyAuth: true },
+  },
+  {
+    path: '/Promotions-companies',
+    name: 'PromotionsCompanies',
+    component: PromotionsCompanies,
     meta: { requiresCompanyAuth: true },
   },
   {
