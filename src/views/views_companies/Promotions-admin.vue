@@ -1,7 +1,5 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import Navbar from '@/components/Navbar-item.vue';
-import Footer from '@/components/Footer-item.vue';
 import {
   getAllPromotions,
   createPromotion,
@@ -157,8 +155,7 @@ function isExpired(deadline) {
 </script>
 
 <template>
-  <header><Navbar /></header>
-
+  <AdminLayout>
   <div class="admin-wrapper">
     <h1 class="admin-title">Gestión de Promociones</h1>
 
@@ -277,8 +274,8 @@ function isExpired(deadline) {
       </div>
     </div>
   </div>
+  </AdminLayout>
 
-  <footer><Footer /></footer>
 </template>
 
 <style scoped>
