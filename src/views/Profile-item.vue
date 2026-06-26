@@ -58,6 +58,55 @@ const loyaltyMessage = computed(() => {
   }
   return `Te faltan ${loyaltyData.value.reservasParaProximo} reserva(s) para ${loyaltyData.value.proximoNivel}.`;
 });
+
+const upcomingBirthdays = computed(() => {
+  if (!children.value.length) return [];
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return children.value.filter((child) => {
+    if (!child.birthday) return false;
+
+    // Construir la fecha de cumpleaños de este año
+    const bday = new Date(child.birthday);
+    const thisYearBday = new Date(
+      today.getFullYear(),
+      bday.getMonth(),
+      bday.getDate(),
+    );
+
+    // Si ya pasó este año, calcular para el año siguiente
+    if (thisYearBday < today) {
+      thisYearBday.setFullYear(today.getFullYear() + 1);
+    }
+
+    const diffDays = Math.round(
+      (thisYearBday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    return diffDays <= 7;
+  }).map((child) => {
+    const bday = new Date(child.birthday);
+    const thisYearBday = new Date(
+      new Date().getFullYear(),
+      bday.getMonth(),
+      bday.getDate(),
+    );
+    if (thisYearBday < new Date()) {
+      thisYearBday.setFullYear(new Date().getFullYear() + 1);
+    }
+    const diffDays = Math.round(
+      (thisYearBday.getTime() - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24),
+    );
+    return {
+      name: child.name,
+      lastname: child.lastname,
+      diffDays,
+    };
+  });
+});
+
 const initials = computed(() => {
   const name = state.user?.name || '';
   return name
@@ -263,6 +312,31 @@ onBeforeUnmount(() => {
             ¡Hijos guardados correctamente! 🎉
           </p>
         </div>
+
+        <!-- ===== AVISO DE CUMPLEAÑOS ===== -->
+<div v-if="upcomingBirthdays.length > 0" class="birthday-alert">
+  <div
+    v-for="(kid, index) in upcomingBirthdays"
+    :key="index"
+    class="birthday-alert-item"
+  >
+    <span class="birthday-alert-icon">🎂</span>
+    <div class="birthday-alert-text">
+      <strong>
+        {{ kid.diffDays === 0
+          ? `¡Hoy es el cumpleaños de ${kid.name}!`
+          : kid.diffDays === 1
+            ? `¡Mañana es el cumpleaños de ${kid.name}!`
+            : `¡El cumpleaños de ${kid.name} es en ${kid.diffDays} días!`
+        }}
+      </strong>
+      <p>Reserva con tiempo y celebra con El Patio de Ani 🎉</p>
+    </div>
+    <router-link to="/Product-item" class="birthday-alert-btn">
+      Ver servicios →
+    </router-link>
+  </div>
+</div>
 
         <div class="orders-section">
           <h2 class="kids-title">📦 Mis Pedidos</h2>
