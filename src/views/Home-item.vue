@@ -6,7 +6,8 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
 import { fetchGlobalReviews } from '@/auth/reviewServicesRepo';
-const { isAuthenticated } = useSession();
+
+const { isAuthenticated, state } = useSession();
 
 /* =============================
    CARRUSEL PRINCIPAL DE VIDEOS (LOCALES)
@@ -62,17 +63,6 @@ const onVideoEnded = () => {
     restartVideoTimer();
   }, VIDEO_ENDED_DELAY);
 };
-
-onMounted(async () => {
-  await fetchCompanyproducts();
-  startVideoTimer();
-  reviews.value = await fetchGlobalReviews();
-});
-
-onBeforeUnmount(() => {
-  stopVideoTimer();
-  clearTimeout(videoEndedTimeout.value);
-});
 
 /* =============================
    HELPERS
@@ -146,13 +136,9 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 /* =============================
    CARRUSEL TESTIMONIOS (scroll)
 ============================= */
-
-// ─── Referencia para el Scroll del Carrusel ────────────────────────
 const reviewsTrackRef = ref(null);
-
 const reviews = ref([]);
 
-// ─── Lógica de Scroll (Igual a la de tus productos) ────────────────
 const scrollReviewsLeft = () => {
   if (reviewsTrackRef.value) {
     reviewsTrackRef.value.scrollBy({ left: -320, behavior: 'smooth' });
@@ -165,11 +151,24 @@ const scrollReviewsRight = () => {
   }
 };
 
-// ─── Helper para formatear la fecha de JS de forma limpia ──────────
 const formatDate = (date) => {
   if (!date) return '';
   return new Intl.DateTimeFormat('es-PE', { year: 'numeric', month: 'short' }).format(date);
 };
+
+/* =============================
+   ÚNICO onMounted
+============================= */
+onMounted(async () => {
+  await fetchCompanyproducts();
+  startVideoTimer();
+  reviews.value = await fetchGlobalReviews();
+});
+
+onBeforeUnmount(() => {
+  stopVideoTimer();
+  clearTimeout(videoEndedTimeout.value);
+});
 
 /* =============================
    TARIFAS DE MOVILIDAD
@@ -248,11 +247,23 @@ const tarifas = [
       </svg>
     </div>
 
+    <!-- ===== BIENVENIDA PERSONALIZADA ===== -->
+    <div v-if="isAuthenticated && state.user" class="welcome-banner">
+      <span class="welcome-icon">👋</span>
+      <span class="welcome-text">
+        ¡Hola <strong>{{ state.user.name }}</strong>, bienvenido de nuevo!
+      </span>
+      <router-link to="/Profile" class="welcome-profile-link">
+        Ver mi perfil →
+      </router-link>
+    </div>
+
     <div class="text-home">
       Encuentra todo lo que necesitas para una celebración inolvidable: desde shows mágicos y juegos inflables hasta deliciosos carritos de snacks. Nos encargamos de la diversión para que tú disfrutes cada momento especial.
     </div>
+
     <div class="proms-area">
-    <button @click="$router.push('/Promotions-item')" class="prom-access-button">Promociones</button>
+      <button @click="$router.push('/Promotions-item')" class="prom-access-button">Promociones</button>
     </div>
 
     <!-- ===== HERO SECTION ===== -->
@@ -412,22 +423,14 @@ const tarifas = [
       <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollRestaurantsRight2">›</button>
     </div>
 
-    <!-- Reviews caroucel -->
-
+    <!-- Reviews carrusel -->
     <section class="reviews-section">
       <h2 class="section-title" style="text-align: center; font-size: 32px; font-weight: 800; color: #2D3E94; margin-bottom: 40px;">
         Lo que dicen nuestros clientes
       </h2>
       
       <div class="our-products-wrapper">
-        <button 
-          class="products-nav products-nav-left" 
-          type="button" 
-          aria-label="Anterior" 
-          @click="scrollReviewsLeft"
-        >
-          ‹
-        </button>
+        <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollReviewsLeft">‹</button>
 
         <div class="our-products" ref="reviewsTrackRef">
           <div
@@ -439,14 +442,10 @@ const tarifas = [
             <div class="review-stars">
               <span v-for="star in review.stars" :key="star" class="star-icon">⭐</span>
             </div>
-
             <p class="review-text">"{{ review.text }}"</p>
-            
             <div class="product-mini-info review-meta">
               <h4 class="product-mini-title review-author" style="margin: 0;">{{ review.author }}</h4>
-              <span v-if="review.createdAt" class="review-date">
-                {{ formatDate(review.createdAt) }}
-              </span>
+              <span v-if="review.createdAt" class="review-date">{{ formatDate(review.createdAt) }}</span>
             </div>
           </div>
 
@@ -455,14 +454,7 @@ const tarifas = [
           </div>
         </div>
 
-        <button 
-          class="products-nav products-nav-right" 
-          type="button" 
-          aria-label="Siguiente" 
-          @click="scrollReviewsRight"
-        >
-          ›
-        </button>
+        <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollReviewsRight">›</button>
       </div>
     </section>
 
@@ -500,6 +492,43 @@ const tarifas = [
   font-family: 'Nunito', sans-serif;
 }
 
+/* ===== BIENVENIDA ===== */
+.welcome-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: white;
+  border-radius: 999px;
+  padding: 14px 28px;
+  margin: 2px auto 0;
+  max-width: 600px;
+  box-shadow: 0 4px 16px rgba(233, 30, 129, 0.12);
+  border: 2px solid rgba(233, 30, 129, 0.15);
+  font-family: 'Nunito', sans-serif;
+}
+
+.welcome-icon { font-size: 1.4rem; }
+
+.welcome-text {
+  font-size: 1rem;
+  color: #2D3E94;
+  font-weight: 600;
+}
+
+.welcome-text strong { color: #E91E81; }
+
+.welcome-profile-link {
+  font-size: 0.88rem;
+  color: #E91E81;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.welcome-profile-link:hover { text-decoration: underline; }
+
 /* ===== CARRUSEL PRINCIPAL DE VIDEOS ===== */
 .main-video-carousel {
   position: relative;
@@ -511,18 +540,10 @@ const tarifas = [
 
 .main-video-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   z-index: 10;
   pointer-events: none;
-  background: linear-gradient(
-    to right,
-    rgba(45, 62, 148, 0.55) 0%,
-    rgba(45, 62, 148, 0.15) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(to right, rgba(45,62,148,0.55) 0%, rgba(45,62,148,0.15) 50%, transparent 100%);
   display: flex;
   align-items: center;
 }
@@ -537,13 +558,13 @@ const tarifas = [
   pointer-events: none;
 }
 
-/* ✅ FIX: fondo degradado mientras carga el video */
 .main-video-wrapper {
   position: relative;
   width: 100%;
   height: 80vh;
   min-height: 500px;
   background: linear-gradient(135deg, #2D3E94, #E91E81);
+  overflow: hidden;
 }
 
 .main-video-player {
@@ -559,8 +580,7 @@ const tarifas = [
   top: 50%;
   transform: translateY(-50%);
   z-index: 20;
-  width: 48px;
-  height: 48px;
+  width: 48px; height: 48px;
   border-radius: 50%;
   border: 2px solid rgba(255,255,255,0.8);
   cursor: pointer;
@@ -575,7 +595,7 @@ const tarifas = [
 }
 
 .main-video-nav:hover {
-  background: rgba(233, 30, 129, 0.85);
+  background: rgba(233,30,129,0.85);
   border-color: transparent;
   transform: translateY(-50%) scale(1.08);
 }
@@ -586,8 +606,7 @@ const tarifas = [
 .main-video-dots {
   position: absolute;
   bottom: 18px;
-  left: 0;
-  right: 0;
+  left: 0; right: 0;
   display: flex;
   justify-content: center;
   gap: 10px;
@@ -596,12 +615,11 @@ const tarifas = [
 }
 
 .main-video-dots span {
-  width: 12px;
-  height: 12px;
+  width: 12px; height: 12px;
   border-radius: 50%;
   cursor: pointer;
   transition: background-color 0.3s, transform 0.3s;
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255,255,255,0.45);
   pointer-events: all;
 }
 
@@ -610,27 +628,16 @@ const tarifas = [
   transform: scale(1.2);
 }
 
-/* Transición de fundido suave entre videos */
 .fade-video-enter-active,
 .fade-video-leave-active {
   transition: opacity 0.6s ease-in-out;
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
 }
 
 .fade-video-enter-from,
-.fade-video-leave-to {
-  opacity: 0;
-}
-
-/* Asegurar que el contenedor mantenga posición relativa para el absolute */
-.main-video-wrapper {
-  position: relative;
-  overflow: hidden;
-}
+.fade-video-leave-to { opacity: 0; }
 
 /* ===== RESTO ===== */
 .text-home {
@@ -656,8 +663,7 @@ const tarifas = [
 
 .title-home::after {
   content: '';
-  width: 60px;
-  height: 4px;
+  width: 60px; height: 4px;
   background: linear-gradient(135deg, #E91E81, #2D3E94);
   position: absolute;
   bottom: -12px;
@@ -666,12 +672,9 @@ const tarifas = [
   border-radius: 5px;
 }
 
-.proms-area {
-  text-align: center;
-  margin: 40px 0;
-}
+.proms-area { text-align: center; margin: 40px 0; }
 
-.prom-access-button{
+.prom-access-button {
   background: linear-gradient(135deg, #E91E81, #2D3E94);
   color: white;
   border: none;
@@ -702,7 +705,7 @@ const tarifas = [
 
 .our-products::-webkit-scrollbar { height: 8px; }
 .our-products::-webkit-scrollbar-thumb {
-  background: rgba(233, 30, 129, 0.3);
+  background: rgba(233,30,129,0.3);
   border-radius: 10px;
 }
 
@@ -710,8 +713,7 @@ const tarifas = [
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
+  width: 42px; height: 42px;
   border-radius: 50%;
   border: 2px solid #E91E81;
   cursor: pointer;
@@ -749,7 +751,7 @@ const tarifas = [
   text-align: center;
   text-decoration: none;
   color: #2D3E94;
-  box-shadow: 0 4px 16px rgba(233, 30, 129, 0.10);
+  box-shadow: 0 4px 16px rgba(233,30,129,0.10);
   transition: 0.25s;
 }
 
@@ -804,8 +806,7 @@ const tarifas = [
 
 .product-mini-badge {
   position: absolute;
-  top: 22px;
-  right: 10px;
+  top: 22px; right: 10px;
   background: linear-gradient(135deg, #FFD200, #FF9800);
   color: #2D3E94;
   padding: 4px 10px;
@@ -814,7 +815,7 @@ const tarifas = [
   font-weight: 800;
   white-space: nowrap;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.35);
+  box-shadow: 0 2px 8px rgba(255,152,0,0.35);
 }
 
 .wave-divider {
@@ -824,11 +825,7 @@ const tarifas = [
   background: #000;
 }
 
-.wave-divider svg {
-  width: 100%;
-  height: 80px;
-  display: block;
-}
+.wave-divider svg { width: 100%; height: 80px; display: block; }
 
 .wave-divider-hero {
   margin-top: -2px;
@@ -836,11 +833,7 @@ const tarifas = [
   background: linear-gradient(135deg, #E91E81 0%, #7B2D8B 50%, #2D3E94 100%);
 }
 
-.wave-divider-hero svg {
-  width: 100%;
-  height: 60px;
-  display: block;
-}
+.wave-divider-hero svg { width: 100%; height: 60px; display: block; }
 
 /* ===== HERO SECTION ===== */
 .hero-section {
@@ -850,12 +843,7 @@ const tarifas = [
   color: #FFFFFF;
 }
 
-.hero-title {
-  font-size: 2.4rem;
-  font-weight: 800;
-  margin: 0 0 16px;
-  line-height: 1.2;
-}
+.hero-title { font-size: 2.4rem; font-weight: 800; margin: 0 0 16px; line-height: 1.2; }
 
 .hero-subtitle {
   font-size: 1.1rem;
@@ -865,14 +853,8 @@ const tarifas = [
   line-height: 1.6;
 }
 
-.hero-stats {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  flex-wrap: wrap;
-}
+.hero-stats { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
 
-/* ✅ FIX: evita compresión y corte de texto en móvil */
 .hero-stat {
   display: flex;
   flex-direction: column;
@@ -882,19 +864,8 @@ const tarifas = [
   min-width: 110px;
 }
 
-.hero-stat-number {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #FFD200;
-  line-height: 1;
-}
-
-/* ✅ FIX: evita corte de texto en móvil */
-.hero-stat-label {
-  font-size: 0.9rem;
-  opacity: 0.9;
-  white-space: nowrap;
-}
+.hero-stat-number { font-size: 2rem; font-weight: 800; color: #FFD200; line-height: 1; }
+.hero-stat-label { font-size: 0.9rem; opacity: 0.9; white-space: nowrap; }
 
 /* ===== BENEFICIOS DE CUENTA ===== */
 .beneficios-section {
@@ -926,26 +897,13 @@ const tarifas = [
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.beneficio-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
-}
-
+.beneficio-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,0,0,0.08); }
 .beneficio-card-plata { border-top-color: #9CA3AF; }
 .beneficio-card-oro   { border-top-color: #FFD200; }
 .beneficio-card-vip   { border-top-color: #E91E81; }
-
 .beneficio-icon { font-size: 2.4rem; line-height: 1; }
-.beneficio-nivel {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #2D3E94;
-}
-.beneficio-descuento {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #E91E81;
-}
+.beneficio-nivel { font-size: 1.05rem; font-weight: 800; color: #2D3E94; }
+.beneficio-descuento { font-size: 1.3rem; font-weight: 800; color: #E91E81; }
 
 .beneficios-cta-btn {
   display: inline-block;
@@ -956,13 +914,13 @@ const tarifas = [
   text-decoration: none;
   padding: 14px 36px;
   border-radius: 999px;
-  box-shadow: 0 6px 20px rgba(233, 30, 129, 0.35);
+  box-shadow: 0 6px 20px rgba(233,30,129,0.35);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .beneficios-cta-btn:hover {
   transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 10px 26px rgba(233, 30, 129, 0.45);
+  box-shadow: 0 10px 26px rgba(233,30,129,0.45);
 }
 
 /* ===== NUESTROS SERVICIOS ===== */
@@ -993,80 +951,37 @@ const tarifas = [
 .service-card-juegos  { background: #E3F2FD; }
 .service-card-snacks  { background: #FFF3E0; }
 .service-card-estetica {
-  background: linear-gradient(135deg, rgba(233, 30, 129, 0.12), rgba(255, 152, 0, 0.1), rgba(45, 62, 148, 0.08));
-  border: 2px solid rgba(233, 30, 129, 0.4);
+  background: linear-gradient(135deg, rgba(233,30,129,0.12), rgba(255,152,0,0.1), rgba(45,62,148,0.08));
+  border: 2px solid rgba(233,30,129,0.4);
   animation: shimmer-border 3s ease-in-out infinite;
 }
 
 @keyframes shimmer-border {
-  0%, 100% { box-shadow: 0 2px 12px rgba(233, 30, 129, 0.15); }
-  50% { box-shadow: 0 2px 20px rgba(255, 152, 0, 0.3); }
+  0%, 100% { box-shadow: 0 2px 12px rgba(233,30,129,0.15); }
+  50% { box-shadow: 0 2px 20px rgba(255,152,0,0.3); }
 }
 
-.service-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
-}
-
+.service-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
 .service-icon { font-size: 2.8rem; line-height: 1; }
 .service-name { font-size: 1rem; font-weight: 700; margin: 0; text-align: center; }
 .service-desc { font-size: 0.82rem; margin: 0; text-align: center; opacity: 0.75; }
 
-.event-types-section {
-  padding: 0 60px;
-}
-
-.event-types-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.event-type-card {
-  background: #fff;
-  border: 2px solid #E91E81;
-  border-radius: 16px;
-  text-decoration: none;
-  color: #2D3E94;
-  padding: 20px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
-}
-
-.event-type-card:hover {
-  background: #fff0f7;
-  box-shadow: 0 10px 24px rgba(233, 30, 129, 0.16);
-  transform: translateY(-3px);
-}
-
-.event-type-icon { font-size: 3rem; line-height: 1; }
-.event-type-name { font-size: 1rem; font-weight: 700; color: #2D3E94; }
-
 /* ===== Reviews styles ===== */
-
 .review-card {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-width: 280px; /* Tamaño ideal de tarjeta para reviews */
+  min-width: 280px;
   max-width: 320px;
   padding: 1.25rem;
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   text-decoration: none;
   color: inherit;
 }
 
-.review-stars {
-  margin-bottom: 0.75rem;
-  font-size: 0.9rem;
-}
+.review-stars { margin-bottom: 0.75rem; font-size: 0.9rem; }
 
 .review-text {
   font-size: 0.95rem;
@@ -1074,7 +989,7 @@ const tarifas = [
   color: #4a4a4a;
   font-style: italic;
   margin: 0 0 1rem 0;
-  flex-grow: 1; /* Hace que el texto empuje el autor hacia abajo uniformemente */
+  flex-grow: 1;
 }
 
 .review-meta {
@@ -1086,19 +1001,9 @@ const tarifas = [
   align-items: center;
 }
 
-.review-author {
-  font-weight: 600;
-  color: #222222;
-}
-
-.review-date {
-  font-size: 0.8rem;
-  color: #999999;
-}
-
-.reviews-section {
-  padding: 3rem 1rem;
-}
+.review-author { font-weight: 600; color: #222222; }
+.review-date { font-size: 0.8rem; color: #999999; }
+.reviews-section { padding: 3rem 1rem; }
 
 .section-title {
   text-align: center;
@@ -1146,11 +1051,7 @@ const tarifas = [
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.movilidad-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(45, 62, 148, 0.12);
-}
-
+.movilidad-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(45,62,148,0.12); }
 .movilidad-distrito { font-weight: 600; color: #2D3E94; font-size: 0.9rem; margin: 0; flex: 1; }
 .movilidad-precio { font-size: 1.2rem; font-weight: 800; color: #E91E81; margin: 0; white-space: nowrap; margin-left: 12px; }
 .movilidad-nota { margin-top: 24px; font-size: 0.82rem; color: #aaa; }
@@ -1162,14 +1063,10 @@ const tarifas = [
 .empty-carousel { padding: 40px 20px; color: #2D3E94; opacity: 0.5; font-size: 0.95rem; }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1200px) {
-  .services-grid { grid-template-columns: repeat(3, 1fr); }
-}
+@media (max-width: 1200px) { .services-grid { grid-template-columns: repeat(3, 1fr); } }
 
 @media (max-width: 900px) {
   .services-grid { grid-template-columns: repeat(2, 1fr); padding: 0 30px 40px; }
-  .event-types-section { padding: 0 30px; }
-  .event-types-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero-title { font-size: 1.8rem; }
   .hero-stats { gap: 24px; }
   .movilidad-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1180,25 +1077,17 @@ const tarifas = [
 @media (max-width: 768px) {
   .main-video-wrapper { height: 55vh; min-height: 280px; }
   .main-video-title { font-size: 28px; max-width: 160px; margin-left: 16px; }
-  .main-video-nav { width: 36px; height: 36px; font-size: 22px; }
   .text-home { font-size: 16px; padding: 0 20px; margin: 40px auto; }
   .title-home { font-size: 26px; margin: 36px 0 16px 0; }
   .our-products-wrapper { padding: 8px 44px; }
   .logs-item { flex-basis: 180px; margin-top: 16px; }
   .card-icons { height: 110px; margin: 4px auto 8px; }
-  .products-nav {
-    width: 32px;
-    height: 32px;
-    font-size: 20px;
-    top: auto;
-    bottom: 0;
-    transform: none;
-    opacity: 0.85;
-  }
+  .products-nav { width: 32px; height: 32px; font-size: 20px; top: auto; bottom: 0; transform: none; opacity: 0.85; }
   .products-nav-left  { left: 2px; }
   .products-nav-right { right: 2px; }
   .home-area { padding-bottom: 70px; }
   .beneficios-grid { grid-template-columns: 1fr; gap: 14px; max-width: 320px; }
+  .welcome-banner { border-radius: 20px; padding: 14px 20px; margin: 12px 20px 0; }
 }
 
 @media (max-width: 700px) {
@@ -1206,25 +1095,15 @@ const tarifas = [
   .hero-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (max-width: 600px) {
-  .services-grid { grid-template-columns: 1fr; }
-  .event-types-grid { grid-template-columns: 1fr; }
-}
+@media (max-width: 600px) { .services-grid { grid-template-columns: 1fr; } }
 
 @media (max-width: 480px) {
   .main-video-wrapper { height: 45vh; min-height: 220px; }
   .main-video-title { font-size: 20px; max-width: 130px; }
   .main-video-nav { display: none; }
   .services-grid { grid-template-columns: 1fr; padding: 0 20px 40px; }
-  .event-types-section { padding: 0 20px; }
   .hero-title { font-size: 1.5rem; }
-  .hero-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px 24px;
-    margin: 0 auto;
-    align-items: start;
-  }
+  .hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; margin: 0 auto; align-items: start; }
   .hero-stat-number { font-size: 1.6rem; }
   .movilidad-grid { grid-template-columns: 1fr; }
   .movilidad-section { margin: 0 20px 50px; padding: 32px 20px 50px; }
@@ -1232,6 +1111,4 @@ const tarifas = [
   .logs-item { flex-basis: 160px; }
   .beneficios-section { margin: 0 20px; padding: 36px 16px; }
 }
-
-/* ===== REVIEWS ===== */
 </style>
