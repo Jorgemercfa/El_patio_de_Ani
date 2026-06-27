@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import Navbar from '@/components/Navbar-item.vue';
@@ -128,6 +128,8 @@ const inflableBadgeLabel = computed(() => {
 
 // ─── CARRUSEL DE FOTOS ─────────────────────────────────────
 const activeImageIndex = ref(0);
+let carouselInterval = null;
+const CAROUSEL_INTERVAL_MS = 4000;
 
 const productImages = computed(() => {
   if (!product.value) return [];
@@ -141,10 +143,62 @@ const productImages = computed(() => {
   return imgs.slice(0, 3);
 });
 
-// Resetear carrusel al cambiar de producto
-watch(() => product.value?.id, () => {
-  activeImageIndex.value = 0;
-});
+const nextSlide = () => {
+  if (productImages.value.length <= 1) return;
+  activeImageIndex.value = (activeImageIndex.value + 1) % productImages.value.length;
+};
+
+const prevSlide = () => {
+  if (productImages.value.length <= 1) return;
+  activeImageIndex.value =
+    (activeImageIndex.value - 1 + productImages.value.length) % productImages.value.length;
+};
+
+const goToSlide = (index) => {
+  activeImageIndex.value = index;
+};
+
+const startCarouselAutoplay = () => {
+  stopCarouselAutoplay();
+  if (productImages.value.length <= 1) return;
+  carouselInterval = setInterval(() => {
+    nextSlide();
+  }, CAROUSEL_INTERVAL_MS);
+};
+
+const stopCarouselAutoplay = () => {
+  if (carouselInterval) {
+    clearInterval(carouselInterval);
+    carouselInterval = null;
+  }
+};
+
+// Reinicia el autoplay cada vez que el usuario interactúa manualmente,
+// para que no "salte" justo después de un click.
+const handleManualNav = (action) => {
+  action();
+  startCarouselAutoplay();
+};
+
+// Resetear carrusel y reiniciar autoplay al cambiar de producto
+watch(
+  () => product.value?.id,
+  () => {
+    activeImageIndex.value = 0;
+    startCarouselAutoplay();
+  },
+);
+
+// Si las imágenes del producto cambian (ej. tras fetch async), reinicia autoplay
+watch(
+  () => productImages.value.length,
+  () => {
+    if (activeImageIndex.value >= productImages.value.length) {
+      activeImageIndex.value = 0;
+    }
+    startCarouselAutoplay();
+  },
+);
 // ───────────────────────────────────────────────────────────
 
 const addedFeedback = ref(false);
@@ -235,9 +289,14 @@ async function forceScrollTop() {
 onMounted(async () => {
   await fetchCompanyproducts();
   forceScrollTop();
+  startCarouselAutoplay();
   if (route.params.id) {
     await fetchReviews(route.params.id);
   }
+});
+
+onBeforeUnmount(() => {
+  stopCarouselAutoplay();
 });
 
 watch(
@@ -293,22 +352,53 @@ function goBack() {
       </div>
 
       <!-- ===== CARRUSEL DE FOTOS ===== -->
-      <div v-if="productImages.length > 0" class="product-carousel">
-        <img
-          class="product-image-details"
-          :src="productImages[activeImageIndex]"
-          :alt="product.name"
-        />
-        <div v-if="productImages.length > 1" class="carousel-dots">
-          <button
+      <div
+        v-if="productImages.length > 0"
+        class="product-carousel"
+        @mouseenter="stopCarouselAutoplay"
+        @mouseleave="startCarouselAutoplay"
+      >
+        <div class="carousel-container">
+          <div
             v-for="(img, i) in productImages"
             :key="i"
-            class="carousel-dot"
+            class="carousel-slide"
             :class="{ active: i === activeImageIndex }"
-            @click="activeImageIndex = i"
-            :aria-label="`Foto ${i + 1}`"
-          />
+          >
+            <img :src="img" class="product-image-details" :alt="`${product.name} - foto ${i + 1}`" />
+          </div>
         </div>
+
+        <template v-if="productImages.length > 1">
+          <button
+            class="carousel-btn prev"
+            @click="handleManualNav(prevSlide)"
+            aria-label="Foto anterior"
+            type="button"
+          >
+            <span>‹</span>
+          </button>
+          <button
+            class="carousel-btn next"
+            @click="handleManualNav(nextSlide)"
+            aria-label="Foto siguiente"
+            type="button"
+          >
+            <span>›</span>
+          </button>
+
+          <div class="carousel-dots">
+            <button
+              v-for="(img, i) in productImages"
+              :key="`dot-${i}`"
+              class="carousel-dot"
+              :class="{ active: i === activeImageIndex }"
+              @click="handleManualNav(() => goToSlide(i))"
+              :aria-label="`Foto ${i + 1}`"
+              type="button"
+            />
+          </div>
+        </template>
       </div>
       <!-- ================================ -->
 
@@ -585,14 +675,63 @@ function goBack() {
   margin-bottom: 26px;
 }
 
+.carousel-container {
+  position: relative;
+  width: 100%;
+  max-height: 460px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(45, 62, 148, 0.16);
+}
+
+.carousel-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.carousel-slide.active {
+  position: relative;
+  opacity: 1;
+  visibility: visible;
+}
+
 .product-image-details {
   width: 100%;
   max-height: 460px;
   object-fit: cover;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(45, 62, 148, 0.16);
   display: block;
 }
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(45, 62, 148, 0.45);
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+  z-index: 2;
+}
+
+.carousel-btn:hover {
+  background: rgba(233, 30, 129, 0.85);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.carousel-btn.prev { left: 14px; }
+.carousel-btn.next { right: 14px; }
 
 .carousel-dots {
   display: flex;
@@ -836,6 +975,7 @@ function goBack() {
   .product-wrapper { padding: 16px; }
   .title { font-size: 1.6rem; }
   .discount-price { font-size: 1.5rem; }
+  .carousel-btn { width: 36px; height: 36px; font-size: 1.3rem; }
   .primary-action-btn {
     position: sticky;
     bottom: 16px;
