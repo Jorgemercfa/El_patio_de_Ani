@@ -42,6 +42,11 @@ function normalizeProduct(product, docId = '') {
     options: Array.isArray(product?.options)
       ? product.options.filter((item) => typeof item === 'string' && item.trim() !== '')
       : [],
+    // ─── NUEVO: array de fotos adicionales ───────────────────
+    images: Array.isArray(product?.images)
+      ? product.images.filter((url) => typeof url === 'string' && url.trim() !== '')
+      : [],
+    // ─────────────────────────────────────────────────────────
     _docId: docId || product?._docId || '',
   };
 }
@@ -67,6 +72,13 @@ function sanitizeProductPayload(productInput) {
           .map((item) => String(item || '').trim())
           .filter(Boolean)
       : [],
+    // ─── NUEVO: array de fotos adicionales ───────────────────
+    images: Array.isArray(productInput?.images)
+      ? productInput.images
+          .map((url) => String(url || '').trim())
+          .filter(Boolean)
+      : [],
+    // ─────────────────────────────────────────────────────────
     Terms_of_use: String(productInput?.Terms_of_use || '').trim(),
     buy_button: String(productInput?.buy_button || '').trim(),
     details_button: String(productInput?.details_button || '').trim(),

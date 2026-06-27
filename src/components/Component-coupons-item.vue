@@ -101,13 +101,8 @@ const displayPrice = computed(() => {
   );
 });
 
-const isInflable = computed(() =>
-  product.value?.category === 'Inflables',
-);
-
-const isSnack = computed(() =>
-  product.value?.category === 'Carritos Snacks',
-);
+const isInflable = computed(() => product.value?.category === 'Inflables');
+const isSnack = computed(() => product.value?.category === 'Carritos Snacks');
 
 const inflableSubcategory = computed(() => {
   const sub = product.value?.subcategory?.toLowerCase() || '';
@@ -118,11 +113,9 @@ const inflableSubcategory = computed(() => {
 
 const inflableDisplayTier = computed(() => {
   if (!isInflable.value) return null;
-
   if ((displayPrice.value || 0) > PREMIUM_INFLABLE_PRICE || inflableSubcategory.value === 'grande') {
     return 'grande';
   }
-
   return inflableSubcategory.value;
 });
 
@@ -132,6 +125,27 @@ const inflableBadgeLabel = computed(() => {
   if (inflableDisplayTier.value === 'mediano') return '🎪 Mediano';
   return '';
 });
+
+// ─── CARRUSEL DE FOTOS ─────────────────────────────────────
+const activeImageIndex = ref(0);
+
+const productImages = computed(() => {
+  if (!product.value) return [];
+  const imgs = [];
+  if (product.value.image) imgs.push(product.value.image);
+  if (Array.isArray(product.value.images)) {
+    product.value.images.forEach((url) => {
+      if (url && !imgs.includes(url)) imgs.push(url);
+    });
+  }
+  return imgs.slice(0, 3);
+});
+
+// Resetear carrusel al cambiar de producto
+watch(() => product.value?.id, () => {
+  activeImageIndex.value = 0;
+});
+// ───────────────────────────────────────────────────────────
 
 const addedFeedback = ref(false);
 const reservationDate = ref('');
@@ -151,13 +165,10 @@ function handleAddToCartSnack() {
     router.push({ name: 'SignIn' });
     return;
   }
-  // Para snacks: agregar directo sin fecha
   reservationError.value = '';
-  addToCart(product.value.id, null); // null = sin fecha de reserva
+  addToCart(product.value.id, null);
   addedFeedback.value = true;
-  setTimeout(() => {
-    addedFeedback.value = false;
-  }, 1500);
+  setTimeout(() => { addedFeedback.value = false; }, 1500);
 }
 
 function handleAddToCartService() {
@@ -176,9 +187,7 @@ function handleAddToCartService() {
   reservationError.value = '';
   addToCart(product.value.id, reservationDate.value);
   addedFeedback.value = true;
-  setTimeout(() => {
-    addedFeedback.value = false;
-  }, 1500);
+  setTimeout(() => { addedFeedback.value = false; }, 1500);
 }
 
 function reserveInflable() {
@@ -202,14 +211,11 @@ function getScrollContainer() {
 
 async function forceScrollTop() {
   await nextTick();
-
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
-
   const el = getScrollContainer();
   if (el) el.scrollTop = 0;
-
   setTimeout(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     document.documentElement.scrollTop = 0;
@@ -217,7 +223,6 @@ async function forceScrollTop() {
     const el2 = getScrollContainer();
     if (el2) el2.scrollTop = 0;
   }, 50);
-
   setTimeout(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     document.documentElement.scrollTop = 0;
@@ -252,7 +257,6 @@ function goBack() {
   if (prev) {
     router.back();
   } else {
-    // Fallback: si tiene categoría conocida, va a ella; si no, a todos
     const category = product.value?.category;
     if (category === 'Inflables') {
       router.push({ path: '/product-item', query: { category: 'Inflables' } });
@@ -288,11 +292,25 @@ function goBack() {
         </span>
       </div>
 
-      <img
-        v-if="product.image"
-        class="product-image-details"
-        :src="product.image"
-      />
+      <!-- ===== CARRUSEL DE FOTOS ===== -->
+      <div v-if="productImages.length > 0" class="product-carousel">
+        <img
+          class="product-image-details"
+          :src="productImages[activeImageIndex]"
+          :alt="product.name"
+        />
+        <div v-if="productImages.length > 1" class="carousel-dots">
+          <button
+            v-for="(img, i) in productImages"
+            :key="i"
+            class="carousel-dot"
+            :class="{ active: i === activeImageIndex }"
+            @click="activeImageIndex = i"
+            :aria-label="`Foto ${i + 1}`"
+          />
+        </div>
+      </div>
+      <!-- ================================ -->
 
       <div class="product-prices">
         <span class="discount-price">
@@ -327,11 +345,9 @@ function goBack() {
         <div class="product-options" v-if="product.options?.length">
           <span class="label">Incluye</span>
           <div class="options-tags">
-            <span
-              class="option-tag"
-              v-for="option in product.options"
-              :key="option"
-            >{{ option }}</span>
+            <span class="option-tag" v-for="option in product.options" :key="option">
+              {{ option }}
+            </span>
           </div>
         </div>
 
@@ -340,16 +356,11 @@ function goBack() {
           <p class="terms-text">{{ product.Terms_of_use }}</p>
         </div>
 
-        <!-- ===== INFLABLES: Botón especial ===== -->
+        <!-- ===== INFLABLES ===== -->
         <div v-if="isInflable" class="inflable-actions">
-          <button
-            v-if="isAuthenticated"
-            class="buy-button primary-action-btn"
-            @click="reserveInflable"
-          >
+          <button v-if="isAuthenticated" class="buy-button primary-action-btn" @click="reserveInflable">
             📋 Reservar este inflable
           </button>
-
           <template v-else>
             <button class="wa-button" @click="consultInflableByWhatsApp">
               💬 Consultar disponibilidad
@@ -360,16 +371,11 @@ function goBack() {
           </template>
         </div>
 
-        <!-- ===== SNACKS: Agregar directo sin fecha ===== -->
+        <!-- ===== SNACKS ===== -->
         <div v-else-if="isSnack" class="snack-actions">
-          <button
-            v-if="isAuthenticated"
-            class="buy-button primary-action-btn"
-            @click="handleAddToCartSnack"
-          >
+          <button v-if="isAuthenticated" class="buy-button primary-action-btn" @click="handleAddToCartSnack">
             {{ addedFeedback ? '✓ Agregado al carrito' : '🛒 Agregar al carrito' }}
           </button>
-
           <template v-else>
             <button class="secondary-login-button" @click="router.push('/Sign-in')">
               🔑 Inicia sesión para comprar
@@ -377,7 +383,7 @@ function goBack() {
           </template>
         </div>
 
-        <!-- ===== OTROS SERVICIOS: Con selector de fecha ===== -->
+        <!-- ===== OTROS SERVICIOS ===== -->
         <template v-else>
           <div class="reservation-date-section">
             <label class="label" for="reservation-date">📅 Fecha del evento</label>
@@ -443,7 +449,6 @@ function goBack() {
         </div>
       </div>
 
-      <!-- Lista de reviews existentes -->
       <div v-if="reviews.length > 0" class="reviews-list">
         <div v-for="review in reviews" :key="review.id" class="review-card">
           <div class="review-top">
@@ -460,10 +465,8 @@ function goBack() {
         <p>Sé el primero en dejar tu opinión sobre este servicio ✨</p>
       </div>
 
-      <!-- Formulario para dejar review -->
       <div class="review-form-wrapper">
         <h3 class="review-form-title">{{ isAuthenticated ? '📝 Deja tu opinión' : '🔑 Inicia sesión para comentar' }}</h3>
-
         <template v-if="isAuthenticated">
           <div class="review-rating-selector">
             <span class="rating-label">Tu calificación:</span>
@@ -489,11 +492,7 @@ function goBack() {
             <span class="char-count">{{ reviewForm.comment.length }}/500</span>
             <p v-if="reviewError" class="review-error">{{ reviewError }}</p>
             <p v-if="reviewSuccess" class="review-success">✅ ¡Gracias por tu opinión!</p>
-            <button
-              class="review-submit-btn"
-              :disabled="reviewSubmitting"
-              @click="submitReview"
-            >
+            <button class="review-submit-btn" :disabled="reviewSubmitting" @click="submitReview">
               {{ reviewSubmitting ? 'Enviando...' : '📤 Enviar opinión' }}
             </button>
           </div>
@@ -572,40 +571,56 @@ function goBack() {
   padding: 5px 12px;
 }
 
-.badge-category {
-  background: linear-gradient(135deg, #E91E81, #2D3E94);
-  color: #fff;
-}
+.badge-category { background: linear-gradient(135deg, #E91E81, #2D3E94); color: #fff; }
+.badge-subcategory { background: #f0f4ff; color: #1a2d7a; }
+.badge-inflable-bebes { background: #efe7ff; color: #4f3d9a; }
+.badge-inflable-mediano { background: #e6f8e8; color: #1b6b32; }
+.badge-inflable-grande { background: #fff2d9; color: #8a5b00; }
 
-.badge-subcategory {
-  background: #f0f4ff;
-  color: #1a2d7a;
-}
-
-.badge-inflable-bebes {
-  background: #efe7ff;
-  color: #4f3d9a;
-}
-
-.badge-inflable-mediano {
-  background: #e6f8e8;
-  color: #1b6b32;
-}
-
-.badge-inflable-grande {
-  background: #fff2d9;
-  color: #8a5b00;
+/* ===== CARRUSEL ===== */
+.product-carousel {
+  width: 100%;
+  max-width: 820px;
+  position: relative;
+  margin-bottom: 26px;
 }
 
 .product-image-details {
   width: 100%;
-  max-width: 820px;
   max-height: 460px;
   object-fit: cover;
   border-radius: 16px;
-  margin-bottom: 26px;
   box-shadow: 0 10px 30px rgba(45, 62, 148, 0.16);
+  display: block;
 }
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.carousel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(233, 30, 129, 0.25);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.carousel-dot.active {
+  background: #E91E81;
+  transform: scale(1.3);
+}
+
+.carousel-dot:hover:not(.active) {
+  background: rgba(233, 30, 129, 0.5);
+}
+/* ==================== */
 
 .text-product-type {
   max-width: 800px;
@@ -657,10 +672,7 @@ function goBack() {
   margin-bottom: 2px;
 }
 
-.value {
-  font-weight: 600;
-  color: #2D3E94;
-}
+.value { font-weight: 600; color: #2D3E94; }
 
 .product-options {
   width: 100%;
@@ -733,13 +745,8 @@ function goBack() {
   font-weight: 700;
 }
 
-.availability-indicator.available {
-  color: #1b6b32;
-}
-
-.availability-indicator.unavailable {
-  color: #b00020;
-}
+.availability-indicator.available { color: #1b6b32; }
+.availability-indicator.unavailable { color: #b00020; }
 
 .inflable-actions,
 .snack-actions {
@@ -747,9 +754,7 @@ function goBack() {
   gap: 12px;
 }
 
-.reserve-service-btn {
-  margin-bottom: 10px;
-}
+.reserve-service-btn { margin-bottom: 10px; }
 
 .buy-button,
 .wa-button,
@@ -770,17 +775,8 @@ function goBack() {
   box-shadow: 0 4px 16px rgba(255, 210, 0, 0.4);
 }
 
-.buy-button:hover {
-  transform: scale(1.02);
-  box-shadow: 0 6px 20px rgba(255, 210, 0, 0.55);
-}
-
-.buy-button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
+.buy-button:hover { transform: scale(1.02); box-shadow: 0 6px 20px rgba(255, 210, 0, 0.55); }
+.buy-button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .wa-button {
   background: #25D366;
@@ -788,10 +784,7 @@ function goBack() {
   box-shadow: 0 4px 16px rgba(37, 211, 102, 0.35);
 }
 
-.wa-button:hover {
-  transform: scale(1.02);
-  box-shadow: 0 7px 20px rgba(37, 211, 102, 0.5);
-}
+.wa-button:hover { transform: scale(1.02); box-shadow: 0 7px 20px rgba(37, 211, 102, 0.5); }
 
 .secondary-login-button {
   background: #fff;
@@ -799,10 +792,7 @@ function goBack() {
   border: 2px solid #E91E81;
 }
 
-.secondary-login-button:hover {
-  transform: scale(1.02);
-  background: #fff0f7;
-}
+.secondary-login-button:hover { transform: scale(1.02); background: #fff0f7; }
 
 .card-button {
   background-color: #FFFFFF;
@@ -816,10 +806,7 @@ function goBack() {
   transition: all 0.2s ease;
 }
 
-.card-button:hover {
-  background-color: #E91E81;
-  color: #FFFFFF;
-}
+.card-button:hover { background-color: #E91E81; color: #FFFFFF; }
 
 .not-found {
   text-align: center;
@@ -842,27 +829,13 @@ function goBack() {
   text-decoration: underline;
 }
 
-.login-cart-link:hover {
-  opacity: 0.8;
-}
+.login-cart-link:hover { opacity: 0.8; }
 
 @media (max-width: 700px) {
-  .container {
-    padding: 24px 12px;
-  }
-
-  .product-wrapper {
-    padding: 16px;
-  }
-
-  .title {
-    font-size: 1.6rem;
-  }
-
-  .discount-price {
-    font-size: 1.5rem;
-  }
-
+  .container { padding: 24px 12px; }
+  .product-wrapper { padding: 16px; }
+  .title { font-size: 1.6rem; }
+  .discount-price { font-size: 1.5rem; }
   .primary-action-btn {
     position: sticky;
     bottom: 16px;
@@ -870,10 +843,7 @@ function goBack() {
     box-shadow: 0 8px 24px rgba(255, 210, 0, 0.6);
     width: 100%;
   }
-
-  .primary-action-btn:hover {
-    transform: none;
-  }
+  .primary-action-btn:hover { transform: none; }
 }
 
 /* ===== REVIEWS ===== */
@@ -882,10 +852,7 @@ function goBack() {
   padding: 48px 20px;
   font-family: 'Nunito', sans-serif;
 }
-.reviews-container {
-  max-width: 800px;
-  margin: 0 auto;
-}
+.reviews-container { max-width: 800px; margin: 0 auto; }
 .reviews-header {
   display: flex;
   align-items: center;
@@ -911,11 +878,7 @@ function goBack() {
   border-radius: 999px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 }
-.avg-number {
-  font-size: 1.6rem;
-  font-weight: 900;
-  color: #FFD200;
-}
+.avg-number { font-size: 1.6rem; font-weight: 900; color: #FFD200; }
 .avg-stars { display: flex; gap: 2px; }
 .avg-count { font-size: 0.85rem; color: #888; }
 .star--filled { color: #FFD200; }

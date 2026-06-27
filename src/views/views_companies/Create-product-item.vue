@@ -34,9 +34,14 @@ const imageFile        = ref(null);
 const imagePreview     = ref('');
 const imageUploading   = ref(false);
 
+// ─── Fotos adicionales (foto 2 y foto 3) ──────────────────
+const extraImageFiles       = ref([null, null]);
+const extraImagePreviews    = ref(['', '']);
+const currentExtraImageUrls = ref(['', '']);
+
 // ─── Options dinámicas ─────────────────────────────────────
-const options    = ref([]);
-const newOption  = ref('');
+const options   = ref([]);
+const newOption = ref('');
 
 const addOption = () => {
   const val = newOption.value.trim();
@@ -62,19 +67,15 @@ const categoryMap = {
 const categories    = Object.keys(categoryMap);
 const subcategories = computed(() => categoryMap[category.value] ?? []);
 
-// Resetear subcategoría al cambiar categoría
 watch(category, () => { subcategory.value = ''; });
 
-// ─── Términos predefinidos por categoría ───────────────────
+// ─── Términos predefinidos ─────────────────────────────────
 const TERMS_JUEGOS =
   'Contrato sujeto a disponibilidad. Reserva con el 50% del total. Los juegos se instalan horas antes y se retiran al finalizar el evento. No se instalan en vía pública. Precios por alquiler por evento. Costo de movilidad varía según distrito.';
-
 const TERMS_SNACKS =
   'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.';
-
 const TERMS_SHOWS =
   'Reserva con 50%. No incluye movilidad. Válido para 10 a 20 niños.';
-
 const TERMS_ESTETICA =
   'Contrato sujeto a disponibilidad. Reserva con el 50% del total. El personal se instala 15 minutos antes. No aplica movilidad (costo aparte según distrito). No se instala en vía pública.';
 
@@ -93,18 +94,18 @@ const applyDefaultTerms = () => {
 // ─── Campos visibles según categoría ──────────────────────
 const showDuration   = computed(() =>
   ['Shows Infantiles', 'Estética Infantil'].includes(category.value));
-
 const showAgeRange   = computed(() =>
   ['Shows Infantiles', 'Inflables', 'Juegos'].includes(category.value));
-
 const showDimensions = computed(() =>
   ['Inflables', 'Juegos'].includes(category.value));
 
 // ─── Mensajes ──────────────────────────────────────────────
 const error   = ref('');
-const success  = ref('');
+const success = ref('');
 
 const isEditing = computed(() => Number.isFinite(editingId.value) && editingId.value > 0);
+
+// ─── Imagen principal ──────────────────────────────────────
 const revokeImagePreviewIfBlob = () => {
   if (imagePreview.value?.startsWith('blob:')) {
     URL.revokeObjectURL(imagePreview.value);
@@ -117,6 +118,17 @@ const onImageChange = (event) => {
   revokeImagePreviewIfBlob();
   imageFile.value = file;
   imagePreview.value = URL.createObjectURL(file);
+};
+
+// ─── Fotos adicionales ─────────────────────────────────────
+const onExtraImageChange = (event, index) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (extraImagePreviews.value[index]?.startsWith('blob:')) {
+    URL.revokeObjectURL(extraImagePreviews.value[index]);
+  }
+  extraImageFiles.value[index] = file;
+  extraImagePreviews.value[index] = URL.createObjectURL(file);
 };
 
 // ─── Código de producto ────────────────────────────────────
@@ -153,6 +165,7 @@ const onCreateProduct = async () => {
 
   if (!productCode.value.trim()) generateProductCode();
 
+  // Subir imagen principal
   let imageUrl = currentImageUrl.value.trim();
   if (imageFile.value) {
     imageUploading.value = true;
@@ -166,11 +179,31 @@ const onCreateProduct = async () => {
     imageUploading.value = false;
   }
 
+  // Subir fotos adicionales
+  const extraUrls = [...currentExtraImageUrls.value];
+  for (let i = 0; i < extraImageFiles.value.length; i++) {
+    if (extraImageFiles.value[i]) {
+      imageUploading.value = true;
+      try {
+        extraUrls[i] = await uploadImage(extraImageFiles.value[i], 'products');
+      } catch (e) {
+        error.value = `No se pudo subir la foto adicional ${i + 2}.`;
+        imageUploading.value = false;
+        return;
+      }
+      imageUploading.value = false;
+    }
+  }
+
+  // Array completo de imágenes (foto 1 + extras, sin vacíos)
+  const allImages = [imageUrl, ...extraUrls].filter(Boolean);
+
   const payload = {
     name:             name.value.trim(),
     shortDescription: shortDescription.value.trim(),
     longDescription:  longDescription.value.trim(),
     image:            imageUrl,
+    images:           allImages,
     category:         category.value,
     subcategory:      subcategory.value,
     price:            priceNumber,
@@ -225,6 +258,10 @@ const resetForm = () => {
   revokeImagePreviewIfBlob();
   imageFile.value        = null;
   imagePreview.value     = '';
+  // Limpiar fotos adicionales
+  extraImageFiles.value       = [null, null];
+  extraImagePreviews.value    = ['', ''];
+  currentExtraImageUrls.value = ['', ''];
 };
 
 // ─── Cargar producto existente (edición) ───────────────────
@@ -248,10 +285,20 @@ onMounted(async () => {
   options.value          = Array.isArray(existing.options) ? [...existing.options] : [];
   termsOfUse.value       = existing.Terms_of_use     ?? '';
   productCode.value      = existing.product_code     ?? '';
+  // Cargar fotos adicionales existentes
+  currentExtraImageUrls.value = [
+    existing.images?.[1] || '',
+    existing.images?.[2] || '',
+  ];
+  extraImagePreviews.value = [...currentExtraImageUrls.value];
 });
 
 onBeforeUnmount(() => {
   revokeImagePreviewIfBlob();
+  // Revocar URLs blob de fotos adicionales
+  extraImagePreviews.value.forEach((url) => {
+    if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
+  });
 });
 </script>
 
@@ -284,9 +331,9 @@ onBeforeUnmount(() => {
           <textarea v-model="longDescription" rows="3" />
         </div>
 
-        <!-- Imagen del producto -->
+        <!-- Imagen principal -->
         <div class="form-group">
-          <label>Imagen del producto</label>
+          <label>Foto 1 — Imagen principal</label>
           <input
             type="file"
             accept="image/*"
@@ -302,6 +349,30 @@ onBeforeUnmount(() => {
           <p v-if="!imagePreview" class="field-hint">
             Selecciona una imagen (JPG, PNG, WEBP o GIF — máx. 5MB)
           </p>
+        </div>
+
+        <!-- Fotos adicionales (foto 2 y foto 3) -->
+        <div
+          v-for="(_, i) in extraImageFiles"
+          :key="`extra-${i}`"
+          class="form-group"
+        >
+          <label>
+            Foto {{ i + 2 }}
+            <span class="optional">(opcional)</span>
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            class="file-input"
+            @change="onExtraImageChange($event, i)"
+          />
+          <img
+            v-if="extraImagePreviews[i]"
+            :src="extraImagePreviews[i]"
+            alt="Preview adicional"
+            class="image-preview"
+          />
         </div>
 
         <!-- Categoría + Subcategoría -->
@@ -328,19 +399,19 @@ onBeforeUnmount(() => {
           <input v-model="price" type="number" min="1" required placeholder="Ej: 1000" />
         </div>
 
-        <!-- Duración (solo Shows e Estética) -->
+        <!-- Duración -->
         <div v-if="showDuration" class="form-group">
           <label>Duración</label>
           <input v-model="duration" type="text" placeholder="Ej: 90 min" />
         </div>
 
-        <!-- Rango de edad (Shows y Juegos) -->
+        <!-- Rango de edad -->
         <div v-if="showAgeRange" class="form-group">
           <label>Rango de edad</label>
           <input v-model="ageRange" type="text" placeholder="Ej: 2-6 años" />
         </div>
 
-        <!-- Dimensiones (solo Inflables y Juegos) -->
+        <!-- Dimensiones -->
         <div v-if="showDimensions" class="form-group">
           <label>Dimensiones</label>
           <input v-model="dimensions" type="text" placeholder="Ej: Alto: 3m | Base: 4m x 4m" />
@@ -412,7 +483,6 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-/* Fila de dos columnas para categoría/subcategoría */
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -433,6 +503,12 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 
+.optional {
+  font-weight: 400;
+  color: #aaa;
+  font-size: 0.8rem;
+}
+
 .form-group input,
 .form-group textarea,
 .form-group select {
@@ -450,7 +526,6 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 3px rgba(233, 30, 129, 0.12);
 }
 
-/* Options */
 .option-input-row {
   display: flex;
   gap: 8px;
@@ -480,9 +555,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.add-btn:hover {
-  background: #1e2d6e;
-}
+.add-btn:hover { background: #1e2d6e; }
 
 .options-list {
   list-style: none;
@@ -515,9 +588,7 @@ onBeforeUnmount(() => {
   padding: 0 4px;
 }
 
-.remove-btn:hover {
-  color: #b00060;
-}
+.remove-btn:hover { color: #b00060; }
 
 .empty-hint {
   color: #aaa;
@@ -525,7 +596,6 @@ onBeforeUnmount(() => {
   margin: 6px 0 0;
 }
 
-/* Botón términos predeterminados */
 .terms-default-btn {
   background: #f0f0f0;
   border: 1px solid #ddd;
@@ -537,11 +607,8 @@ onBeforeUnmount(() => {
   font-weight: 600;
 }
 
-.terms-default-btn:hover {
-  background: #e0e8ff;
-}
+.terms-default-btn:hover { background: #e0e8ff; }
 
-/* Acciones */
 .actions {
   display: flex;
   align-items: center;
@@ -569,27 +636,12 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 
-.submit-btn {
-  background: #FFD200;
-  color: #2D3E94;
-}
+.submit-btn { background: #FFD200; color: #2D3E94; }
+.secondary-btn { background: #E91E81; color: white; }
 
-.secondary-btn {
-  background: #E91E81;
-  color: white;
-}
-
-.message {
-  font-weight: 600;
-}
-
-.message.error {
-  color: #b00020;
-}
-
-.message.success {
-  color: #177245;
-}
+.message { font-weight: 600; }
+.message.error { color: #b00020; }
+.message.success { color: #177245; }
 
 .file-input {
   border: 1.5px solid #ddd;
@@ -615,19 +667,8 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 700px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .submit-btn,
-  .secondary-btn {
-    width: 100%;
-    text-align: center;
-  }
+  .form-row { grid-template-columns: 1fr; }
+  .actions { flex-direction: column; align-items: stretch; }
+  .submit-btn, .secondary-btn { width: 100%; text-align: center; }
 }
 </style>
