@@ -25,6 +25,30 @@ const revokeImagePreviewIfBlob = () => {
   }
 };
 
+// ─── Fotos adicionales (foto 2 y foto 3) ──────────────────
+const extraImageFiles       = ref([null, null]);
+const extraImagePreviews    = ref(['', '']);
+const currentExtraImageUrls = ref(['', '']);
+
+const onExtraImageChange = (event, index) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (extraImagePreviews.value[index]?.startsWith('blob:')) {
+    URL.revokeObjectURL(extraImagePreviews.value[index]);
+  }
+  extraImageFiles.value[index] = file;
+  extraImagePreviews.value[index] = URL.createObjectURL(file);
+};
+
+const removeExtraImage = (index) => {
+  if (extraImagePreviews.value[index]?.startsWith('blob:')) {
+    URL.revokeObjectURL(extraImagePreviews.value[index]);
+  }
+  extraImageFiles.value[index] = null;
+  extraImagePreviews.value[index] = '';
+  currentExtraImageUrls.value[index] = '';
+};
+
 const form = ref({
   name: '',
   shortDescription: '',
@@ -99,6 +123,13 @@ onMounted(async () => {
       : service.options || '',
   };
   currentImage.value = service.image || '';
+
+  // Cargar fotos adicionales existentes (images[1] = foto 2, images[2] = foto 3)
+  currentExtraImageUrls.value = [
+    service.images?.[1] || '',
+    service.images?.[2] || '',
+  ];
+  extraImagePreviews.value = [...currentExtraImageUrls.value];
 });
 
 const onImageChange = (event) => {
@@ -111,6 +142,9 @@ const onImageChange = (event) => {
 
 onBeforeUnmount(() => {
   revokeImagePreviewIfBlob();
+  extraImagePreviews.value.forEach((url) => {
+    if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
+  });
 });
 
 function onCancel() {
@@ -149,12 +183,32 @@ async function onSave() {
     imageUploading.value = false;
   }
 
+  // Subir fotos adicionales (solo las que cambiaron)
+  const extraUrls = [...currentExtraImageUrls.value];
+  for (let i = 0; i < extraImageFiles.value.length; i++) {
+    if (extraImageFiles.value[i]) {
+      imageUploading.value = true;
+      try {
+        extraUrls[i] = await uploadImage(extraImageFiles.value[i], 'products');
+      } catch (e) {
+        error.value = `No se pudo subir la foto adicional ${i + 2}.`;
+        imageUploading.value = false;
+        return;
+      }
+      imageUploading.value = false;
+    }
+  }
+
+  // Array completo de imágenes (foto 1 + extras, sin vacíos) — mantiene sincronía con images[0]
+  const allImages = [finalImageUrl, ...extraUrls].filter(Boolean);
+
   try {
     await updateCompanyproduct(serviceId, {
       name: form.value.name.trim(),
       shortDescription: form.value.shortDescription.trim(),
       longDescription: form.value.longDescription.trim(),
       image: finalImageUrl,
+      images: allImages,
       price,
       category: form.value.category,
       subcategory: form.value.subcategory.trim(),
@@ -269,8 +323,9 @@ async function onSave() {
           <textarea v-model="form.optionsText" rows="6" />
         </div>
 
+        <!-- Foto 1 — Imagen principal -->
         <div class="form-group">
-          <label>Imagen del servicio</label>
+          <label>Foto 1 — Imagen principal</label>
           <img
             v-if="currentImage && !imagePreview"
             :src="currentImage"
@@ -292,6 +347,35 @@ async function onSave() {
           <p class="field-hint">
             {{ currentImage || imagePreview ? 'Selecciona otra para reemplazar' : 'Selecciona una imagen (JPG, PNG, WEBP o GIF — máx. 5MB)' }}
           </p>
+        </div>
+
+        <!-- Fotos adicionales (foto 2 y foto 3) -->
+        <div
+          v-for="(_, i) in extraImageFiles"
+          :key="`extra-${i}`"
+          class="form-group"
+        >
+          <label>
+            Foto {{ i + 2 }}
+            <span class="optional">(opcional)</span>
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            class="file-input"
+            @change="onExtraImageChange($event, i)"
+          />
+          <div v-if="extraImagePreviews[i]" class="extra-preview-row">
+            <img
+              :src="extraImagePreviews[i]"
+              alt="Preview adicional"
+              class="image-preview"
+            />
+            <button type="button" class="remove-image-btn" @click="removeExtraImage(i)">
+              ✕ Quitar foto
+            </button>
+          </div>
+          <p v-else class="field-hint">Sin foto en este espacio.</p>
         </div>
 
         <div class="actions">
@@ -332,6 +416,15 @@ async function onSave() {
   color: #e91e81;
   font-weight: 600;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.optional {
+  font-weight: 400;
+  color: #aaa;
+  font-size: 0.8rem;
 }
 
 .form-group input,
@@ -366,6 +459,26 @@ async function onSave() {
   object-fit: cover;
   border: 2px solid #f0d3e6;
 }
+
+.extra-preview-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.remove-image-btn {
+  background: #fff0f0;
+  border: 1px solid #f0b8b8;
+  color: #b00020;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.remove-image-btn:hover { background: #ffe0e0; }
 
 .field-hint {
   font-size: 0.8rem;
