@@ -131,6 +131,15 @@ const onExtraImageChange = (event, index) => {
   extraImagePreviews.value[index] = URL.createObjectURL(file);
 };
 
+const removeExtraImage = (index) => {
+  if (extraImagePreviews.value[index]?.startsWith('blob:')) {
+    URL.revokeObjectURL(extraImagePreviews.value[index]);
+  }
+  extraImageFiles.value[index] = null;
+  extraImagePreviews.value[index] = '';
+  currentExtraImageUrls.value[index] = '';
+};
+
 // ─── Código de producto ────────────────────────────────────
 const generateProductCode = () => {
   const prefix = name.value
@@ -367,12 +376,16 @@ onBeforeUnmount(() => {
             class="file-input"
             @change="onExtraImageChange($event, i)"
           />
-          <img
-            v-if="extraImagePreviews[i]"
-            :src="extraImagePreviews[i]"
-            alt="Preview adicional"
-            class="image-preview"
-          />
+          <div v-if="extraImagePreviews[i]" class="extra-preview-row">
+            <img
+              :src="extraImagePreviews[i]"
+              alt="Preview adicional"
+              class="image-preview"
+            />
+            <button type="button" class="remove-image-btn" @click="removeExtraImage(i)">
+              ✕ Quitar foto
+            </button>
+          </div>
         </div>
 
         <!-- Categoría + Subcategoría -->
