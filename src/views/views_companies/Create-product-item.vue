@@ -70,15 +70,6 @@ const subcategories = computed(() => categoryMap[category.value] ?? []);
 
 watch(category, () => { subcategory.value = ''; });
 
-// ─── Segunda subcategoría (opcional, solo Inflables > Acuáticos) ──
-const showSubcategory2 = computed(
-  () => category.value === 'Inflables' && subcategory.value === 'Acuáticos',
-);
-
-watch(showSubcategory2, (visible) => {
-  if (!visible) subcategory2.value = '';
-});
-
 // ─── Términos predefinidos ─────────────────────────────────
 const TERMS_JUEGOS =
   'Contrato sujeto a disponibilidad. Reserva con el 50% del total. Los juegos se instalan horas antes y se retiran al finalizar el evento. No se instalan en vía pública. Precios por alquiler por evento. Costo de movilidad varía según distrito.';
@@ -225,7 +216,7 @@ const onCreateProduct = async () => {
     images:           allImages,
     category:         category.value,
     subcategory:      subcategory.value,
-    subcategory2:     showSubcategory2.value ? subcategory2.value.trim() : '',
+    subcategory2:     subcategory2.value.trim(),
     price:            priceNumber,
     duration:         duration.value.trim(),
     age_range:        ageRange.value.trim(),
@@ -419,8 +410,8 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Segunda subcategoría (opcional, solo Inflables > Acuáticos) -->
-        <div v-if="showSubcategory2" class="form-group">
+        <!-- Subcategoría adicional (siempre visible, opcional) -->
+        <div class="form-group">
           <label>
             Subcategoría adicional
             <span class="optional">(opcional)</span>
@@ -430,6 +421,9 @@ onBeforeUnmount(() => {
             type="text"
             placeholder="Ej: Tropical, Splash, Lava, Curve Little Tikes"
           />
+          <p class="field-hint">
+            Úsalo si quieres dar un detalle extra de clasificación, además de la subcategoría principal.
+          </p>
         </div>
 
         <!-- Precio -->

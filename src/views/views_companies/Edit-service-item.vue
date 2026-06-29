@@ -85,11 +85,6 @@ const subcategoryMap = {
 const availableSubcategories = computed(() => subcategoryMap[form.value.category] || []);
 const usesSubcategorySelect = computed(() => availableSubcategories.value.length > 0);
 
-// ─── Segunda subcategoría (opcional, solo Inflables > Acuáticos) ──
-const showSubcategory2 = computed(
-  () => form.value.category === 'Inflables' && form.value.subcategory === 'Acuáticos',
-);
-
 watch(
   () => form.value.category,
   () => {
@@ -101,10 +96,6 @@ watch(
     }
   },
 );
-
-watch(showSubcategory2, (visible) => {
-  if (!visible) form.value.subcategory2 = '';
-});
 
 onMounted(async () => {
   await fetchCompanyproducts();
@@ -223,7 +214,7 @@ async function onSave() {
       price,
       category: form.value.category,
       subcategory: form.value.subcategory.trim(),
-      subcategory2: showSubcategory2.value ? form.value.subcategory2.trim() : '',
+      subcategory2: form.value.subcategory2.trim(),
       duration: form.value.duration.trim(),
       age_range: form.value.age_range.trim(),
       dimensions: form.value.dimensions.trim(),
@@ -292,8 +283,8 @@ async function onSave() {
           <input v-else v-model="form.subcategory" type="text" />
         </div>
 
-        <!-- Segunda subcategoría (opcional, solo Inflables > Acuáticos) -->
-        <div v-if="showSubcategory2" class="form-group">
+        <!-- Subcategoría adicional (siempre visible, opcional) -->
+        <div class="form-group">
           <label>
             Subcategoría adicional
             <span class="optional">(opcional)</span>
@@ -303,6 +294,9 @@ async function onSave() {
             type="text"
             placeholder="Ej: Tropical, Splash, Lava, Curve Little Tikes"
           />
+          <p class="field-hint">
+            Úsalo si quieres dar un detalle extra de clasificación, además de la subcategoría principal.
+          </p>
         </div>
 
         <div class="form-group">
