@@ -32,7 +32,7 @@ onMounted(async () => {
 
 const subcategoryMap = {
   'Shows Infantiles':  ['Animación', 'Competencia', 'Magia'],
-  'Inflables':         ['Bebes', 'Mediano', 'Grande'],
+  'Inflables':         ['Bebes', 'Mediano', 'Grande', 'Acuaticos'],
   'Juegos':            ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
   [ESTETICA_INFANTIL_CATEGORY]: ['Pintacaritas', 'Glitter Bar'],
   'Carritos Snacks':   ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],

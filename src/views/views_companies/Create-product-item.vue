@@ -24,6 +24,7 @@ const longDescription  = ref('');
 const currentImageUrl  = ref('');
 const category         = ref('Shows Infantiles');
 const subcategory      = ref('');
+const subcategory2     = ref('');
 const price            = ref('');
 const duration         = ref('');
 const ageRange         = ref('');
@@ -58,7 +59,7 @@ const removeOption = (index) => {
 // ─── Catálogo de categorías y subcategorías ────────────────
 const categoryMap = {
   'Shows Infantiles': ['Animación', 'Competencia', 'Magia'],
-  Inflables: ['Bebes', 'Mediano', 'Grande'],
+  Inflables: ['Bebes', 'Mediano', 'Grande', 'Acuáticos'],
   Juegos: ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
   'Estética Infantil': ['Pintacaritas', 'Glitter Bar'],
   'Carritos Snacks': ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
@@ -68,6 +69,15 @@ const categories    = Object.keys(categoryMap);
 const subcategories = computed(() => categoryMap[category.value] ?? []);
 
 watch(category, () => { subcategory.value = ''; });
+
+// ─── Segunda subcategoría (opcional, solo Inflables > Acuáticos) ──
+const showSubcategory2 = computed(
+  () => category.value === 'Inflables' && subcategory.value === 'Acuáticos',
+);
+
+watch(showSubcategory2, (visible) => {
+  if (!visible) subcategory2.value = '';
+});
 
 // ─── Términos predefinidos ─────────────────────────────────
 const TERMS_JUEGOS =
@@ -215,6 +225,7 @@ const onCreateProduct = async () => {
     images:           allImages,
     category:         category.value,
     subcategory:      subcategory.value,
+    subcategory2:     showSubcategory2.value ? subcategory2.value.trim() : '',
     price:            priceNumber,
     duration:         duration.value.trim(),
     age_range:        ageRange.value.trim(),
@@ -256,6 +267,7 @@ const resetForm = () => {
   currentImageUrl.value  = '';
   category.value         = 'Shows Infantiles';
   subcategory.value      = '';
+  subcategory2.value     = '';
   price.value            = '';
   duration.value         = '';
   ageRange.value         = '';
@@ -287,6 +299,7 @@ onMounted(async () => {
   imagePreview.value     = existing.image            ?? '';
   category.value         = existing.category         ?? 'Shows Infantiles';
   subcategory.value      = existing.subcategory      ?? '';
+  subcategory2.value     = existing.subcategory2     ?? '';
   price.value            = existing.price            ?? '';
   duration.value         = existing.duration         ?? '';
   ageRange.value         = existing.age_range        ?? '';
@@ -404,6 +417,19 @@ onBeforeUnmount(() => {
               <option v-for="sub in subcategories" :key="sub" :value="sub">{{ sub }}</option>
             </select>
           </div>
+        </div>
+
+        <!-- Segunda subcategoría (opcional, solo Inflables > Acuáticos) -->
+        <div v-if="showSubcategory2" class="form-group">
+          <label>
+            Subcategoría adicional
+            <span class="optional">(opcional)</span>
+          </label>
+          <input
+            v-model="subcategory2"
+            type="text"
+            placeholder="Ej: Tropical, Splash, Lava, Curve Little Tikes"
+          />
         </div>
 
         <!-- Precio -->
@@ -672,6 +698,26 @@ onBeforeUnmount(() => {
   object-fit: cover;
   border: 2px solid #f0d3e6;
 }
+
+.extra-preview-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.remove-image-btn {
+  background: #fff0f0;
+  border: 1px solid #f0b8b8;
+  color: #b00020;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.remove-image-btn:hover { background: #ffe0e0; }
 
 .field-hint {
   font-size: 0.8rem;

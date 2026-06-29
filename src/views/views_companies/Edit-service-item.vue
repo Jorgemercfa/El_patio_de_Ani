@@ -56,6 +56,7 @@ const form = ref({
   price: '',
   category: 'Shows Infantiles',
   subcategory: '',
+  subcategory2: '',
   duration: '',
   age_range: '',
   dimensions: '',
@@ -75,7 +76,7 @@ const categories = [
 
 const subcategoryMap = {
   'Shows Infantiles': ['Animación', 'Competencia', 'Magia'],
-  Inflables: ['Bebes', 'Mediano', 'Grande'],
+  Inflables: ['Bebes', 'Mediano', 'Grande', 'Acuáticos'],
   Juegos: ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
   'Carritos Snacks': ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
   'Estética Infantil': ['Pintacaritas', 'Glitter Bar'],
@@ -83,6 +84,11 @@ const subcategoryMap = {
 
 const availableSubcategories = computed(() => subcategoryMap[form.value.category] || []);
 const usesSubcategorySelect = computed(() => availableSubcategories.value.length > 0);
+
+// ─── Segunda subcategoría (opcional, solo Inflables > Acuáticos) ──
+const showSubcategory2 = computed(
+  () => form.value.category === 'Inflables' && form.value.subcategory === 'Acuáticos',
+);
 
 watch(
   () => form.value.category,
@@ -95,6 +101,10 @@ watch(
     }
   },
 );
+
+watch(showSubcategory2, (visible) => {
+  if (!visible) form.value.subcategory2 = '';
+});
 
 onMounted(async () => {
   await fetchCompanyproducts();
@@ -112,6 +122,7 @@ onMounted(async () => {
     price: service.price ?? '',
     category: service.category || 'Shows Infantiles',
     subcategory: service.subcategory || '',
+    subcategory2: service.subcategory2 || '',
     duration: service.duration || '',
     age_range: service.age_range || '',
     dimensions: service.dimensions || '',
@@ -212,6 +223,7 @@ async function onSave() {
       price,
       category: form.value.category,
       subcategory: form.value.subcategory.trim(),
+      subcategory2: showSubcategory2.value ? form.value.subcategory2.trim() : '',
       duration: form.value.duration.trim(),
       age_range: form.value.age_range.trim(),
       dimensions: form.value.dimensions.trim(),
@@ -278,6 +290,19 @@ async function onSave() {
             </option>
           </select>
           <input v-else v-model="form.subcategory" type="text" />
+        </div>
+
+        <!-- Segunda subcategoría (opcional, solo Inflables > Acuáticos) -->
+        <div v-if="showSubcategory2" class="form-group">
+          <label>
+            Subcategoría adicional
+            <span class="optional">(opcional)</span>
+          </label>
+          <input
+            v-model="form.subcategory2"
+            type="text"
+            placeholder="Ej: Tropical, Splash, Lava, Curve Little Tikes"
+          />
         </div>
 
         <div class="form-group">

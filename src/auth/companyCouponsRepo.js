@@ -42,10 +42,13 @@ function normalizeProduct(product, docId = '') {
     options: Array.isArray(product?.options)
       ? product.options.filter((item) => typeof item === 'string' && item.trim() !== '')
       : [],
-    // ─── NUEVO: array de fotos adicionales ───────────────────
+    // ─── Array de fotos adicionales ───────────────────────────
     images: Array.isArray(product?.images)
       ? product.images.filter((url) => typeof url === 'string' && url.trim() !== '')
       : [],
+    // ─────────────────────────────────────────────────────────
+    // ─── NUEVO: segunda subcategoría (opcional) ──────────────
+    subcategory2: product?.subcategory2 || '',
     // ─────────────────────────────────────────────────────────
     _docId: docId || product?._docId || '',
   };
@@ -64,6 +67,9 @@ function sanitizeProductPayload(productInput) {
     price: Number(productInput?.price || 0),
     category: String(productInput?.category || '').trim(),
     subcategory: String(productInput?.subcategory || '').trim(),
+    // ─── NUEVO: segunda subcategoría (opcional) ──────────────
+    subcategory2: String(productInput?.subcategory2 || '').trim(),
+    // ─────────────────────────────────────────────────────────
     duration: String(productInput?.duration || '').trim(),
     age_range: String(productInput?.age_range || '').trim(),
     dimensions: String(productInput?.dimensions || '').trim(),
@@ -72,7 +78,7 @@ function sanitizeProductPayload(productInput) {
           .map((item) => String(item || '').trim())
           .filter(Boolean)
       : [],
-    // ─── NUEVO: array de fotos adicionales ───────────────────
+    // ─── Array de fotos adicionales ───────────────────────────
     images: Array.isArray(productInput?.images)
       ? productInput.images
           .map((url) => String(url || '').trim())

@@ -26,7 +26,7 @@ const categories = [
 
 const subcategoryMap = {
   'Shows Infantiles': ['Animación', 'Competencia', 'Magia'],
-  Inflables: ['Bebes', 'Mediano', 'Grande'],
+  Inflables: ['Bebes', 'Mediano', 'Grande', 'Acuáticos'],
   Juegos: ['Juegos Little Tikes', 'Trampolines', 'Juegos para Bebés'],
   'Carritos Snacks': ['Salados', 'Dulces', 'Dúo Packs', 'Combos'],
   'Estética Infantil': ['Pintacaritas', 'Glitter Bar'],
@@ -150,6 +150,7 @@ onMounted(loadServices);
             <p class="meta">
               {{ service.category || '-' }}
               <span v-if="service.subcategory">/ {{ service.subcategory }}</span>
+              <span v-if="service.subcategory2"> / {{ service.subcategory2 }}</span>
             </p>
             <p class="price">S/ {{ Number(service.price ?? 0).toFixed(2) }}</p>
             <p class="description">{{ service.shortDescription || '-' }}</p>
