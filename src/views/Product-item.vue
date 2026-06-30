@@ -62,12 +62,24 @@ onBeforeUnmount(() => {
   if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
 })
 
+const normalizeText = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+
 const products = computed(() => {
   let list = activeFilter.value === 'Todos'
     ? allProducts.value
     : allProducts.value.filter((p) => p.category === activeFilter.value)
   if (activeSubcategory.value) {
-    list = list.filter((p) => p.subcategory === activeSubcategory.value)
+    const target = normalizeText(activeSubcategory.value)
+    list = list.filter(
+      (p) =>
+        normalizeText(p.subcategory) === target ||
+        normalizeText(p.subcategory2) === target
+    )
   }
   return list
 })
