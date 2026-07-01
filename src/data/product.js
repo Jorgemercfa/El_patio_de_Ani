@@ -5,7 +5,7 @@
  *
  * PASOS para eliminar:
  * 1. Verificar que todos los productos en Firestore tienen campo `image` con URL válida
- * 2. Cambiar `USE_SEED_FALLBACK` a false en companyCouponsRepo.js
+ * 2. Cambiar `USE_SEED_FALLBACK` a false en companyproductsRepo.js
  * 3. Eliminar este archivo y los imports de assets en src/assets/
  */
 // ================================
