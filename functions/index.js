@@ -5,6 +5,7 @@ const { Resend } = require('resend');
 const resendApiKey = defineSecret('RESEND_API_KEY');
 const DEFAULT_FROM_EMAIL = 'El Patio de Ani <onboarding@resend.dev>';
 const HOME_URL = 'https://jorgemercfa.github.io/El_patio_de_Ani/';
+let hasWarnedAboutFromEmail = false;
 
 function getFromEmail() {
   const configuredFromEmail = String(process.env.RESEND_FROM_EMAIL || '').trim();
@@ -14,10 +15,13 @@ function getFromEmail() {
       : `El Patio de Ani <${configuredFromEmail}>`;
   }
 
-  console.warn(
-    '[Emails] RESEND_FROM_EMAIL no está configurado. ' +
-      'Se usará El Patio de Ani <onboarding@resend.dev> como fallback.',
-  );
+  if (!hasWarnedAboutFromEmail) {
+    hasWarnedAboutFromEmail = true;
+    console.warn(
+      '[Emails] RESEND_FROM_EMAIL no está configurado. ' +
+        'Se usará El Patio de Ani <onboarding@resend.dev> como fallback.',
+    );
+  }
   return DEFAULT_FROM_EMAIL;
 }
 
