@@ -4,6 +4,7 @@ import router from './router';
 import './style.css'
 
 const CHUNK_RELOAD_FLAG = 'chunk-reload-attempted';
+const APP_BASE_PATH = process.env.BASE_URL || '/';
 
 function getChunkErrorMessage(error) {
   if (!error) return '';
@@ -21,7 +22,7 @@ function isChunkOrAssetLoadError(error, eventTarget) {
 
   const assetUrl = eventTarget?.src || eventTarget?.href || '';
   const isAppAsset = typeof assetUrl === 'string'
-    && assetUrl.includes('/El_patio_de_Ani/')
+    && assetUrl.includes(APP_BASE_PATH)
     && /\/(js|css)\//.test(assetUrl);
 
   return ['SCRIPT', 'LINK'].includes(eventTarget?.tagName) && isAppAsset;

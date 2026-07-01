@@ -194,7 +194,9 @@ onMounted(() => {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   if (route.query.welcomeEmail === 'pending') {
     profileNotice.value = 'Cuenta creada correctamente. Revisa tu correo de bienvenida si el servicio de email está configurado.';
-    router.replace({ name: 'Profile' });
+    router.replace({ name: 'Profile' }).catch((error) => {
+      console.warn('[Perfil] No se pudo limpiar el query de bienvenida:', error);
+    });
   }
   loadChildren();
 });
