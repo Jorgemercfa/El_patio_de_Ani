@@ -3,7 +3,8 @@ const { defineSecret } = require('firebase-functions/params');
 const { Resend } = require('resend');
 
 const resendApiKey = defineSecret('RESEND_API_KEY');
-// Fallback seguro de Resend para pruebas/manual QA cuando no se configure RESEND_FROM_EMAIL.
+// Fallback seguro de Resend para pruebas/manual QA. En producción debe configurarse
+// RESEND_FROM_EMAIL con un remitente propio verificado para evitar problemas de entrega.
 const DEFAULT_FROM_EMAIL = 'El Patio de Ani <onboarding@resend.dev>';
 const HOME_URL = 'https://jorgemercfa.github.io/El_patio_de_Ani/';
 let hasWarnedAboutFromEmail = false;

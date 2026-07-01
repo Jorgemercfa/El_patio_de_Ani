@@ -48,7 +48,10 @@ const onSignUp = async () => {
 
     successMessage.value = 'Cuenta creada correctamente. Redirigiendo a tu perfil...';
     login(user);
-    await router.replace({ name: 'Profile', query: { welcomeEmail: 'pending' } });
+    await router.replace({ name: 'Profile', query: { welcomeEmail: 'pending' } }).catch((error) => {
+      console.warn('[SignUp] No se pudo completar la redirección al perfil:', error);
+      throw error;
+    });
   } catch (e) {
     error.value = e?.message || 'No se pudo registrar el usuario.';
   } finally {
