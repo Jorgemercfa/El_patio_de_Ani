@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import Navbar from '@/components/Navbar-item.vue';
@@ -10,10 +10,13 @@ import { useCart } from '@/store/cart.js';
 import { NIVELES, useLoyalty } from '@/store/loyalty';
 
 const router = useRouter();
+const route = useRoute();
 const { state, logout } = useSession();
 const children = ref([]);
 const showChildrenSavedMessage = ref(false);
 const childrenStorageTimer = ref(null);
+const childrenErrorMessage = ref('');
+const profileNotice = ref('');
 const ORDER_ID_DISPLAY_LENGTH = 12;
 const { getPurchasedproducts } = useCart();
 const { getLoyaltyData } = useLoyalty();
@@ -158,6 +161,8 @@ const loadChildren = () => {
 const saveChildren = async () => {
   if (!state.user?.uid) return;
 
+  childrenErrorMessage.value = '';
+
   const sanitizedChildren = children.value.map((child) => ({
     name: (child.name || '').trim(),
     lastname: (child.lastname || '').trim(),
@@ -171,6 +176,7 @@ const saveChildren = async () => {
 
     state.user.children = sanitizedChildren;
     showChildrenSavedMessage.value = true;
+    profileNotice.value = 'Si las notificaciones por email están configuradas, recibirás una confirmación por el registro de hijos.';
 
     if (childrenStorageTimer.value) {
       clearTimeout(childrenStorageTimer.value);
@@ -179,12 +185,19 @@ const saveChildren = async () => {
       showChildrenSavedMessage.value = false;
     }, 3000);
   } catch (error) {
-    console.warn('[Perfil] Error guardando hijos:', error);
+    console.error('[Perfil] Error guardando hijos:', error);
+    childrenErrorMessage.value = 'No se pudieron guardar los hijos. Intenta nuevamente.';
   }
 };
 
 onMounted(() => {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  if (route.query.welcomeEmail === 'pending') {
+    profileNotice.value = 'Cuenta creada correctamente. Revisa tu correo de bienvenida si el servicio de email está configurado.';
+    router.replace({ name: 'Profile' }).catch((error) => {
+      console.warn('[Perfil] No se pudo limpiar el query de bienvenida:', error);
+    });
+  }
   loadChildren();
 });
 
@@ -229,6 +242,10 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
+
+        <p v-if="profileNotice" class="profile-notice">
+          {{ profileNotice }}
+        </p>
 
         <div class="loyalty-section">
           <h2 class="kids-title">🏆 Mi Nivel</h2>
@@ -310,6 +327,9 @@ onBeforeUnmount(() => {
 
           <p v-if="showChildrenSavedMessage" class="save-children-message">
             ¡Hijos guardados correctamente! 🎉
+          </p>
+          <p v-if="childrenErrorMessage" class="save-children-error">
+            {{ childrenErrorMessage }}
           </p>
         </div>
 
@@ -650,6 +670,18 @@ onBeforeUnmount(() => {
 .save-children-message {
   margin: 14px 0 0;
   color: #1c8c46;
+  font-weight: 700;
+}
+
+.profile-notice {
+  margin-top: 16px;
+  color: #2D3E94;
+  font-weight: 700;
+}
+
+.save-children-error {
+  margin: 14px 0 0;
+  color: #b00020;
   font-weight: 700;
 }
 

@@ -497,7 +497,11 @@ function goBack() {
             </p>
           </div>
 
-          <button class="buy-button reserve-service-btn primary-action-btn" @click="reserveServicio">
+          <button
+            v-if="!isAuthenticated"
+            class="buy-button reserve-service-btn primary-action-btn"
+            @click="reserveServicio"
+          >
             📋 Reservar este servicio
           </button>
 
