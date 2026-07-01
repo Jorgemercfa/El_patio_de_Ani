@@ -16,9 +16,12 @@ const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
 const error = ref('');
+const successMessage = ref('');
+const isSubmitting = ref(false);
 
 const onSignUp = async () => {
   error.value = '';
+  successMessage.value = '';
 
   if (!name.value.trim()) {
     error.value = 'Ingresa tu nombre.';
@@ -36,17 +39,20 @@ const onSignUp = async () => {
   }
 
   try {
+    isSubmitting.value = true;
     const user = await addUser({
       name: name.value,
       email: email.value,
       password: password.value,
     });
 
+    successMessage.value = 'Cuenta creada correctamente. Redirigiendo a tu perfil...';
     login(user);
-
-    router.push({ name: 'Profile' });
+    await router.replace({ name: 'Profile', query: { welcomeEmail: 'pending' } });
   } catch (e) {
     error.value = e?.message || 'No se pudo registrar el usuario.';
+  } finally {
+    isSubmitting.value = false;
   }
 };
 </script>
@@ -65,6 +71,9 @@ const onSignUp = async () => {
           <form class="form-area" @submit.prevent="onSignUp" autocomplete="on">
             <div v-if="error" style="color: #b00020; font-weight: 600">
               {{ error }}
+            </div>
+            <div v-if="successMessage" style="color: #2D3E94; font-weight: 600">
+              {{ successMessage }}
             </div>
 
             <div class="form-group">
@@ -104,7 +113,9 @@ const onSignUp = async () => {
               />
             </div>
 
-            <button type="submit" class="submit-btn">Registrarme</button>
+            <button type="submit" class="submit-btn" :disabled="isSubmitting">
+              {{ isSubmitting ? 'Creando cuenta...' : 'Registrarme' }}
+            </button>
 
             <router-link
               to="/Sign-in"
@@ -206,6 +217,11 @@ const onSignUp = async () => {
   border-radius: 999px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.submit-btn:disabled {
+  cursor: wait;
+  opacity: 0.8;
 }
 
 .submit-btn:hover {

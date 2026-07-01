@@ -3,6 +3,48 @@ const { defineSecret } = require('firebase-functions/params');
 const { Resend } = require('resend');
 
 const resendApiKey = defineSecret('RESEND_API_KEY');
+const DEFAULT_FROM_EMAIL = 'El Patio de Ani <onboarding@resend.dev>';
+const HOME_URL = 'https://jorgemercfa.github.io/El_patio_de_Ani/';
+
+function getFromEmail() {
+  const configuredFromEmail = String(process.env.RESEND_FROM_EMAIL || '').trim();
+  if (configuredFromEmail) {
+    return configuredFromEmail.includes('<')
+      ? configuredFromEmail
+      : `El Patio de Ani <${configuredFromEmail}>`;
+  }
+
+  console.warn(
+    '[Emails] RESEND_FROM_EMAIL no está configurado. ' +
+      'Se usará El Patio de Ani <onboarding@resend.dev> como fallback.',
+  );
+  return DEFAULT_FROM_EMAIL;
+}
+
+async function sendEmail({ to, subject, html, context }) {
+  const apiKey = resendApiKey.value();
+
+  if (!apiKey) {
+    console.warn(`[Emails] RESEND_API_KEY no está configurado. No se enviará el correo de ${context}.`);
+    return null;
+  }
+
+  try {
+    const resend = new Resend(apiKey);
+    const response = await resend.emails.send({
+      from: getFromEmail(),
+      to,
+      subject,
+      html,
+    });
+
+    console.info(`[Emails] Correo de ${context} enviado a ${to}.`, response);
+    return response;
+  } catch (error) {
+    console.error(`[Emails] Error enviando correo de ${context} a ${to}:`, error);
+    return null;
+  }
+}
 
 // ─── EMAIL DE BIENVENIDA AL CREAR CUENTA ──────────────────
 exports.onUserCreated = onDocumentCreated(
@@ -11,11 +53,9 @@ exports.onUserCreated = onDocumentCreated(
     const user = event.data.data();
     if (!user?.email) return;
 
-    const resend = new Resend(resendApiKey.value());
-
-    await resend.emails.send({
-      from: 'El Patio de Ani <elpatiodeani@gmail.com>',
+    await sendEmail({
       to: user.email,
+      context: 'bienvenida',
       subject: '¡Bienvenido a El Patio de Ani! 🎉',
       html: `
         <div style="font-family: 'Nunito', Arial, sans-serif; max-width: 600px; margin: auto;">
@@ -30,7 +70,7 @@ exports.onUserCreated = onDocumentCreated(
             <li>💎 <strong>VIP</strong> — 50% de descuento exclusivo</li>
           </ul>
           <p>Además recibirás recordatorios especiales antes del cumpleaños de tus hijos para que nunca se te olvide celebrar.</p>
-          <a href="https://jorgemercfa.github.io/El_patio_de_Ani/" 
+          <a href="${HOME_URL}"
              style="background:#FFD200;color:#2D3E94;padding:14px 28px;border-radius:999px;text-decoration:none;font-weight:700;display:inline-block;margin-top:16px;">
             Ver nuestros servicios
           </a>
@@ -57,11 +97,9 @@ exports.onChildrenAdded = onDocumentUpdated(
     const newChildren = after.children.slice(childrenBefore);
     const nombres = newChildren.map((c) => c.name).filter(Boolean).join(', ');
 
-    const resend = new Resend(resendApiKey.value());
-
-    await resend.emails.send({
-      from: 'El Patio de Ani <hola@tudominio.com>',
+    await sendEmail({
       to: after.email,
+      context: 'registro de hijos',
       subject: '¡Hijos registrados en El Patio de Ani! 🎂',
       html: `
         <div style="font-family: 'Nunito', Arial, sans-serif; max-width: 600px; margin: auto;">
@@ -69,7 +107,7 @@ exports.onChildrenAdded = onDocumentUpdated(
           <p>Hola <strong>${after.name || ''}</strong>,</p>
           <p>Has registrado a <strong>${nombres || 'tus hijos'}</strong> en El Patio de Ani.</p>
           <p>Ahora recibirás un aviso especial antes de cada cumpleaños para que puedas reservar con tiempo y celebrar como se merece.</p>
-          <a href="https://jorgemercfa.github.io/El_patio_de_Ani/"
+          <a href="${HOME_URL}"
              style="background:#FFD200;color:#2D3E94;padding:14px 28px;border-radius:999px;text-decoration:none;font-weight:700;display:inline-block;margin-top:16px;">
             Explorar servicios
           </a>
