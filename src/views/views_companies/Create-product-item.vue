@@ -419,7 +419,7 @@ onBeforeUnmount(() => {
           <input
             v-model="subcategory2"
             type="text"
-            placeholder="Ej: Tropical, Splash, Lava, Curve Little Tikes"
+            placeholder="Ej: Bebes, Mediano, Grande y Acuático"
           />
           <p class="field-hint">
             Úsalo si quieres dar un detalle extra de clasificación, además de la subcategoría principal.
