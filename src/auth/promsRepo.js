@@ -1,4 +1,4 @@
-import { db } from '@/firebase';
+import { db, isFirebaseConfigured } from '@/firebase';
 import {
   collection,
   getDocs,
@@ -18,6 +18,7 @@ const COLLECTION = 'proms';
  * Usada en la vista pública de Promociones y en Home.
  */
 export const getActivePromotions = async () => {
+  if (!isFirebaseConfigured || !db) return [];
   const q = query(
     collection(db, COLLECTION),
     orderBy('order', 'asc'),
@@ -33,6 +34,7 @@ export const getActivePromotions = async () => {
  * Usada en el panel admin.
  */
 export const getAllPromotions = async () => {
+  if (!isFirebaseConfigured || !db) return [];
   const q = query(collection(db, COLLECTION), orderBy('order', 'asc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -43,6 +45,7 @@ export const getAllPromotions = async () => {
  * @param {Object} data - Campos: title, description, price, originalPrice, image, deadline, active, order
  */
 export const createPromotion = (data) => {
+  if (!isFirebaseConfigured || !db) return Promise.reject(new Error('Firebase no configurado'));
   return addDoc(collection(db, COLLECTION), {
     ...data,
     createdAt: new Date().toISOString(),
@@ -55,6 +58,7 @@ export const createPromotion = (data) => {
  * @param {Object} data - Campos a actualizar
  */
 export const updatePromotion = (id, data) => {
+  if (!isFirebaseConfigured || !db) return Promise.reject(new Error('Firebase no configurado'));
   return updateDoc(doc(db, COLLECTION, id), data);
 };
 
@@ -63,6 +67,7 @@ export const updatePromotion = (id, data) => {
  * @param {string} id - ID del documento en Firestore
  */
 export const deletePromotion = (id) => {
+  if (!isFirebaseConfigured || !db) return Promise.reject(new Error('Firebase no configurado'));
   return deleteDoc(doc(db, COLLECTION, id));
 };
 
@@ -72,5 +77,6 @@ export const deletePromotion = (id) => {
  * @param {boolean} active - true para activar, false para desactivar
  */
 export const togglePromotion = (id, active) => {
+  if (!isFirebaseConfigured || !db) return Promise.reject(new Error('Firebase no configurado'));
   return updateDoc(doc(db, COLLECTION, id), { active });
 };

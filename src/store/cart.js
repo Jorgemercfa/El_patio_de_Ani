@@ -56,9 +56,19 @@ export function useCart() {
   }
 
   function updateQuantity(productId, qty) {
+    if (productId === null || productId === undefined) return;
     const item = state.items.find((i) => i.productId === productId);
     if (item) {
       item.quantity = Math.max(1, qty);
+      persist();
+    }
+  }
+
+  function updateReservationDate(productId, date) {
+    if (productId === null || productId === undefined) return;
+    const item = state.items.find((i) => i.productId === productId);
+    if (item) {
+      item.reservationDate = date || null;
       persist();
     }
   }
@@ -135,6 +145,7 @@ export function useCart() {
     addToCart,
     removeFromCart,
     updateQuantity,
+    updateReservationDate,
     clearCart,
     checkout,
     getPurchasedproducts,

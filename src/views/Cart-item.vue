@@ -8,8 +8,9 @@ import { useLoyalty } from '@/store/loyalty';
 
 const MAX_QUANTITY_PER_SNACK = 10;
 const WHATSAPP_PHONE = '51975495623';
+const SNACK_CATEGORY = 'Carritos Snacks';
 
-const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, checkout } =
+const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, updateReservationDate, checkout } =
   useCart();
 const { state: sessionState } = useSession();
 const { getLoyaltyData, getDescuento, addReserva } = useLoyalty();
@@ -27,6 +28,9 @@ const cartTotalWithDiscount = computed(() =>
 
 const showConfirmation = ref(false);
 const submitting = ref(false);
+const missingDateError = ref('');
+
+const todayDate = new Date().toLocaleDateString('en-CA');
 
 function getItemPrice(item) {
   return Number(item.discount_price ?? item.price ?? 0);
@@ -35,6 +39,10 @@ function getItemPrice(item) {
 function isService(item) {
   const serviceCategories = ['Inflables', 'Juegos', 'Shows Infantiles', 'Estética Infantil'];
   return serviceCategories.includes(item.category);
+}
+
+function isSnack(item) {
+  return item.category === SNACK_CATEGORY;
 }
 
 function shouldShowQuantityControls(item) {
@@ -52,13 +60,25 @@ function decreaseQuantity(item) {
   updateQuantity(item.id, item.quantity - 1);
 }
 
+function onDateChange(item, event) {
+  updateReservationDate(item.id, event.target.value);
+  missingDateError.value = '';
+}
+
+function snacksWithoutDate() {
+  return cartItems.value.filter((item) => isSnack(item) && !item.reservationDate);
+}
+
 function buildWhatsAppMessage(items, total, totalWithDiscount, discount, discountAmt, loyalty) {
   // Recibe todos los valores como parámetros (snapshot) para evitar
   // que computed reactivos se lean DESPUÉS de que checkout() limpie el carrito
-  const lines = items.map(
-    (item) =>
-      `- ${item.name} x${item.quantity}: S/ ${(getItemPrice(item) * item.quantity).toFixed(2)}`,
-  );
+  const lines = items.map((item) => {
+    let line = `- ${item.name} x${item.quantity}: S/ ${(getItemPrice(item) * item.quantity).toFixed(2)}`;
+    if (item.reservationDate) {
+      line += ` (Fecha: ${item.reservationDate})`;
+    }
+    return line;
+  });
 
   const parts = [
     'Hola Ani, quiero reservar lo siguiente:',
@@ -79,6 +99,14 @@ function buildWhatsAppMessage(items, total, totalWithDiscount, discount, discoun
 
 function confirmReservation() {
   if (cartCount.value === 0 || submitting.value) return;
+
+  // ─── Validar que todos los snacks tengan fecha ───
+  const missing = snacksWithoutDate();
+  if (missing.length > 0) {
+    missingDateError.value = `Por favor selecciona la fecha del evento para: ${missing.map((i) => i.name).join(', ')}.`;
+    return;
+  }
+  missingDateError.value = '';
 
   submitting.value = true;
 
@@ -168,6 +196,19 @@ function confirmReservation() {
                 </button>
               </div>
 
+              <div v-if="isSnack(item)" class="snack-date-picker">
+                <label :for="`date-${item.id}`" class="snack-date-label">📅 Fecha del evento</label>
+                <input
+                  :id="`date-${item.id}`"
+                  type="date"
+                  class="snack-date-input"
+                  :min="todayDate"
+                  :value="item.reservationDate || ''"
+                  @change="onDateChange(item, $event)"
+                />
+                <span v-if="!item.reservationDate" class="snack-date-required">Requerida</span>
+              </div>
+
               <div v-else class="service-quantity">
                 <span class="qty-label">Cantidad:</span>
                 <span class="qty-fixed">{{ item.quantity }}</span>
@@ -200,6 +241,10 @@ function confirmReservation() {
             <button class="checkout-btn" :disabled="submitting" @click="confirmReservation">
               {{ submitting ? 'Enviando...' : 'Reservar por WhatsApp' }}
             </button>
+
+            <p v-if="missingDateError" class="missing-date-error">
+              {{ missingDateError }}
+            </p>
 
             <p v-if="showConfirmation" class="confirmation-message">
               Tu reserva fue registrada. Pronto Ani te atenderá.
@@ -398,6 +443,52 @@ function confirmReservation() {
 
 .remove-btn:hover {
   color: #e53935;
+}
+
+.snack-date-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+}
+
+.snack-date-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2D3E94;
+}
+
+.snack-date-input {
+  border: 1.5px solid #E91E81;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-family: 'Nunito', sans-serif;
+  color: #2D3E94;
+  cursor: pointer;
+}
+
+.snack-date-input:focus {
+  outline: none;
+  border-color: #2D3E94;
+  box-shadow: 0 0 0 3px rgba(45, 62, 148, 0.1);
+}
+
+.snack-date-required {
+  font-size: 0.72rem;
+  color: #E91E81;
+  font-weight: 700;
+}
+
+.missing-date-error {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  background: rgba(233, 30, 129, 0.08);
+  border: 1px solid rgba(233, 30, 129, 0.35);
+  border-radius: 12px;
+  color: #b00020;
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
 .cart-summary {
