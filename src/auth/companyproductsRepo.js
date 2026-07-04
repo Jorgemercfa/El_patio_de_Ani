@@ -133,6 +133,12 @@ export async function fetchCompanyproducts(force = false) {
     productsState.value = sortProducts(normalized);
     hasLoadedState.value = true;
     return productsState.value;
+  } catch (error) {
+    console.warn('[Products] Error cargando desde Firestore:', error);
+    if (!hasLoadedState.value) {
+      ensureLocalFallbackLoaded();
+    }
+    return productsState.value;
   } finally {
     loadingState.value = false;
   }

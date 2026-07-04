@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import AdminLayout from '@/components/AdminLayout.vue';
 import {
   getAllPromotions,
   createPromotion,
