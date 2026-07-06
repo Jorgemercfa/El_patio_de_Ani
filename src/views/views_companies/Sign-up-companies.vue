@@ -5,16 +5,15 @@ import { useRouter } from 'vue-router';
 import AdminLayout from '@/components/AdminLayout.vue';
 
 import { addCompany } from '@/auth/companiesRepo';
-import { useSessionCompany } from '@/auth/session_companies';
 
 const router = useRouter();
-const { login } = useSessionCompany();
 
 const name = ref('');
 const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
 const error = ref('');
+const success = ref('');
 
 const onCancel = () => {
   router.push({ name: 'HomeCompanies' });
@@ -22,6 +21,7 @@ const onCancel = () => {
 
 const onSignUp = async () => {
   error.value = '';
+  success.value = '';
 
   if (!name.value.trim()) {
     error.value = 'Ingresa el nombre del administrador.';
@@ -39,15 +39,20 @@ const onSignUp = async () => {
   }
 
   try {
-    const company = await addCompany({
+    // No iniciamos sesión con el administrador recién creado: se registra su
+    // perfil (rol) en Firestore y podrá iniciar sesión por su cuenta luego.
+    // Esto evita reemplazar la sesión del administrador que lo está creando.
+    await addCompany({
       name: name.value,
       email: email.value,
       password: password.value,
     });
 
-    login(company);
-
-    router.push({ name: 'HomeCompanies' });
+    success.value = `Administrador "${name.value.trim()}" registrado correctamente. Ya puede iniciar sesión con su email y contraseña.`;
+    name.value = '';
+    email.value = '';
+    password.value = '';
+    confirmPassword.value = '';
   } catch (e) {
     error.value = e?.message || 'No se pudo registrar el administrador.';
   }
@@ -64,6 +69,9 @@ const onSignUp = async () => {
           <form class="form-area" @submit.prevent="onSignUp" autocomplete="on">
             <div v-if="error" style="color: #b00020; font-weight: 600">
               {{ error }}
+            </div>
+            <div v-if="success" style="color: #177245; font-weight: 600">
+              {{ success }}
             </div>
 
             <div class="form-group">
