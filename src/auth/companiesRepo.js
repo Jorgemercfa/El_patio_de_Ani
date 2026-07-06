@@ -1,5 +1,7 @@
+import { deleteApp, getApps, initializeApp } from 'firebase/app';
 import {
   createUserWithEmailAndPassword,
+  getAuth,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
@@ -22,11 +24,35 @@ import { db } from '@/firebase/firestore';
 // ──────────────────────────────────────────────────────────
 
 const COMPANIES_COLLECTION = 'company';
+const SECONDARY_APP_NAME = 'CompanyCreationApp';
 
 // Eliminamos la dependencia de isFirebaseConfigured para evitar el crash
 function ensureFirebaseReady() {
   if (!auth || !db) {
     throw new Error('Firebase no está inicializado correctamente.');
+  }
+}
+
+// Crea (o reutiliza) una app secundaria de Firebase para dar de alta nuevos
+// administradores sin reemplazar la sesión del administrador que ya inició
+// sesión: `createUserWithEmailAndPassword` autentica automáticamente al
+// usuario recién creado en la instancia de Auth que se le pase, por lo que
+// usar una instancia aislada evita "expulsar" al administrador actual.
+function getSecondaryAuth() {
+  const existingApp = getApps().find((app) => app.name === SECONDARY_APP_NAME);
+  const secondaryApp = existingApp || initializeApp(auth.app.options, SECONDARY_APP_NAME);
+  return getAuth(secondaryApp);
+}
+
+async function disposeSecondaryApp() {
+  const existingApp = getApps().find((app) => app.name === SECONDARY_APP_NAME);
+  if (existingApp) {
+    // Solo liberamos recursos de la app secundaria; un fallo aquí no afecta la
+    // sesión principal ni el alta ya persistida, por lo que únicamente lo
+    // registramos para diagnóstico.
+    await deleteApp(existingApp).catch((cleanupError) => {
+      console.warn('[CompaniesRepo] No se pudo liberar la app secundaria de Auth:', cleanupError);
+    });
   }
 }
 
@@ -98,10 +124,13 @@ export async function addCompany(companyInput) {
     throw new Error('La contraseña debe tener al menos 6 caracteres.');
   }
 
+  const secondaryAuth = getSecondaryAuth();
+
   try {
-    // Registramos directamente en Auth
+    // Registramos en una instancia de Auth secundaria para no cerrar/reemplazar
+    // la sesión del administrador que está dando de alta al nuevo usuario.
     const credential = await createUserWithEmailAndPassword(
-      auth,
+      secondaryAuth,
       normalizedEmail,
       normalizedPassword,
     );
@@ -117,7 +146,7 @@ export async function addCompany(companyInput) {
       products: [],
     };
 
-    // Guardamos en Firestore
+    // Guardamos en Firestore (persiste el rol/perfil administrativo del nuevo usuario)
     await setDoc(doc(db, COMPANIES_COLLECTION, uid), payload);
 
     return mapCompany(uid, payload, normalizedEmail);
@@ -127,6 +156,9 @@ export async function addCompany(companyInput) {
       throw new Error('Ya existe una empresa registrada con ese email.');
     }
     throw error;
+  } finally {
+    // Cerramos y liberamos la app secundaria; la sesión principal no se ve afectada.
+    await disposeSecondaryApp();
   }
 }
 

@@ -11,8 +11,6 @@ import { useSession } from '@/auth/session';
 const router = useRouter();
 const { logout } = useSession();
 const email = ref('');
-const password = ref('');
-const confirmPassword = ref('');
 const error = ref('');
 const success = ref('');
 
@@ -20,22 +18,16 @@ const onRequestPasswordReset = async () => {
   error.value = '';
   success.value = '';
 
-  if (password.value.length < 6) {
-    error.value = 'La contraseña debe tener al menos 6 caracteres.';
-    return;
-  }
-
-  if (password.value !== confirmPassword.value) {
-    error.value = 'Las contraseñas no coinciden.';
+  if (!email.value.trim()) {
+    error.value = 'Debes ingresar un email válido.';
     return;
   }
 
   try {
     await logout();
     await sendUserResetPassword(email.value);
-    success.value = 'Te enviamos un enlace para restablecer tu contraseña.';
-    password.value = '';
-    confirmPassword.value = '';
+    success.value = 'Te enviamos un enlace para restablecer tu contraseña. Revisa tu correo.';
+    email.value = '';
     setTimeout(() => {
       router.push({ name: 'SignIn' });
     }, 1200);
@@ -74,30 +66,8 @@ const onRequestPasswordReset = async () => {
               />
             </div>
 
-            <div class="form-group">
-              <label>Nueva Contraseña</label>
-              <input
-                v-model="password"
-                type="password"
-                required
-                minlength="6"
-                autocomplete="new-password"
-              />
-            </div>
-
-            <div class="form-group">
-              <label>Confirmar Nueva Contraseña</label>
-              <input
-                v-model="confirmPassword"
-                type="password"
-                required
-                minlength="6"
-                autocomplete="new-password"
-              />
-            </div>
-
             <button type="submit" class="submit-btn">
-              Restablecer Contraseña
+              Enviar enlace de recuperación
             </button>
 
             <router-link
