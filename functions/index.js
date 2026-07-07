@@ -5,7 +5,7 @@ const { Resend } = require('resend');
 const resendApiKey = defineSecret('RESEND_API_KEY');
 // Fallback seguro de Resend para pruebas/manual QA. En producción debe configurarse
 // RESEND_FROM_EMAIL con un remitente propio verificado para evitar problemas de entrega.
-const DEFAULT_FROM_EMAIL = 'El Patio de Ani <onboarding@resend.dev>';
+const DEFAULT_FROM_EMAIL = 'El Patio de Ani <Reservas@elpatiodeani.com>';
 const HOME_URL = 'https://jorgemercfa.github.io/El_patio_de_Ani/';
 let hasWarnedAboutFromEmail = false;
 
@@ -21,7 +21,7 @@ function getFromEmail() {
     hasWarnedAboutFromEmail = true;
     console.warn(
       '[Emails] RESEND_FROM_EMAIL no está configurado. ' +
-        'Se usará El Patio de Ani <onboarding@resend.dev> como fallback.',
+        'Se usará El Patio de Ani <Reservas@elpatiodeani.com> como fallback.',
     );
   }
   return DEFAULT_FROM_EMAIL;
