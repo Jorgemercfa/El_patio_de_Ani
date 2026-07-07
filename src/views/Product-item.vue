@@ -26,6 +26,9 @@ onMounted(async () => {
   if (route.query.category) {
     activeFilter.value = route.query.category
   }
+  if (route.query.subcategory) {
+    activeSubcategory.value = route.query.subcategory
+  }
   await nextTick()
   isRestoringFromUrl.value = false
 })
@@ -56,6 +59,16 @@ watch(activeFilter, (newCat) => {
       productsContainerRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, FILTER_SCROLL_DELAY)
+})
+
+watch(activeSubcategory, (newSub) => {
+  if (isRestoringFromUrl.value) return
+  const currentCat = activeFilter.value
+  router.replace({
+    query: currentCat !== 'Todos'
+      ? { category: currentCat, ...(newSub ? { subcategory: newSub } : {}) }
+      : {}
+  })
 })
 
 onBeforeUnmount(() => {
