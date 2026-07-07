@@ -7,7 +7,7 @@ const STORAGE_KEY = 'al-toque-cart';
 // Categorías cuya reserva representa un único evento/servicio: nunca deben
 // acumular cantidad al volver a agregarse (ej. confirmar una reserva
 // detallada de un inflable que ya estaba en el carrito).
-const SERVICE_CATEGORIES = ['Inflables', 'Shows Infantiles', 'Estética Infantil'];
+const SERVICE_CATEGORIES = ['Inflables', 'Juegos', 'Shows Infantiles', 'Carritos Snacks', 'Estética Infantil'];
 
 function safeParse(json) {
   try {
