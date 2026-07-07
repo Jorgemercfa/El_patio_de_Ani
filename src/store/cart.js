@@ -4,6 +4,11 @@ import { useSession } from '@/auth/session';
 
 const STORAGE_KEY = 'al-toque-cart';
 
+// Categorías cuya reserva representa un único evento/servicio: nunca deben
+// acumular cantidad al volver a agregarse (ej. confirmar una reserva
+// detallada de un inflable que ya estaba en el carrito).
+const SERVICE_CATEGORIES = ['Inflables', 'Shows Infantiles', 'Estética Infantil'];
+
 function safeParse(json) {
   try {
     return JSON.parse(json);
@@ -37,9 +42,14 @@ export function useCart() {
   const products = computed(() => getCompanyproducts());
 
   function addToCart(productId, reservationDate = null) {
+    const product = products.value.find((p) => p.id === productId);
+    const isServiceProduct = SERVICE_CATEGORIES.includes(product?.category);
     const existing = state.items.find((i) => i.productId === productId);
     if (existing) {
-      existing.quantity += 1;
+      // Los servicios (inflables, shows, estética) son una única reserva:
+      // volver a "agregarla" (ej. al confirmar el formulario de reserva
+      // detallada) no debe duplicar la cantidad reservada.
+      existing.quantity = isServiceProduct ? 1 : existing.quantity + 1;
       if (reservationDate) existing.reservationDate = reservationDate;
     } else {
       state.items.push({ productId, quantity: 1, reservationDate });

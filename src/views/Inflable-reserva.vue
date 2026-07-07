@@ -1,10 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
+import { useCart } from '@/store/cart.js';
 import {
   PREMIUM_INFLABLE_PRICE,
   MAX_GUEST_COUNT,
@@ -12,7 +13,9 @@ import {
 } from '@/constants/inflables';
 
 const route = useRoute();
+const router = useRouter();
 const { state, isAuthenticated } = useSession();
+const { addToCart } = useCart();
 const CURRENCY_PREFIX = 'S/';
 const RESERVATIONS_STORAGE_KEY = 'patio-reservas';
 const CALENDAR_WEEK_DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
@@ -422,9 +425,15 @@ function validateForm() {
 }
 
 function submitReservation() {
-  if (!validateForm()) return;
+  if (!validateForm() || !selectedProduct.value) return;
   saveReservationDate(form.value.eventDate);
+  addToCart(selectedProduct.value.id, form.value.eventDate);
   showConfirmationModal.value = true;
+}
+
+function goToCart() {
+  showConfirmationModal.value = false;
+  router.push('/Cart');
 }
 
 onMounted(async () => {
@@ -739,13 +748,16 @@ onMounted(async () => {
 
       <div v-if="showConfirmationModal" class="modal-overlay" @click.self="showConfirmationModal = false">
         <div class="modal-card">
-          <h3>Reserva lista para confirmar</h3>
+          <h3>✅ Inflable agregado al carrito</h3>
           <p><strong>Inflable:</strong> {{ reservationSummary.producto }}</p>
           <p><strong>Responsable:</strong> {{ reservationSummary.responsable }}</p>
           <p><strong>Tipo de evento:</strong> {{ reservationSummary.tipoEvento }}</p>
           <p><strong>Fecha:</strong> {{ reservationSummary.fecha }}</p>
           <p><strong>Horario:</strong> {{ reservationSummary.horario }}</p>
-          <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="whatsapp-cta">
+          <button class="whatsapp-cta" type="button" @click="goToCart">
+            🛒 Ir al carrito de compras
+          </button>
+          <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="secondary-whatsapp-link">
             Enviar confirmación por WhatsApp
           </a>
           <button class="secondary-close" @click="showConfirmationModal = false">Cerrar</button>
@@ -1095,9 +1107,25 @@ select:focus {
   color: #fff;
   font-weight: 700;
   text-decoration: none;
+  border: none;
   border-radius: 12px;
   padding: 12px 14px;
   box-shadow: 0 4px 18px rgba(37, 211, 102, 0.35);
+  width: 100%;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.secondary-whatsapp-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  width: 100%;
+  color: #128C7E;
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .modal-overlay {
