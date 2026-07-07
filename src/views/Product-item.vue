@@ -48,11 +48,11 @@ const activeSubcategories = computed(() =>
 const filterScrollTimeout = ref(null)
 
 watch(activeFilter, (newCat) => {
+  if (isRestoringFromUrl.value) return
   router.replace({
     query: newCat !== 'Todos' ? { category: newCat } : {}
   })
   activeSubcategory.value = ''
-  if (isRestoringFromUrl.value) return
   if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
   filterScrollTimeout.value = setTimeout(() => {
     if (productsContainerRef.value) {
@@ -221,7 +221,13 @@ const formatPrice = (product) => {
         </div>
         <button
           class="details-button"
-          @click="router.push({ name: 'productsDetails', params: { id: product.id } })"
+          @click="router.push({
+            name: 'productsDetails',
+            params: { id: product.id },
+            query: activeSubcategory.value
+              ? { fromCat: activeFilter.value, fromSub: activeSubcategory.value }
+              : activeFilter.value !== 'Todos' ? { fromCat: activeFilter.value } : {}
+          })"
         >
           Ver detalles
         </button>

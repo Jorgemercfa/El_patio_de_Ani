@@ -303,14 +303,13 @@ function goBack() {
   if (prev) {
     router.back();
   } else {
-    const category = product.value?.category;
-    if (category === 'Inflables') {
-      router.push({ path: '/product-item', query: { category: 'Inflables' } });
-    } else if (category === 'Carritos Snacks') {
-      router.push({ path: '/product-item', query: { category: 'Carritos Snacks' } });
-    } else {
-      router.push('/product-item');
-    }
+    const fromCat = route.query.fromCat;
+    const fromSub = route.query.fromSub;
+    const category = fromCat || product.value?.category;
+    const query = {};
+    if (category && category !== 'Todos') query.category = category;
+    if (fromSub) query.subcategory = fromSub;
+    router.push({ path: '/Product-item', query });
   }
 }
 </script>
@@ -438,8 +437,8 @@ function goBack() {
           <button class="buy-button primary-action-btn" @click="handleAddToCartInflable">
             {{ addedFeedback ? '✓ Agregado al carrito' : '🛒 Agregar al carrito' }}
           </button>
-          <button v-if="isAuthenticated" class="secondary-login-button" @click="reserveInflable">
-            📋 Reserva detallada
+          <button class="secondary-login-button" @click="reserveInflable">
+            📋 Reservar inflable
           </button>
         </div>
 
