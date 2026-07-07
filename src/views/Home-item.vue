@@ -213,6 +213,9 @@ const tarifas = [
           @click="goToVideo(index)"
         ></span>
       </div>
+      <div class="pet-area">
+         <img src="@/assets/rhinoceros.jpeg" alt="Mascota" />
+      </div>
     </div>
 
     <!-- Wave divider -->
@@ -233,8 +236,11 @@ const tarifas = [
       </router-link>
     </div>
 
-    <div class="text-home">
-      Encuentra todo lo que necesitas para una celebración inolvidable: desde shows mágicos y juegos inflables hasta deliciosos carritos de snacks. Nos encargamos de la diversión para que tú disfrutes cada momento especial.
+    <!-- ===== INTRO + MASCOTA ===== -->
+    <div class="intro-section">
+      <p class="text-home">
+        Encuentra todo lo que necesitas para una celebración inolvidable: desde shows mágicos y juegos inflables hasta deliciosos carritos de snacks. Nos encargamos de la diversión para que tú disfrutes cada momento especial.
+      </p>
     </div>
 
     <div class="proms-area">
@@ -568,6 +574,15 @@ const tarifas = [
   transform: scale(1.2);
 }
 
+.pet-area{
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 80px;
+  height: 60px;
+  z-index: 15;
+}
+
 .fade-video-enter-active,
 .fade-video-leave-active {
   transition: opacity 0.6s ease-in-out;
@@ -579,16 +594,33 @@ const tarifas = [
 .fade-video-enter-from,
 .fade-video-leave-to { opacity: 0; }
 
-/* ===== RESTO ===== */
-.text-home {
-  max-width: 900px;
+/* ===== INTRO + MASCOTA ===== */
+.intro-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  max-width: 1000px;
   margin: 60px auto;
-  text-align: center;
+  padding: 0 24px;
+}
+
+.text-home {
+  flex: 1;
+  max-width: 560px;
+  margin: 0;
+  text-align: left;
   font-size: 18px;
   line-height: 1.7;
   color: #2D3E94;
 }
 
+@keyframes float-mascot {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* ===== RESTO ===== */
 .title-home {
   text-align: center;
   font-size: 32px;
@@ -966,12 +998,14 @@ const tarifas = [
   .movilidad-grid { grid-template-columns: repeat(2, 1fr); }
   .movilidad-section { margin: 0 30px 60px; padding: 40px 30px 60px; }
   .beneficios-section { margin: 0 30px; padding: 44px 24px; }
+  .intro-section { gap: 28px; }
 }
 
 @media (max-width: 768px) {
   .main-video-wrapper { height: 55vh; min-height: 280px; }
   .main-video-title { font-size: 28px; max-width: 160px; margin-left: 16px; }
-  .text-home { font-size: 16px; padding: 0 20px; margin: 40px auto; }
+  .intro-section { flex-direction: column-reverse; text-align: center; margin: 40px auto; gap: 20px; }
+  .text-home { text-align: center; font-size: 16px; padding: 0 20px; margin: 0; }
   .title-home { font-size: 26px; margin: 36px 0 16px 0; }
   .our-products-wrapper { padding: 8px 44px; }
   .logs-item { flex-basis: 180px; margin-top: 16px; }
