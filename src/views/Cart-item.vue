@@ -37,7 +37,7 @@ function getItemPrice(item) {
 }
 
 function isService(item) {
-  const serviceCategories = ['Inflables', 'Juegos', 'Shows Infantiles', 'Estética Infantil'];
+  const serviceCategories = ['Inflables', 'Shows Infantiles', 'Estética Infantil'];
   return serviceCategories.includes(item.category);
 }
 
@@ -209,9 +209,13 @@ function confirmReservation() {
                 <span v-if="!item.reservationDate" class="snack-date-required">Requerida</span>
               </div>
 
-              <div v-else class="service-quantity">
+              <div v-else-if="isService(item)" class="service-quantity">
                 <span class="qty-label">Cantidad:</span>
                 <span class="qty-fixed">{{ item.quantity }}</span>
+              </div>
+
+              <div v-else-if="item.reservationDate" class="service-date-display">
+                <span class="snack-date-label">📅 {{ item.reservationDate }}</span>
               </div>
 
               <button
@@ -450,6 +454,15 @@ function confirmReservation() {
   flex-direction: column;
   gap: 4px;
   min-width: 160px;
+}
+
+.service-date-display {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  background: #f0f4ff;
+  border-radius: 10px;
+  min-width: 120px;
 }
 
 .snack-date-label {

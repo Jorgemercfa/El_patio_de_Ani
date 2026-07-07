@@ -230,6 +230,7 @@ function submitReservation() {
 
 onMounted(async () => {
   await fetchCompanyproducts();
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   if (state.user?.name) {
     form.value.responsibleName = state.user.name;
   }

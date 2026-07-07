@@ -9,7 +9,7 @@ import { useCart } from '@/store/cart.js';
 import { useReservasServicio } from '@/store/reservas';
 import { useSession } from '@/auth/session';
 import { useReviews } from '@/store/reviews.js';
-import { PREMIUM_INFLABLE_PRICE, WHATSAPP_BUSINESS_NUMBER } from '@/constants/inflables';
+import { PREMIUM_INFLABLE_PRICE } from '@/constants/inflables';
 
 const route = useRoute();
 const router = useRouter();
@@ -215,10 +215,6 @@ const availabilityLabel = computed(() => {
 });
 
 function handleAddToCartSnack() {
-  if (!isAuthenticated.value) {
-    router.push({ name: 'SignIn' });
-    return;
-  }
   reservationError.value = '';
   addToCart(product.value.id, null);
   addedFeedback.value = true;
@@ -226,10 +222,6 @@ function handleAddToCartSnack() {
 }
 
 function handleAddToCartService() {
-  if (!isAuthenticated.value) {
-    router.push({ name: 'SignIn' });
-    return;
-  }
   if (!reservationDate.value) {
     reservationError.value = 'Selecciona la fecha del evento para continuar.';
     return;
@@ -244,19 +236,14 @@ function handleAddToCartService() {
   setTimeout(() => { addedFeedback.value = false; }, 1500);
 }
 
+function handleAddToCartInflable() {
+  addToCart(product.value.id, null);
+  addedFeedback.value = true;
+  setTimeout(() => { addedFeedback.value = false; }, 1500);
+}
+
 function reserveInflable() {
   router.push({ path: '/Inflable-reserva', query: { id: product.value.id } });
-}
-
-function reserveServicio() {
-  router.push({ path: '/Servicio-reserva', query: { id: product.value.id } });
-}
-
-function consultInflableByWhatsApp() {
-  const productName = product.value?.name || 'inflable';
-  const message = `Hola! Quiero consultar disponibilidad del inflable ${productName} para mi evento.`;
-  const url = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`;
-  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function getScrollContainer() {
@@ -448,29 +435,19 @@ function goBack() {
 
         <!-- ===== INFLABLES ===== -->
         <div v-if="isInflable" class="inflable-actions">
-          <button v-if="isAuthenticated" class="buy-button primary-action-btn" @click="reserveInflable">
-            📋 Reservar este inflable
+          <button class="buy-button primary-action-btn" @click="handleAddToCartInflable">
+            {{ addedFeedback ? '✓ Agregado al carrito' : '🛒 Agregar al carrito' }}
           </button>
-          <template v-else>
-            <button class="wa-button" @click="consultInflableByWhatsApp">
-              💬 Consultar disponibilidad
-            </button>
-            <button class="secondary-login-button" @click="router.push('/Sign-in')">
-              🔑 Inicia sesión y obtener descuentos
-            </button>
-          </template>
+          <button v-if="isAuthenticated" class="secondary-login-button" @click="reserveInflable">
+            📋 Reserva detallada
+          </button>
         </div>
 
         <!-- ===== SNACKS ===== -->
         <div v-else-if="isSnack" class="snack-actions">
-          <button v-if="isAuthenticated" class="buy-button primary-action-btn" @click="handleAddToCartSnack">
+          <button class="buy-button primary-action-btn" @click="handleAddToCartSnack">
             {{ addedFeedback ? '✓ Agregado al carrito' : '🛒 Agregar al carrito' }}
           </button>
-          <template v-else>
-            <button class="secondary-login-button" @click="router.push('/Sign-in')">
-              🔑 Inicia sesión para comprar
-            </button>
-          </template>
         </div>
 
         <!-- ===== OTROS SERVICIOS ===== -->
@@ -498,15 +475,6 @@ function goBack() {
           </div>
 
           <button
-            v-if="!isAuthenticated"
-            class="buy-button reserve-service-btn primary-action-btn"
-            @click="reserveServicio"
-          >
-            📋 Reservar este servicio
-          </button>
-
-          <button
-            v-if="isAuthenticated"
             class="buy-button"
             :disabled="!reservationDate || isSelectedDateAvailable !== true"
             :title="!reservationDate || isSelectedDateAvailable !== true ? 'Selecciona una fecha disponible para agregar al carrito' : 'Agregar al carrito'"
@@ -515,11 +483,6 @@ function goBack() {
           >
             {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
           </button>
-
-          <p v-else class="login-cart-hint">
-            Para acceder a descuentos
-            <router-link to="/Sign-in" class="login-cart-link">inicia sesión</router-link>
-          </p>
         </template>
       </div>
     </div>
