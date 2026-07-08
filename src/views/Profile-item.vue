@@ -223,6 +223,7 @@ onBeforeUnmount(() => {
             <div class="avatar">{{ initials }}</div>
             <div>
               <h2 class="profile-name">{{ state.user?.name }}</h2>
+              <h2 class="profile-lastname">{{ state.user?.lastname }}</h2>
               <p class="profile-email">{{ state.user?.email }}</p>
             </div>
           </div>
@@ -474,7 +475,9 @@ onBeforeUnmount(() => {
   color: #fff;
   font-weight: 700;
 }
-.profile-name {
+
+.profile-name,
+.profile-lastname {
   margin: 0;
   color: #2D3E94;
 }

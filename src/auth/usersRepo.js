@@ -29,6 +29,7 @@ function mapUser(uid, data, fallbackEmail = '') {
     id: uid,
     uid,
     name: data?.name || '',
+    lastname: data?.lastname || '',
     email: data?.email || fallbackEmail || '',
     products: Array.isArray(data?.products) ? data.products : [],
     children: Array.isArray(data?.children) ? data.children : [],
@@ -68,7 +69,7 @@ export async function getUserByUid(uid) {
   return mapUser(uid, userDoc.data());
 }
 
-export async function addUser({ name, email, password }) {
+export async function addUser({ name, lastname, email, password }) {
   const normalizedEmail = normalizeEmail(email);
   const normalizedPassword = String(password || '');
   
@@ -86,6 +87,7 @@ export async function addUser({ name, email, password }) {
     const payload = {
       uid,
       name: String(name || '').trim(),
+      lastname: String(lastname || '').trim(),
       email: normalizedEmail,
       products: [],
       children: [],

@@ -12,6 +12,7 @@ const router = useRouter();
 const { login } = useSession();
 
 const name = ref('');
+const lastname = ref('');
 const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
@@ -25,6 +26,11 @@ const onSignUp = async () => {
 
   if (!name.value.trim()) {
     error.value = 'Ingresa tu nombre.';
+    return;
+  }
+
+  if (!lastname.value.trim()) {
+    error.value = 'Ingresa tu apellido.';
     return;
   }
 
@@ -42,6 +48,7 @@ const onSignUp = async () => {
     isSubmitting.value = true;
     const user = await addUser({
       name: name.value,
+      lastname: lastname.value,
       email: email.value,
       password: password.value,
     });
@@ -82,6 +89,11 @@ const onSignUp = async () => {
             <div class="form-group">
               <label>Nombre</label>
               <input v-model="name" type="text" required autocomplete="name" />
+            </div>
+
+            <div class="form-group">
+              <label>Apellido</label>
+              <input v-model="lastname" type="text" required autocomplete="family-name" />
             </div>
 
             <div class="form-group">
