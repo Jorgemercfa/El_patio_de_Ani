@@ -41,6 +41,10 @@
           <i class="pi pi-user"></i> Mi perfil
         </router-link>
       </div>
+          
+      <div class="pet-logo">
+           <img src="@/assets/rhinoceros.jpeg" class="pet-image" alt="Mascota" />
+      </div>
 
       <!-- 3. REDES SOCIALES (DERECHA) -->
       <div class="social-media">
@@ -144,6 +148,18 @@ const { cartCount } = useCart();
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.pet-logo {
+  height: 50px;
+  border-radius: 8px;
+  margin: 0 25px;
+}
+
+.pet-image {
+  height: 50px;
+  width: 80px;
+  border-radius: 8px;
 }
 
 .social-media {
