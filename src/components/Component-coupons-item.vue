@@ -428,7 +428,11 @@ function goBack() {
 
         <!-- ===== INFLABLES ===== -->
         <div v-if="isInflable" class="inflable-actions">
-          <button class="buy-button primary-action-btn" @click="reserveInflable">
+          <button
+            class="buy-button primary-action-btn"
+            aria-label="Agregar al carrito"
+            @click="reserveInflable"
+          >
             🛒 Agregar al carrito
           </button>
         </div>
