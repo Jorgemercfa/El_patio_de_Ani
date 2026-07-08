@@ -236,12 +236,6 @@ function handleAddToCartService() {
   setTimeout(() => { addedFeedback.value = false; }, 1500);
 }
 
-function handleAddToCartInflable() {
-  addToCart(product.value.id, null);
-  addedFeedback.value = true;
-  setTimeout(() => { addedFeedback.value = false; }, 1500);
-}
-
 function reserveInflable() {
   router.push({ path: '/Inflable-reserva', query: { id: product.value.id } });
 }
@@ -434,11 +428,8 @@ function goBack() {
 
         <!-- ===== INFLABLES ===== -->
         <div v-if="isInflable" class="inflable-actions">
-          <button class="buy-button primary-action-btn" @click="handleAddToCartInflable">
-            {{ addedFeedback ? '✓ Agregado al carrito' : '🛒 Agregar al carrito' }}
-          </button>
-          <button class="secondary-login-button" @click="reserveInflable">
-            📋 Reservar inflable
+          <button class="buy-button primary-action-btn" @click="reserveInflable">
+            🛒 Agregar al carrito
           </button>
         </div>
 
