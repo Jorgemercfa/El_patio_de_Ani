@@ -29,6 +29,7 @@ const cartTotalWithDiscount = computed(() =>
 const showConfirmation = ref(false);
 const submitting = ref(false);
 const missingDateError = ref('');
+const whatsappBlockedUrl = ref(''); // fallback visible si el navegador bloquea la apertura automática
 
 const todayDate = new Date().toLocaleDateString('en-CA');
 
@@ -107,8 +108,18 @@ function confirmReservation() {
     return;
   }
   missingDateError.value = '';
+  whatsappBlockedUrl.value = '';
 
   submitting.value = true;
+
+  // ─── 0. Abrir la pestaña YA, de forma síncrona, dentro del gesto de click ───
+  // En navegadores móviles (especialmente iOS Safari), window.open() solo
+  // se permite si ocurre síncronamente dentro del handler del evento del
+  // usuario. Si lo llamamos después de un setTimeout (aunque sea corto),
+  // el navegador lo bloquea SIN avisar: el usuario nunca ve el error.
+  // Por eso abrimos la pestaña en blanco aquí mismo, y le asignamos la URL
+  // real de WhatsApp más abajo, una vez armado el mensaje.
+  const waWindow = window.open('', '_blank');
 
   // ─── 1. Tomar SNAPSHOT de todos los valores ANTES de tocar el carrito ───
   const itemsSnapshot = cartItems.value.map((item) => ({ ...item }));
@@ -145,11 +156,18 @@ function confirmReservation() {
 
   showConfirmation.value = true;
 
-  // ─── 5. Abrir WhatsApp en nueva pestaña ───
-  setTimeout(() => {
-    window.open(url, '_blank');
-    submitting.value = false;
-  }, 1200);
+  // ─── 5. Redirigir la pestaña ya abierta a la URL de WhatsApp ───
+  if (waWindow) {
+    waWindow.location.href = url;
+  } else {
+    // El navegador bloqueó incluso la apertura síncrona (poco común, pero
+    // puede pasar con bloqueadores de pop-ups agresivos). Mostramos un
+    // link visible como respaldo para que el usuario no se quede sin poder
+    // enviar su reserva.
+    whatsappBlockedUrl.value = url;
+  }
+
+  submitting.value = false;
 }
 </script>
 
@@ -252,6 +270,11 @@ function confirmReservation() {
 
             <p v-if="showConfirmation" class="confirmation-message">
               Tu reserva fue registrada. Pronto Ani te atenderá.
+            </p>
+
+            <p v-if="whatsappBlockedUrl" class="whatsapp-fallback">
+              Si WhatsApp no se abrió automáticamente,
+              <a :href="whatsappBlockedUrl" target="_blank" rel="noopener noreferrer">haz click aquí</a>.
             </p>
           </div>
         </div>
@@ -504,6 +527,24 @@ function confirmReservation() {
   font-size: 0.85rem;
 }
 
+.whatsapp-fallback {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  background: rgba(37, 211, 102, 0.08);
+  border: 1px solid rgba(37, 211, 102, 0.35);
+  border-radius: 12px;
+  color: #128C7E;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.whatsapp-fallback a {
+  color: #128C7E;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
 .cart-summary {
   width: 280px;
   background: white;
@@ -612,9 +653,57 @@ function confirmReservation() {
   transform: translateY(-2px);
 }
 
+/* ─── Mobile ─── */
 @media (max-width: 700px) {
   .cart-summary {
     width: 100%;
+  }
+
+  .cart-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .cart-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cart-thumb {
+    width: 56px;
+    height: 56px;
+  }
+
+  /* Touch targets más grandes: 44px es el mínimo recomendado (Apple/Google) */
+  .qty-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+  }
+
+  .cart-controls {
+    justify-content: center;
+  }
+
+  .snack-date-picker,
+  .service-quantity,
+  .service-date-display {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .snack-date-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem; /* evita zoom automático de iOS al enfocar el input */
+  }
+
+  .remove-btn {
+    align-self: flex-end;
+    font-size: 1.3rem;
+    padding: 8px;
   }
 }
 </style>
