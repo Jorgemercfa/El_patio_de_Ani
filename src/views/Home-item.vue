@@ -1,12 +1,28 @@
 <script setup>
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
-
+import { useRouter } from 'vue-router';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
 import { fetchGlobalReviews } from '@/auth/reviewServicesRepo';
 const { isAuthenticated, state } = useSession();
+const router = useRouter();
+
+/* =============================
+   POPUP DE BIENVENIDA
+============================= */
+const showWelcomePopup = ref(false);
+const WELCOME_POPUP_SESSION_KEY = 'welcomePopupShown';
+
+const closeWelcomePopup = () => {
+  showWelcomePopup.value = false;
+};
+
+const goToProfileFromPopup = () => {
+  showWelcomePopup.value = false;
+  router.push('/Profile');
+};
 
 /* =============================
    CARRUSEL PRINCIPAL DE VIDEOS (LOCALES)
@@ -163,6 +179,13 @@ onMounted(async () => {
   await fetchCompanyproducts();
   startVideoTimer();
   reviews.value = await fetchGlobalReviews();
+  if (isAuthenticated.value && state.user) {
+    const alreadyShown = sessionStorage.getItem(WELCOME_POPUP_SESSION_KEY);
+    if (!alreadyShown) {
+      showWelcomePopup.value = true;
+      sessionStorage.setItem(WELCOME_POPUP_SESSION_KEY, 'true');
+    }
+  }
 });
 
 onBeforeUnmount(() => {
@@ -251,15 +274,29 @@ const tarifas = [
     </div>
 
     <!-- ===== BIENVENIDA PERSONALIZADA ===== -->
-    <div v-if="isAuthenticated && state.user" class="welcome-banner">
-      <span class="welcome-icon">👋</span>
-      <span class="welcome-text">
-        ¡Hola <strong>{{ state.user.name }}</strong>, bienvenido de nuevo!
-      </span>
-      <router-link to="/Profile" class="welcome-profile-link">
-        Ver mi perfil →
-      </router-link>
+    <!-- ===== POPUP DE BIENVENIDA ===== -->
+<transition name="fade-popup">
+  <div v-if="showWelcomePopup" class="welcome-popup-overlay" @click.self="closeWelcomePopup">
+    <div class="welcome-popup-card">
+      <button class="welcome-popup-close" type="button" @click="closeWelcomePopup" aria-label="Cerrar">
+        ✕
+      </button>
+      <span class="welcome-popup-icon">👋</span>
+      <h2 class="welcome-popup-title">
+        ¡Hola <strong>{{ state.user?.name }}</strong>,<br />bienvenido de nuevo!
+      </h2>
+      <p class="welcome-popup-subtitle">Nos alegra tenerte de vuelta 🎉</p>
+      <div class="welcome-popup-actions">
+        <button class="welcome-popup-profile-btn" type="button" @click="goToProfileFromPopup">
+          Ver mi perfil →
+        </button>
+        <button class="welcome-popup-dismiss-btn" type="button" @click="closeWelcomePopup">
+          Seguir explorando
+        </button>
+      </div>
     </div>
+  </div>
+</transition>
 
     <!-- ===== INTRO + MASCOTA ===== -->
     <div class="intro-section">
@@ -498,42 +535,146 @@ const tarifas = [
   font-family: 'Nunito', sans-serif;
 }
 
-/* ===== BIENVENIDA ===== */
-.welcome-banner {
+/* ===== POPUP DE BIENVENIDA ===== */
+.welcome-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 62, 148, 0.45);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  background: white;
-  border-radius: 999px;
-  padding: 14px 28px;
-  margin: 2px auto 0;
-  max-width: 600px;
-  box-shadow: 0 4px 16px rgba(233, 30, 129, 0.12);
-  border: 2px solid rgba(233, 30, 129, 0.15);
+  z-index: 1000;
+  padding: 20px;
+}
+
+.welcome-popup-card {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 28px;
+  padding: 40px 32px 32px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   font-family: 'Nunito', sans-serif;
 }
 
-.welcome-icon { font-size: 1.4rem; }
-
-.welcome-text {
+.welcome-popup-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #FDF6EC;
+  color: #2D3E94;
   font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.2s ease;
+}
+
+.welcome-popup-close:hover {
+  background: #ffe8f4;
+  color: #E91E81;
+}
+
+.welcome-popup-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.welcome-popup-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #2D3E94;
+  margin: 0 0 8px;
+  line-height: 1.35;
+}
+
+.welcome-popup-title strong {
+  color: #E91E81;
+}
+
+.welcome-popup-subtitle {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0 0 28px;
+}
+
+.welcome-popup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.welcome-popup-profile-btn {
+  padding: 14px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #E91E81, #C2185B);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(233, 30, 129, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.welcome-popup-profile-btn:hover {
+  transform: translateY(-2px);
+}
+
+.welcome-popup-dismiss-btn {
+  padding: 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
   color: #2D3E94;
   font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
-.welcome-text strong { color: #E91E81; }
-
-.welcome-profile-link {
-  font-size: 0.88rem;
-  color: #E91E81;
-  font-weight: 700;
-  text-decoration: none;
-  white-space: nowrap;
+.welcome-popup-dismiss-btn:hover {
+  text-decoration: underline;
 }
 
-.welcome-profile-link:hover { text-decoration: underline; }
+/* Transición del popup */
+.fade-popup-enter-active,
+.fade-popup-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.fade-popup-enter-from,
+.fade-popup-leave-to {
+  opacity: 0;
+}
+
+.fade-popup-enter-active .welcome-popup-card,
+.fade-popup-leave-active .welcome-popup-card {
+  transition: transform 0.25s ease;
+}
+
+.fade-popup-enter-from .welcome-popup-card {
+  transform: scale(0.92) translateY(10px);
+}
+
+@media (max-width: 480px) {
+  .welcome-popup-card {
+    padding: 32px 24px 24px;
+    border-radius: 24px;
+  }
+
+  .welcome-popup-title {
+    font-size: 1.2rem;
+  }
+}
 
 /* ===== CARRUSEL PRINCIPAL DE VIDEOS ===== */
 .main-video-carousel {
