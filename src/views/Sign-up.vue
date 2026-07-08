@@ -6,10 +6,8 @@ import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 
 import { addUser } from '@/auth/usersRepo';
-import { useSession } from '@/auth/session';
 
 const router = useRouter();
-const { login } = useSession();
 
 const name = ref('');
 const lastname = ref('');
@@ -46,19 +44,25 @@ const onSignUp = async () => {
 
   try {
     isSubmitting.value = true;
-    const user = await addUser({
+    await addUser({
       name: name.value,
       lastname: lastname.value,
       email: email.value,
       password: password.value,
     });
 
-    successMessage.value = 'Cuenta creada correctamente. Redirigiendo a tu perfil...';
-    login(user);
-    await router.replace({ name: 'Profile', query: { welcomeEmail: 'pending' } }).catch((error) => {
-      console.warn('[SignUp] No se pudo completar la redirección al perfil:', error);
-      throw error;
-    });
+    successMessage.value = '¡Cuenta creada correctamente! Redirigiendo a inicio de sesión...';
+
+    // Pequeña pausa para que el usuario alcance a leer el mensaje de éxito
+    // antes de saltar a la pantalla de Sign In.
+    setTimeout(async () => {
+      await router.replace({
+        name: 'SignIn',
+        query: { accountCreated: 'true', email: email.value },
+      }).catch((navError) => {
+        console.warn('[SignUp] No se pudo completar la redirección a Sign In:', navError);
+      });
+    }, 1500);
   } catch (e) {
     error.value = e?.message || 'No se pudo registrar el usuario.';
   } finally {
