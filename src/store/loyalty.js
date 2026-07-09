@@ -36,9 +36,11 @@ const buildLoyaltyData = (reservas) => {
     nivel: nivel.nombre,
     descuento: nivel.descuento,
     proximoNivel: nextLevel ? nextLevel.nombre : 'Máximo nivel',
+    descuentoProximo: nextLevel ? nextLevel.descuento : 0,
     reservasParaProximo: nextLevel
       ? Math.max(0, nextLevel.minReservas - totalReservas)
       : 0,
+    cumpleCondiciones: Boolean(nextLevel) && totalReservas >= nextLevel.minReservas,
   };
 };
 
@@ -84,5 +86,6 @@ export function useLoyalty() {
     getLoyaltyData,
     addReserva,
     getDescuento,
+    NIVELES,
   };
 }

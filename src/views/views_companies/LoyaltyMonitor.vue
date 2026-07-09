@@ -9,18 +9,21 @@ const loadingUsers = ref(false);
 const searchQuery = ref('');
 const filterStatus = ref('todos');
 
-const { getLoyaltyData, NIVELES } = useLoyaltyManual();
+const { getLoyaltyData } = useLoyaltyManual();
 
 const processedUsers = computed(() => {
   return users.value.map((user) => {
     const loyaltyData = getLoyaltyData(user.uid);
-    const nivelIndex = NIVELES.findIndex(n => n.nombre === loyaltyData.nivel);
+    const esMaximoNivel = loyaltyData.proximoNivel === 'Máximo nivel';
+    const totalParaProximo = loyaltyData.reservas + loyaltyData.reservasParaProximo;
+
     return {
       ...user,
       loyalty: loyaltyData,
-      proximoNivel: nivelIndex < NIVELES.length - 1 ? NIVELES[nivelIndex + 1] : null,
       status: loyaltyData.cumpleCondiciones ? 'listo' : 'pendiente',
-      porcentajeProgreso: loyaltyData.proximoNivel === 'Máximo nivel' ? 100 : (loyaltyData.reservas / (loyaltyData.proximoNivel ? NIVELES[nivelIndex + 1].minReservas : 1)) * 100,
+      porcentajeProgreso: esMaximoNivel
+        ? 100
+        : (loyaltyData.reservas / (totalParaProximo || 1)) * 100,
     };
   });
 });
@@ -99,9 +102,10 @@ onMounted(() => { loadUsers(); });
               <p class="reservas-count">{{ user.loyalty.reservas }}</p>
               <p v-if="user.loyalty.proximoNivel !== 'Máximo nivel'" class="faltantes">Faltan {{ user.loyalty.reservasParaProximo }}</p>
             </div>
-            <div v-if="user.proximoNivel" class="level-box">
+            <div v-if="user.loyalty.proximoNivel !== 'Máximo nivel'" class="level-box">
               <p class="label">Próximo</p>
-              <span :class="['level-badge', getNivelBadgeClass(user.proximoNivel.nombre)]">{{ user.proximoNivel.nombre }}</span>
+              <span :class="['level-badge', getNivelBadgeClass(user.loyalty.proximoNivel)]">{{ user.loyalty.proximoNivel }}</span>
+              <p class="discount">{{ user.loyalty.descuentoProximo }}%</p>
             </div>
           </div>
           <div class="progress-section" v-if="user.loyalty.proximoNivel !== 'Máximo nivel'">

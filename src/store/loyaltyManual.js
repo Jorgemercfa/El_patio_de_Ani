@@ -35,7 +35,7 @@ const buildLoyaltyData = (reservas) => {
     proximoNivel: nextLevel ? nextLevel.nombre : 'Máximo nivel',
     descuentoProximo: nextLevel ? nextLevel.descuento : 0,
     reservasParaProximo: nextLevel ? Math.max(0, nextLevel.minReservas - totalReservas) : 0,
-    cumpleCondiciones: nextLevel && totalReservas >= nextLevel.minReservas,
+    cumpleCondiciones: Boolean(nextLevel) && totalReservas >= nextLevel.minReservas,
   };
 };
 
@@ -57,7 +57,16 @@ const saveLoyaltyReservas = (userId, reservas) => {
 
 export function useLoyaltyManual() {
   const getLoyaltyData = (userId) => buildLoyaltyData(readLoyaltyReservas(userId));
-  const addReserva = (userId) => { const current = readLoyaltyReservas(userId); const updated = current + 1; saveLoyaltyReservas(userId, updated); return buildLoyaltyData(updated); };
+  const addReserva = (userId) => {
+    const current = readLoyaltyReservas(userId);
+    const updated = current + 1;
+    saveLoyaltyReservas(userId, updated);
+    return buildLoyaltyData(updated);
+  };
   const getDescuento = (userId) => getLoyaltyData(userId).descuento;
-  return { getLoyaltyData, addReserva, getDescuento };
+
+  // Se expone NIVELES también aquí para que los componentes puedan
+  // desestructurarlo directamente desde useLoyaltyManual() si lo prefieren,
+  // sin depender de un import nombrado aparte.
+  return { getLoyaltyData, addReserva, getDescuento, NIVELES };
 }
