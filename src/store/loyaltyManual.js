@@ -1,8 +1,8 @@
 export const NIVELES = [
-  { nombre: '🥉 Bronce', minReservas: 0, descuento: 0, minDescuentoProximo: 5 },
-  { nombre: '🥈 Plata', minReservas: 3, descuento: 5, minDescuentoProximo: 10 },
-  { nombre: '🥇 Oro', minReservas: 6, descuento: 10, minDescuentoProximo: 15 },
-  { nombre: '💎 VIP', minReservas: 10, descuento: 15, minDescuentoProximo: 0 },
+  { nombre: '🥉 Bronce', minReservas: 0, descuento: 0 },
+  { nombre: '🥈 Plata', minReservas: 3, descuento: 5 },
+  { nombre: '🥇 Oro', minReservas: 6, descuento: 10 },
+  { nombre: '💎 VIP', minReservas: 10, descuento: 15 },
 ];
 
 const STORAGE_PREFIX = 'patio-loyalty-';
@@ -17,25 +17,21 @@ const normalizeReservas = (value) => {
 const getNivelByReservas = (reservas) => {
   let nivel = NIVELES[0];
   NIVELES.forEach((candidate) => {
-    if (reservas >= candidate.minReservas) {
-      nivel = candidate;
-    }
+    if (reservas >= candidate.minReservas) nivel = candidate;
   });
   return nivel;
 };
 
-const buildLoyaltyData = (reservas, nivelAprobado = null) => {
+const buildLoyaltyData = (reservas) => {
   const totalReservas = normalizeReservas(reservas);
-  let nivelActual = nivelAprobado ? NIVELES.find(n => n.nombre === nivelAprobado) : getNivelByReservas(totalReservas);
-  if (!nivelActual) nivelActual = NIVELES[0];
-  
-  const currentLevelIndex = NIVELES.findIndex((item) => item.nombre === nivelActual.nombre);
+  const nivel = getNivelByReservas(totalReservas);
+  const currentLevelIndex = NIVELES.findIndex((item) => item.nombre === nivel.nombre);
   const nextLevel = NIVELES[currentLevelIndex + 1] || null;
 
   return {
     reservas: totalReservas,
-    nivelActual: nivelActual.nombre,
-    descuentoActual: nivelActual.descuento,
+    nivel: nivel.nombre,
+    descuento: nivel.descuento,
     proximoNivel: nextLevel ? nextLevel.nombre : 'Máximo nivel',
     descuentoProximo: nextLevel ? nextLevel.descuento : 0,
     reservasParaProximo: nextLevel ? Math.max(0, nextLevel.minReservas - totalReservas) : 0,
@@ -60,9 +56,8 @@ const saveLoyaltyReservas = (userId, reservas) => {
 };
 
 export function useLoyaltyManual() {
-  const getLoyaltyData = (userId, nivelAprobado = null) => buildLoyaltyData(readLoyaltyReservas(userId), nivelAprobado);
-  const addReserva = (userId) => { const currentReservas = readLoyaltyReservas(userId); const updatedReservas = currentReservas + 1; saveLoyaltyReservas(userId, updatedReservas); return buildLoyaltyData(updatedReservas); };
-  const getDescuento = (userId, nivelAprobado = null) => getLoyaltyData(userId, nivelAprobado).descuentoActual;
-  const getReservas = (userId) => readLoyaltyReservas(userId);
-  return { getLoyaltyData, addReserva, getDescuento, getReservas, NIVELES };
+  const getLoyaltyData = (userId) => buildLoyaltyData(readLoyaltyReservas(userId));
+  const addReserva = (userId) => { const current = readLoyaltyReservas(userId); const updated = current + 1; saveLoyaltyReservas(userId, updated); return buildLoyaltyData(updated); };
+  const getDescuento = (userId) => getLoyaltyData(userId).descuento;
+  return { getLoyaltyData, addReserva, getDescuento };
 }
