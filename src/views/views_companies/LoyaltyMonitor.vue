@@ -8,10 +8,18 @@ const users = ref([]);
 const loadingUsers = ref(false);
 const searchQuery = ref('');
 const filterStatus = ref('todos');
+const approvingUserId = ref(null);
 
-const { getLoyaltyData } = useLoyaltyManual();
+const { getLoyaltyData, approveNivel } = useLoyaltyManual();
+
+// Se incrementa cada vez que se aprueba un ascenso, para forzar a
+// processedUsers a recalcular (getLoyaltyData lee de localStorage,
+// que Vue no puede observar por sí solo).
+const refreshKey = ref(0);
 
 const processedUsers = computed(() => {
+  refreshKey.value; // eslint-disable-line no-unused-expressions
+
   return users.value.map((user) => {
     const loyaltyData = getLoyaltyData(user.uid);
     const esMaximoNivel = loyaltyData.proximoNivel === 'Máximo nivel';
@@ -36,6 +44,12 @@ const filteredUsers = computed(() => {
   });
 });
 
+// Cuántos usuarios están esperando aprobación, para que se note de
+// un vistazo aunque el filtro esté en "Todos".
+const pendientesDeAprobacion = computed(
+  () => processedUsers.value.filter((user) => user.status === 'listo').length,
+);
+
 const loadUsers = async () => {
   loadingUsers.value = true;
   try {
@@ -45,6 +59,21 @@ const loadUsers = async () => {
     console.error('Error cargando usuarios:', error);
   } finally {
     loadingUsers.value = false;
+  }
+};
+
+const handleApprove = (user) => {
+  const confirmado = window.confirm(
+    `¿Aprobar el ascenso de ${user.name} ${user.lastname ?? ''} a ${user.loyalty.proximoNivel}?`,
+  );
+  if (!confirmado) return;
+
+  approvingUserId.value = user.uid;
+  try {
+    approveNivel(user.uid);
+    refreshKey.value += 1;
+  } finally {
+    approvingUserId.value = null;
   }
 };
 
@@ -71,12 +100,17 @@ onMounted(() => { loadUsers(); });
         <h1>📊 Monitoreo de Loyalty</h1>
         <p class="subtitle">Revisa el progreso de clientes y aprueba cambios de nivel</p>
       </div>
+      <div v-if="pendientesDeAprobacion > 0" class="pending-banner">
+        🔔 Tienes <strong>{{ pendientesDeAprobacion }}</strong> {{ pendientesDeAprobacion === 1 ? 'usuario listo' : 'usuarios listos' }} para ascender de nivel.
+      </div>
       <div class="controls-area">
         <input v-model="searchQuery" type="text" placeholder="Buscar por nombre, apellido o email..." class="search-input" />
         <div class="filter-buttons">
           <button type="button" :class="{ active: filterStatus === 'todos' }" @click="filterStatus = 'todos'" class="filter-btn">Todos</button>
           <button type="button" :class="{ active: filterStatus === 'pendiente' }" @click="filterStatus = 'pendiente'" class="filter-btn">En progreso</button>
-          <button type="button" :class="{ active: filterStatus === 'listo' }" @click="filterStatus = 'listo'" class="filter-btn">Listo ✓</button>
+          <button type="button" :class="{ active: filterStatus === 'listo' }" @click="filterStatus = 'listo'" class="filter-btn">
+            Listo ✓ <span v-if="pendientesDeAprobacion > 0" class="count-pill">{{ pendientesDeAprobacion }}</span>
+          </button>
         </div>
       </div>
       <div v-if="loadingUsers" class="loading-state">Cargando usuarios...</div>
@@ -100,7 +134,9 @@ onMounted(() => { loadUsers(); });
             <div class="level-box">
               <p class="label">Reservas</p>
               <p class="reservas-count">{{ user.loyalty.reservas }}</p>
-              <p v-if="user.loyalty.proximoNivel !== 'Máximo nivel'" class="faltantes">Faltan {{ user.loyalty.reservasParaProximo }}</p>
+              <p v-if="user.loyalty.proximoNivel !== 'Máximo nivel'" class="faltantes">
+                {{ user.loyalty.reservasParaProximo > 0 ? `Faltan ${user.loyalty.reservasParaProximo}` : 'Listo para ascender' }}
+              </p>
             </div>
             <div v-if="user.loyalty.proximoNivel !== 'Máximo nivel'" class="level-box">
               <p class="label">Próximo</p>
@@ -114,7 +150,14 @@ onMounted(() => { loadUsers(); });
             </div>
           </div>
           <div v-if="user.status === 'listo'" class="action-area">
-            <button type="button" class="approve-btn">Aprobar ascenso</button>
+            <button
+              type="button"
+              class="approve-btn"
+              :disabled="approvingUserId === user.uid"
+              @click="handleApprove(user)"
+            >
+              {{ approvingUserId === user.uid ? 'Aprobando...' : `Aprobar ascenso a ${user.loyalty.proximoNivel}` }}
+            </button>
           </div>
         </article>
       </div>
@@ -127,11 +170,13 @@ onMounted(() => { loadUsers(); });
 .monitor-header { margin-bottom: 20px; }
 .monitor-header h1 { margin: 0 0 8px; color: #2D3E94; font-size: 1.6rem; }
 .subtitle { margin: 0; color: #666; font-size: 0.9rem; }
+.pending-banner { background: #fff8e1; border: 2px solid #FFD700; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; color: #6c5300; font-size: 0.9rem; }
 .controls-area { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
 .search-input { padding: 10px 14px; border: 2px solid #E91E81; border-radius: 8px; font-size: 0.9rem; width: 100%; }
 .filter-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-.filter-btn { padding: 8px 14px; border: 2px solid #E91E81; border-radius: 18px; background: white; color: #2D3E94; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+.filter-btn { padding: 8px 14px; border: 2px solid #E91E81; border-radius: 18px; background: white; color: #2D3E94; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .filter-btn.active { background: #E91E81; color: white; }
+.count-pill { background: #FFD700; color: #2D3E94; border-radius: 999px; padding: 1px 7px; font-size: 0.75rem; font-weight: 700; }
 .loading-state, .empty-state { padding: 30px; background: #FDF6EC; border-radius: 10px; color: #666; text-align: center; }
 .users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
 .user-card { background: white; border: 2px solid #E91E81; border-radius: 10px; padding: 16px; transition: all 0.3s ease; }
@@ -161,6 +206,7 @@ onMounted(() => { loadUsers(); });
 .progress-fill { height: 100%; transition: width 0.3s ease; }
 .action-area { padding-top: 10px; border-top: 1px solid #FFD700; }
 .approve-btn { width: 100%; padding: 10px; background: #FFD700; color: #2D3E94; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
-.approve-btn:hover { background: #FFC700; }
+.approve-btn:hover:not(:disabled) { background: #FFC700; }
+.approve-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 @media (max-width: 768px) { .users-grid { grid-template-columns: 1fr; } }
 </style>

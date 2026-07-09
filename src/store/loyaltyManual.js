@@ -6,6 +6,7 @@ export const NIVELES = [
 ];
 
 const STORAGE_PREFIX = 'patio-loyalty-';
+
 const buildStorageKey = (userId) => `${STORAGE_PREFIX}${userId}`;
 
 const normalizeReservas = (value) => {
@@ -14,19 +15,29 @@ const normalizeReservas = (value) => {
   return Math.max(0, Math.floor(parsed));
 };
 
-const getNivelByReservas = (reservas) => {
-  let nivel = NIVELES[0];
-  NIVELES.forEach((candidate) => {
-    if (reservas >= candidate.minReservas) nivel = candidate;
-  });
-  return nivel;
+const normalizeNivelIndex = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.min(Math.max(0, Math.floor(parsed)), NIVELES.length - 1);
 };
 
-const buildLoyaltyData = (reservas) => {
-  const totalReservas = normalizeReservas(reservas);
-  const nivel = getNivelByReservas(totalReservas);
-  const currentLevelIndex = NIVELES.findIndex((item) => item.nombre === nivel.nombre);
-  const nextLevel = NIVELES[currentLevelIndex + 1] || null;
+// El nivel MÁXIMO al que un usuario podría aspirar según sus reservas.
+// Ya no se usa para asignar el nivel directamente: solo sirve para saber
+// hasta dónde tiene derecho a que el admin lo apruebe.
+const getNivelElegibleIndex = (reservas) => {
+  let index = 0;
+  NIVELES.forEach((candidate, i) => {
+    if (reservas >= candidate.minReservas) index = i;
+  });
+  return index;
+};
+
+const buildLoyaltyData = (state) => {
+  const totalReservas = normalizeReservas(state.reservas);
+  const nivelAprobadoIndex = normalizeNivelIndex(state.nivelAprobadoIndex);
+  const nivel = NIVELES[nivelAprobadoIndex];
+  const nextLevel = NIVELES[nivelAprobadoIndex + 1] || null;
+  const nivelElegibleIndex = getNivelElegibleIndex(totalReservas);
 
   return {
     reservas: totalReservas,
@@ -34,39 +45,84 @@ const buildLoyaltyData = (reservas) => {
     descuento: nivel.descuento,
     proximoNivel: nextLevel ? nextLevel.nombre : 'Máximo nivel',
     descuentoProximo: nextLevel ? nextLevel.descuento : 0,
-    reservasParaProximo: nextLevel ? Math.max(0, nextLevel.minReservas - totalReservas) : 0,
-    cumpleCondiciones: Boolean(nextLevel) && totalReservas >= nextLevel.minReservas,
+    reservasParaProximo: nextLevel
+      ? Math.max(0, nextLevel.minReservas - totalReservas)
+      : 0,
+    // true SOLO si el usuario ya juntó suficientes reservas para el
+    // siguiente nivel, pero el admin todavía no lo aprobó.
+    cumpleCondiciones: Boolean(nextLevel) && nivelElegibleIndex > nivelAprobadoIndex,
   };
 };
 
-const readLoyaltyReservas = (userId) => {
-  if (!userId) return 0;
+const readLoyaltyState = (userId) => {
+  if (!userId) return { reservas: 0, nivelAprobadoIndex: 0 };
+
   try {
     const raw = localStorage.getItem(buildStorageKey(userId));
-    if (!raw) return 0;
+    if (!raw) return { reservas: 0, nivelAprobadoIndex: 0 };
+
     const parsed = JSON.parse(raw);
-    if (typeof parsed === 'number') return normalizeReservas(parsed);
-    return normalizeReservas(parsed?.reservas);
-  } catch { return 0; }
+
+    // Compatibilidad con el formato viejo, donde solo se guardaba un número
+    // o un objeto { reservas } sin nivelAprobadoIndex.
+    if (typeof parsed === 'number') {
+      return { reservas: normalizeReservas(parsed), nivelAprobadoIndex: 0 };
+    }
+
+    return {
+      reservas: normalizeReservas(parsed?.reservas),
+      nivelAprobadoIndex: normalizeNivelIndex(parsed?.nivelAprobadoIndex ?? 0),
+    };
+  } catch {
+    return { reservas: 0, nivelAprobadoIndex: 0 };
+  }
 };
 
-const saveLoyaltyReservas = (userId, reservas) => {
+const saveLoyaltyState = (userId, state) => {
   if (!userId) return;
-  localStorage.setItem(buildStorageKey(userId), JSON.stringify({ reservas: normalizeReservas(reservas) }));
+  localStorage.setItem(
+    buildStorageKey(userId),
+    JSON.stringify({
+      reservas: normalizeReservas(state.reservas),
+      nivelAprobadoIndex: normalizeNivelIndex(state.nivelAprobadoIndex),
+    }),
+  );
 };
 
 export function useLoyaltyManual() {
-  const getLoyaltyData = (userId) => buildLoyaltyData(readLoyaltyReservas(userId));
+  const getLoyaltyData = (userId) => buildLoyaltyData(readLoyaltyState(userId));
+
   const addReserva = (userId) => {
-    const current = readLoyaltyReservas(userId);
-    const updated = current + 1;
-    saveLoyaltyReservas(userId, updated);
+    const state = readLoyaltyState(userId);
+    const updated = { ...state, reservas: state.reservas + 1 };
+    saveLoyaltyState(userId, updated);
     return buildLoyaltyData(updated);
   };
+
+  // Sube el nivel aprobado en UNO, solo si el usuario ya tiene reservas
+  // suficientes para justificarlo. Devuelve los datos actualizados, o los
+  // datos sin cambios si no era elegible (protección extra por si el
+  // botón se llega a mostrar en un estado inconsistente).
+  const approveNivel = (userId) => {
+    const state = readLoyaltyState(userId);
+    const nivelElegibleIndex = getNivelElegibleIndex(state.reservas);
+
+    if (nivelElegibleIndex <= state.nivelAprobadoIndex) {
+      return buildLoyaltyData(state);
+    }
+
+    const updated = { ...state, nivelAprobadoIndex: state.nivelAprobadoIndex + 1 };
+    saveLoyaltyState(userId, updated);
+    return buildLoyaltyData(updated);
+  };
+
   const getDescuento = (userId) => getLoyaltyData(userId).descuento;
 
-  // Se expone NIVELES también aquí para que los componentes puedan
-  // desestructurarlo directamente desde useLoyaltyManual() si lo prefieren,
-  // sin depender de un import nombrado aparte.
-  return { getLoyaltyData, addReserva, getDescuento, NIVELES };
+  return {
+    getLoyaltyData,
+    addReserva,
+    approveNivel,
+    getDescuento,
+    NIVELES,
+  };
 }
