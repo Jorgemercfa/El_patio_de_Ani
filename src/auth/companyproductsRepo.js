@@ -10,7 +10,6 @@ import {
   query,
   updateDoc,
 } from 'firebase/firestore';
-import productsSeed from '@/data/product';
 import { db, isFirebaseConfigured } from '@/firebase';
 
 const PRODUCTS_COLLECTION = 'products';
@@ -42,20 +41,12 @@ function normalizeProduct(product, docId = '') {
     options: Array.isArray(product?.options)
       ? product.options.filter((item) => typeof item === 'string' && item.trim() !== '')
       : [],
-    // ─── Array de fotos adicionales ───────────────────────────
     images: Array.isArray(product?.images)
       ? product.images.filter((url) => typeof url === 'string' && url.trim() !== '')
       : [],
-    // ─────────────────────────────────────────────────────────
-    // ─── NUEVO: segunda subcategoría (opcional) ──────────────
     subcategory2: product?.subcategory2 || '',
-    // ─────────────────────────────────────────────────────────
     _docId: docId || product?._docId || '',
   };
-}
-
-function normalizeSeedProducts() {
-  return sortProducts(productsSeed.map((item) => normalizeProduct(item)));
 }
 
 function sanitizeProductPayload(productInput) {
@@ -67,24 +58,16 @@ function sanitizeProductPayload(productInput) {
     price: Number(productInput?.price || 0),
     category: String(productInput?.category || '').trim(),
     subcategory: String(productInput?.subcategory || '').trim(),
-    // ─── NUEVO: segunda subcategoría (opcional) ──────────────
     subcategory2: String(productInput?.subcategory2 || '').trim(),
-    // ─────────────────────────────────────────────────────────
     duration: String(productInput?.duration || '').trim(),
     age_range: String(productInput?.age_range || '').trim(),
     dimensions: String(productInput?.dimensions || '').trim(),
     options: Array.isArray(productInput?.options)
-      ? productInput.options
-          .map((item) => String(item || '').trim())
-          .filter(Boolean)
+      ? productInput.options.map((item) => String(item || '').trim()).filter(Boolean)
       : [],
-    // ─── Array de fotos adicionales ───────────────────────────
     images: Array.isArray(productInput?.images)
-      ? productInput.images
-          .map((url) => String(url || '').trim())
-          .filter(Boolean)
+      ? productInput.images.map((url) => String(url || '').trim()).filter(Boolean)
       : [],
-    // ─────────────────────────────────────────────────────────
     Terms_of_use: String(productInput?.Terms_of_use || '').trim(),
     buy_button: String(productInput?.buy_button || '').trim(),
     details_button: String(productInput?.details_button || '').trim(),
@@ -95,12 +78,9 @@ function sanitizeProductPayload(productInput) {
   };
 }
 
-// Constante de control — false = leer siempre desde Firestore
-const USE_SEED_FALLBACK = false;
-
 function ensureLocalFallbackLoaded() {
   if (!hasLoadedState.value) {
-    productsState.value = USE_SEED_FALLBACK ? normalizeSeedProducts() : [];
+    productsState.value = [];
     hasLoadedState.value = true;
   }
 
@@ -259,18 +239,11 @@ export async function updateCompanyproduct(id, data) {
 export async function resetCompanyproductToSeed(id) {
   if (!isFirebaseConfigured || !db) {
     if (id === undefined || id === null) {
-      productsState.value = normalizeSeedProducts();
+      productsState.value = [];
       hasLoadedState.value = true;
       return;
     }
 
-    const normalizedId = Number(id);
-    productsState.value = productsState.value.map((product) => {
-      if (product.id !== normalizedId) return product;
-      const seedProduct = productsSeed.find((item) => Number(item?.id) === normalizedId);
-      return seedProduct ? normalizeProduct(seedProduct, product._docId) : product;
-    });
-    productsState.value = sortProducts(productsState.value);
     return;
   }
 
