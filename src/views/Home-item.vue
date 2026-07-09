@@ -262,7 +262,7 @@ const tarifas = [
         ></span>
       </div>
       <div class="pet-area">
-         <img src="@/assets/rhinoceros.jpeg" alt="Mascota" />
+         <img src="@/assets/transparent_pet_logo.png" class="pet-logo" alt="Mascota" />
       </div>
     </div>
 
@@ -784,6 +784,13 @@ const tarifas = [
   z-index: 15;
 }
 
+@media (max-width: 768px) {
+  .pet-area{
+    width: 40px;
+    height: 30px;
+  }
+}
+
 .fade-video-enter-active,
 .fade-video-leave-active {
   transition: opacity 0.6s ease-in-out;
@@ -795,7 +802,6 @@ const tarifas = [
 .fade-video-enter-from,
 .fade-video-leave-to { opacity: 0; }
 
-/* ===== INTRO + MASCOTA ===== */
 .intro-section {
   display: flex;
   align-items: center;
