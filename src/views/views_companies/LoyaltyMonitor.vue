@@ -9,8 +9,10 @@ const loadingUsers = ref(false);
 const searchQuery = ref('');
 const filterStatus = ref('todos');
 const approvingUserId = ref(null);
+const editingUserId = ref(null);
+const editingValue = ref(0);
 
-const { getLoyaltyData, approveNivel } = useLoyaltyManual();
+const { getLoyaltyData, approveNivel, setReservas } = useLoyaltyManual();
 
 // Se incrementa cada vez que se aprueba un ascenso, para forzar a
 // processedUsers a recalcular (getLoyaltyData lee de localStorage,
@@ -60,6 +62,22 @@ const loadUsers = async () => {
   } finally {
     loadingUsers.value = false;
   }
+};
+
+const startEditReservas = (user) => {
+  editingUserId.value = user.uid;
+  editingValue.value = user.loyalty.reservas;
+};
+
+const cancelEditReservas = () => {
+  editingUserId.value = null;
+};
+
+const saveEditReservas = (user) => {
+  const nuevoTotal = Math.max(0, Math.floor(Number(editingValue.value) || 0));
+  setReservas(user.uid, nuevoTotal);
+  editingUserId.value = null;
+  refreshKey.value += 1;
 };
 
 const handleApprove = (user) => {
@@ -133,10 +151,28 @@ onMounted(() => { loadUsers(); });
             </div>
             <div class="level-box">
               <p class="label">Reservas</p>
-              <p class="reservas-count">{{ user.loyalty.reservas }}</p>
-              <p v-if="user.loyalty.proximoNivel !== 'Máximo nivel'" class="faltantes">
-                {{ user.loyalty.reservasParaProximo > 0 ? `Faltan ${user.loyalty.reservasParaProximo}` : 'Listo para ascender' }}
-              </p>
+              <template v-if="editingUserId === user.uid">
+                <input
+                  v-model.number="editingValue"
+                  type="number"
+                  min="0"
+                  class="reservas-input"
+                  @keyup.enter="saveEditReservas(user)"
+                  @keyup.esc="cancelEditReservas"
+                />
+                <div class="edit-actions">
+                  <button type="button" class="edit-save" @click="saveEditReservas(user)">Guardar</button>
+                  <button type="button" class="edit-cancel" @click="cancelEditReservas">Cancelar</button>
+                </div>
+              </template>
+              <template v-else>
+                <p class="reservas-count reservas-editable" title="Clic para ajustar manualmente" @click="startEditReservas(user)">
+                  {{ user.loyalty.reservas }} <span class="edit-icon">✎</span>
+                </p>
+                <p v-if="user.loyalty.proximoNivel !== 'Máximo nivel'" class="faltantes">
+                  {{ user.loyalty.reservasParaProximo > 0 ? `Faltan ${user.loyalty.reservasParaProximo}` : 'Listo para ascender' }}
+                </p>
+              </template>
             </div>
             <div v-if="user.loyalty.proximoNivel !== 'Máximo nivel'" class="level-box">
               <p class="label">Próximo</p>
@@ -200,6 +236,14 @@ onMounted(() => { loadUsers(); });
 .badge-vip { background: rgba(155, 89, 182, 0.15); color: #6c3483; }
 .discount { margin: 4px 0 0; font-size: 0.85rem; color: #2D3E94; font-weight: 600; }
 .reservas-count { margin: 0; font-size: 1.2rem; font-weight: 700; color: #E91E81; }
+.reservas-editable { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.edit-icon { font-size: 0.7rem; opacity: 0.5; }
+.reservas-editable:hover .edit-icon { opacity: 1; }
+.reservas-input { width: 70px; padding: 4px 6px; border: 2px solid #2D3E94; border-radius: 4px; font-size: 1rem; font-weight: 700; color: #E91E81; }
+.edit-actions { display: flex; gap: 6px; margin-top: 6px; }
+.edit-save, .edit-cancel { padding: 4px 8px; border-radius: 4px; border: none; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+.edit-save { background: #2D3E94; color: white; }
+.edit-cancel { background: #eee; color: #666; }
 .faltantes { margin: 4px 0 0; font-size: 0.8rem; color: #666; }
 .progress-section { margin-bottom: 10px; }
 .progress-bar { width: 100%; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }

@@ -99,6 +99,17 @@ export function useLoyaltyManual() {
     return buildLoyaltyData(updated);
   };
 
+  // Ajuste manual del contador de reservas. Pensado para sumar (o corregir)
+  // reservas que llegaron solo por mensajería y nunca generaron un pedido
+  // dentro de la app, por lo que el conteo automático no las capturó.
+  // Recibe el NUEVO total, no un incremento.
+  const setReservas = (userId, nuevoTotal) => {
+    const state = readLoyaltyState(userId);
+    const updated = { ...state, reservas: normalizeReservas(nuevoTotal) };
+    saveLoyaltyState(userId, updated);
+    return buildLoyaltyData(updated);
+  };
+
   // Sube el nivel aprobado en UNO, solo si el usuario ya tiene reservas
   // suficientes para justificarlo. Devuelve los datos actualizados, o los
   // datos sin cambios si no era elegible (protección extra por si el
@@ -121,6 +132,7 @@ export function useLoyaltyManual() {
   return {
     getLoyaltyData,
     addReserva,
+    setReservas,
     approveNivel,
     getDescuento,
     NIVELES,
