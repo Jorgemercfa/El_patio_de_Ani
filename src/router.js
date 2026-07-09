@@ -32,6 +32,7 @@ const EditServiceItem = () => import('./views/views_companies/Edit-service-item.
 const OrdersCompanies = () => import('./views/views_companies/Orders-companies.vue');
 const PromotionsCompanies = () => import('./views/views_companies/Promotions-admin.vue');
 const CompanyProfile = () => import('./views/views_companies/Company-profile-companies.vue');
+const LoyaltyProgram = () => import('./views/views_companies/LoyaltyMonitor.vue');
 import { useSession } from './auth/session';
 import { useSessionCompany } from './auth/session_companies';
 
@@ -174,6 +175,12 @@ const routes = [
     path: '/Company-profile',
     name: 'CompanyProfile',
     component: CompanyProfile,
+    meta: { requiresCompanyAuth: true },
+  },
+  {
+    path: '/Loyalty-program',
+    name: 'LoyaltyProgram',
+    component: LoyaltyProgram,
     meta: { requiresCompanyAuth: true },
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
