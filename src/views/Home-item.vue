@@ -1070,6 +1070,41 @@ const tarifas = [
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* --- Mobile --- */
+@media (max-width: 600px) {
+  .beneficios-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0 16px;
+    margin: 0 auto 20px;
+  }
+
+  .beneficio-card {
+    padding: 14px 16px;
+    border-radius: 14px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    text-align: left;
+  }
+
+  .beneficio-card img,
+  .beneficio-card svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .beneficio-card h3 {
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .beneficio-card p {
+    font-size: 13px;
+    margin: 0;
+  }
+}
+
 .beneficio-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,0,0,0.08); }
 .beneficio-card-plata { border-top-color: #9CA3AF; }
 .beneficio-card-oro   { border-top-color: #FFD200; }
