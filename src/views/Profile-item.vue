@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
 import { useCart } from '@/store/cart.js';
-import { NIVELES, useLoyalty } from '@/store/loyalty';
+import { NIVELES, useLoyaltyManual } from '@/store/loyaltyManual';
 
 const router = useRouter();
 const route = useRoute();
@@ -19,7 +19,7 @@ const childrenErrorMessage = ref('');
 const profileNotice = ref('');
 const ORDER_ID_DISPLAY_LENGTH = 12;
 const { getPurchasedproducts } = useCart();
-const { getLoyaltyData } = useLoyalty();
+const { getLoyaltyData } = useLoyaltyManual();
 
 const purchasedproducts = computed(() =>
   state.user ? getPurchasedproducts(state.user.id) : [],
@@ -112,12 +112,10 @@ const upcomingBirthdays = computed(() => {
 
 const initials = computed(() => {
   const name = state.user?.name || '';
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('') || 'UA';
+  const lastname = state.user?.lastname || '';
+  const first = name.trim()[0] || '';
+  const second = lastname.trim()[0] || name.trim()[1] || '';
+  return `${first}${second}`.toUpperCase() || 'UA';
 });
 
 function formatDate(iso) {
@@ -231,6 +229,11 @@ onBeforeUnmount(() => {
             <div class="form-group">
               <label>Nombre</label>
               <input :value="state.user?.name" disabled />
+            </div>
+
+            <div class="form-group">
+              <label>Apellido</label>
+              <input :value="state.user?.lastname" disabled />
             </div>
 
             <div class="form-group">

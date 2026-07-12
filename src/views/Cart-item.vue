@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useCart } from '@/store/cart.js';
 import { useSession } from '@/auth/session';
-import { useLoyalty } from '@/store/loyalty';
+import { useLoyaltyManual } from '@/store/loyaltyManual';
 
 const MAX_QUANTITY_PER_SNACK = 10;
 const WHATSAPP_PHONE = '51975495623';
@@ -13,7 +13,7 @@ const SNACK_CATEGORY = 'Carritos Snacks';
 const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, updateReservationDate, checkout } =
   useCart();
 const { state: sessionState } = useSession();
-const { getLoyaltyData, getDescuento, addReserva } = useLoyalty();
+const { getLoyaltyData, getDescuento, addReserva } = useLoyaltyManual();
 
 const loyaltyData = computed(() =>
   sessionState.user ? getLoyaltyData(sessionState.user.id) : getLoyaltyData(null),
