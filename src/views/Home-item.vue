@@ -9,55 +9,67 @@ import { fetchGlobalReviews } from '@/auth/reviewServicesRepo';
 const { isAuthenticated, state } = useSession();
 const router = useRouter();
 
+
 /* =============================
    POPUP DE BIENVENIDA
 ============================= */
 const showWelcomePopup = ref(false);
 const WELCOME_POPUP_SESSION_KEY = 'welcomePopupShown';
 
+
 const closeWelcomePopup = () => {
   showWelcomePopup.value = false;
 };
+
 
 const goToProfileFromPopup = () => {
   showWelcomePopup.value = false;
   router.push('/Profile');
 };
 
+
 /* =============================
    CARRUSEL PRINCIPAL DE VIDEOS (LOCALES)
 ============================= */
 
+
 const videos = [
-  new URL('@/assets/videos/video1.mp4', import.meta.url).href, 
-  new URL('@/assets/videos/video2.mp4', import.meta.url).href, 
-  new URL('@/assets/videos/video3.mp4', import.meta.url).href, 
-  new URL('@/assets/videos/video4.mp4', import.meta.url).href, 
+  new URL('@/assets/videos/video1.mp4', import.meta.url).href,
+  new URL('@/assets/videos/video2.mp4', import.meta.url).href,
+  new URL('@/assets/videos/video3.mp4', import.meta.url).href,
+  new URL('@/assets/videos/video4.mp4', import.meta.url).href,
   new URL('@/assets/videos/video5.mp4', import.meta.url).href
 ];
 const VIDEO_AUTO_ADVANCE_INTERVAL = 20000;
 const VIDEO_ENDED_DELAY = 1000;
+
 
 const currentVideoIndex = ref(0);
 const totalVideos = videos.length;
 const videoIntervalId = ref(null);
 const videoRef = ref(null);
 const videoEndedTimeout = ref(null);
+const mainWrapperRef = ref(null);
+
 
 const currentVideoSrc = computed(() => videos[currentVideoIndex.value]);
+
 
 const nextVideo = () => {
   currentVideoIndex.value = (currentVideoIndex.value + 1) % totalVideos;
 };
+
 
 const goToVideo = (index) => {
   currentVideoIndex.value = index;
   restartVideoTimer();
 };
 
+
 const startVideoTimer = () => {
   videoIntervalId.value = setInterval(nextVideo, VIDEO_AUTO_ADVANCE_INTERVAL);
 };
+
 
 const stopVideoTimer = () => {
   if (videoIntervalId.value) {
@@ -66,10 +78,12 @@ const stopVideoTimer = () => {
   }
 };
 
+
 const restartVideoTimer = () => {
   stopVideoTimer();
   startVideoTimer();
 };
+
 
 const onVideoEnded = () => {
   clearTimeout(videoEndedTimeout.value);
@@ -79,6 +93,44 @@ const onVideoEnded = () => {
   }, VIDEO_ENDED_DELAY);
 };
 
+
+/* =============================
+   ZOOM DINÁMICO DEL VIDEO PRINCIPAL
+   Calcula, para cada video segun su proporcion real,
+   cuanto "cover" moderado aplicar sin recortar de mas.
+============================= */
+const ZOOM_CAP = 1.9; // tope maximo de recorte permitido, calibrado para el contenedor de 80vh
+
+
+const applyModerateZoom = (event) => {
+  const videoEl = event.target;
+  const wrapperEl = mainWrapperRef.value;
+  if (!wrapperEl || !videoEl.videoWidth || !videoEl.videoHeight) return;
+
+
+  const vw = videoEl.videoWidth;
+  const vh = videoEl.videoHeight;
+  const cw = wrapperEl.clientWidth;
+  const ch = wrapperEl.clientHeight;
+
+
+  const containScale = Math.min(cw / vw, ch / vh);
+  const coverScale = Math.max(cw / vw, ch / vh);
+  const fullCoverZoom = coverScale / containScale;
+
+
+  const zoom = Math.min(fullCoverZoom, ZOOM_CAP);
+
+
+  videoEl.style.setProperty('--video-zoom', zoom.toFixed(3));
+};
+
+
+const recalcZoomOnResize = () => {
+  if (videoRef.value) applyModerateZoom({ target: videoRef.value });
+};
+
+
 /* =============================
    HELPERS
 ============================= */
@@ -87,10 +139,12 @@ const getProductName = (product) => product.name ?? 'Producto sin nombre';
 const getProductCategory = (product) => product.category ?? '';
 const getProductImage = (product) => product.image ?? '';
 
+
 /* =============================
    CARRUSEL PRODUCTOS (HORIZONTAL)
 ============================= */
 const productsTrackRef = ref(null);
+
 
 const scrollproductsBy = (direction) => {
   const el = productsTrackRef.value;
@@ -100,26 +154,32 @@ const scrollproductsBy = (direction) => {
   el.scrollBy({ left: direction * (cardWidth + 20), behavior: 'smooth' });
 };
 
+
 const scrollproductsLeft = () => scrollproductsBy(-1);
 const scrollproductsRight = () => scrollproductsBy(1);
+
 
 /* =============================
    FILTRO POR CATEGORÍA
 ============================= */
 const products = computed(() => getCompanyproducts());
 
+
 const restaurantproducts = computed(() =>
   products.value.filter((c) => c.category === 'Shows Infantiles'),
 );
+
 
 const restaurantproducts2 = computed(() =>
   products.value.filter((c) => c.category === 'Inflables' || c.category === 'Juegos'),
 );
 
+
 /* =============================
    CARRUSEL SHOWS (scroll)
 ============================= */
 const restaurantTrackRef = ref(null);
+
 
 const scrollRestaurantsBy = (direction) => {
   const el = restaurantTrackRef.value;
@@ -129,13 +189,16 @@ const scrollRestaurantsBy = (direction) => {
   el.scrollBy({ left: direction * (cardWidth + 20), behavior: 'smooth' });
 };
 
+
 const scrollRestaurantsLeft = () => scrollRestaurantsBy(-1);
 const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
+
 
 /* =============================
    CARRUSEL Inflables y Juegos (scroll)
 ============================= */
 const restaurantTrackRef2 = ref(null);
+
 
 const scrollRestaurantsBy2 = (direction) => {
   const el = restaurantTrackRef2.value;
@@ -145,8 +208,10 @@ const scrollRestaurantsBy2 = (direction) => {
   el.scrollBy({ left: direction * (cardWidth + 20), behavior: 'smooth' });
 };
 
+
 const scrollRestaurantsLeft2 = () => scrollRestaurantsBy2(-1);
 const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
+
 
 /* =============================
    CARRUSEL TESTIMONIOS (scroll)
@@ -154,11 +219,13 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 const reviewsTrackRef = ref(null);
 const reviews = ref([]);
 
+
 const scrollReviewsLeft = () => {
   if (reviewsTrackRef.value) {
     reviewsTrackRef.value.scrollBy({ left: -320, behavior: 'smooth' });
   }
 };
+
 
 const scrollReviewsRight = () => {
   if (reviewsTrackRef.value) {
@@ -166,10 +233,13 @@ const scrollReviewsRight = () => {
   }
 };
 
+
 const formatDate = (date) => {
   if (!date) return '';
   return new Intl.DateTimeFormat('es-PE', { year: 'numeric', month: 'short' }).format(date);
 };
+
+
 
 
 /* =============================
@@ -179,6 +249,7 @@ onMounted(async () => {
   await fetchCompanyproducts();
   startVideoTimer();
   reviews.value = await fetchGlobalReviews();
+  window.addEventListener('resize', recalcZoomOnResize);
   if (isAuthenticated.value && state.user) {
     const alreadyShown = sessionStorage.getItem(WELCOME_POPUP_SESSION_KEY);
     if (!alreadyShown) {
@@ -188,10 +259,13 @@ onMounted(async () => {
   }
 });
 
+
 onBeforeUnmount(() => {
   stopVideoTimer();
   clearTimeout(videoEndedTimeout.value);
+  window.removeEventListener('resize', recalcZoomOnResize);
 });
+
 
 /* =============================
    TARIFAS DE MOVILIDAD
@@ -210,12 +284,15 @@ const tarifas = [
 ];
 </script>
 
+
 <template>
   <header>
     <Navbar />
   </header>
 
+
   <div class="home-area">
+
 
     <!-- ===== CARRUSEL PRINCIPAL DE VIDEOS LOCALES ===== -->
     <div class="main-video-carousel">
@@ -223,35 +300,46 @@ const tarifas = [
         <h1 class="main-video-title">Productora de eventos infantiles</h1>
       </div>
 
-      <div class="main-video-wrapper">
+
+      <div class="main-video-wrapper" ref="mainWrapperRef">
         <transition name="fade-video">
-          <video
-            v-if="currentVideoIndex % 2 === 0"
-            ref="videoRef"
-            :src="currentVideoSrc"
-            class="main-video-player"
-            autoplay
-            muted
-            playsinline
-            preload="auto"
-            @ended="onVideoEnded"
-          ></video>
+          <div v-if="currentVideoIndex % 2 === 0" class="video-layer-group">
+            <video
+              class="main-video-bg"
+              :src="currentVideoSrc"
+              autoplay muted playsinline preload="auto"
+            ></video>
+            <video
+              ref="videoRef"
+              :src="currentVideoSrc"
+              class="main-video-player"
+              autoplay muted playsinline preload="auto"
+              @ended="onVideoEnded"
+              @loadedmetadata="applyModerateZoom"
+            ></video>
+          </div>
         </transition>
 
+
         <transition name="fade-video">
-          <video
-            v-if="currentVideoIndex % 2 !== 0"
-            ref="videoRef"
-            :src="currentVideoSrc"
-            class="main-video-player"
-            autoplay
-            muted
-            playsinline
-            preload="auto"
-            @ended="onVideoEnded"
-          ></video>
+          <div v-if="currentVideoIndex % 2 !== 0" class="video-layer-group">
+            <video
+              class="main-video-bg"
+              :src="currentVideoSrc"
+              autoplay muted playsinline preload="auto"
+            ></video>
+            <video
+              ref="videoRef"
+              :src="currentVideoSrc"
+              class="main-video-player"
+              autoplay muted playsinline preload="auto"
+              @ended="onVideoEnded"
+              @loadedmetadata="applyModerateZoom"
+            ></video>
+          </div>
         </transition>
       </div>
+
 
       <div class="main-video-dots">
         <span
@@ -266,12 +354,14 @@ const tarifas = [
       </div>
     </div>
 
+
     <!-- Wave divider -->
     <div class="wave-divider">
       <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
         <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#FDF6EC"/>
       </svg>
     </div>
+
 
     <!-- ===== BIENVENIDA PERSONALIZADA ===== -->
     <!-- ===== POPUP DE BIENVENIDA ===== -->
@@ -298,6 +388,7 @@ const tarifas = [
   </div>
 </transition>
 
+
     <!-- ===== INTRO + MASCOTA ===== -->
     <div class="intro-section">
       <p class="text-home">
@@ -305,9 +396,11 @@ const tarifas = [
       </p>
     </div>
 
+
     <div class="proms-area">
       <button @click="$router.push('/Promotions-item')" class="prom-access-button">Promociones</button>
     </div>
+
 
     <!-- ===== HERO SECTION ===== -->
     <section class="hero-section">
@@ -333,17 +426,20 @@ const tarifas = [
       </div>
     </section>
 
+
     <div class="wave-divider-hero">
       <svg viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
         <path d="M0,30 C480,60 960,0 1440,30 L1440,60 L0,60 Z" fill="#FDF6EC"/>
       </svg>
     </div>
 
+
     <!-- ===== BENEFICIOS DE TENER CUENTA ===== -->
     <section v-if="!isAuthenticated" class="beneficios-section">
       <div class="movilidad-badge">CREA TU CUENTA</div>
       <h2 class="title-home">Ahorra hasta 50% en cada evento 🎁</h2>
       <p class="movilidad-subtitle">Acumula reservas y sube de nivel automáticamente, sin costo</p>
+
 
       <div class="beneficios-grid">
         <div class="beneficio-card beneficio-card-plata">
@@ -363,11 +459,14 @@ const tarifas = [
         </div>
       </div>
 
+
       <router-link to="/Sign-in" class="beneficios-cta-btn">Crear cuenta gratis</router-link>
     </section>
 
+
     <!-- ===== NUESTROS SERVICIOS ===== -->
     <h1 class="title-home">Nuestros Servicios</h1>
+
 
     <div class="services-grid">
       <router-link :to="{ path: '/Product-item', query: { category: 'Shows Infantiles' } }" class="service-card service-card-shows">
@@ -397,7 +496,9 @@ const tarifas = [
       </router-link>
     </div>
 
+
     <h1 class="title-home">Más populares</h1>
+
 
     <div class="our-products-wrapper">
       <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollproductsLeft">‹</button>
@@ -420,7 +521,9 @@ const tarifas = [
       <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollproductsRight">›</button>
     </div>
 
+
     <h1 class="title-home">Shows</h1>
+
 
     <div class="our-products-wrapper">
       <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollRestaurantsLeft">‹</button>
@@ -443,7 +546,9 @@ const tarifas = [
       <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollRestaurantsRight">›</button>
     </div>
 
+
     <h1 class="title-home">Inflables y Juegos</h1>
+
 
     <div class="our-products-wrapper">
       <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollRestaurantsLeft2">‹</button>
@@ -466,14 +571,16 @@ const tarifas = [
       <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollRestaurantsRight2">›</button>
     </div>
 
+
     <!-- Reviews carrusel -->
     <section class="reviews-section">
       <h2 class="section-title" style="text-align: center; font-size: 32px; font-weight: 800; color: #2D3E94; margin-bottom: 40px;">
         Lo que dicen nuestros clientes
       </h2>
-      
+     
       <div class="our-products-wrapper">
         <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollReviewsLeft">‹</button>
+
 
         <div class="our-products" ref="reviewsTrackRef">
           <div
@@ -492,14 +599,17 @@ const tarifas = [
             </div>
           </div>
 
+
           <div v-if="reviews.length === 0" class="empty-carousel">
             No hay testimonios todavía.
           </div>
         </div>
 
+
         <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollReviewsRight">›</button>
       </div>
     </section>
+
 
     <!-- ===== TARIFAS DE MOVILIDAD ===== -->
     <section class="movilidad-section">
@@ -519,12 +629,15 @@ const tarifas = [
       </div>
     </section>
 
+
   </div>
+
 
   <footer>
     <Footer />
   </footer>
 </template>
+
 
 <style>
 .main-video-carousel,
@@ -534,6 +647,7 @@ const tarifas = [
 .movilidad-section {
   font-family: 'Nunito', sans-serif;
 }
+
 
 /* ===== POPUP DE BIENVENIDA ===== */
 .welcome-popup-overlay {
@@ -548,6 +662,7 @@ const tarifas = [
   padding: 20px;
 }
 
+
 .welcome-popup-card {
   position: relative;
   background: #FFFFFF;
@@ -559,6 +674,7 @@ const tarifas = [
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   font-family: 'Nunito', sans-serif;
 }
+
 
 .welcome-popup-close {
   position: absolute;
@@ -578,16 +694,19 @@ const tarifas = [
   transition: background 0.2s ease;
 }
 
+
 .welcome-popup-close:hover {
   background: #ffe8f4;
   color: #E91E81;
 }
+
 
 .welcome-popup-icon {
   font-size: 3rem;
   display: block;
   margin-bottom: 12px;
 }
+
 
 .welcome-popup-title {
   font-size: 1.4rem;
@@ -597,9 +716,11 @@ const tarifas = [
   line-height: 1.35;
 }
 
+
 .welcome-popup-title strong {
   color: #E91E81;
 }
+
 
 .welcome-popup-subtitle {
   font-size: 0.95rem;
@@ -607,11 +728,13 @@ const tarifas = [
   margin: 0 0 28px;
 }
 
+
 .welcome-popup-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+
 
 .welcome-popup-profile-btn {
   padding: 14px;
@@ -626,9 +749,11 @@ const tarifas = [
   transition: transform 0.2s ease;
 }
 
+
 .welcome-popup-profile-btn:hover {
   transform: translateY(-2px);
 }
+
 
 .welcome-popup-dismiss-btn {
   padding: 12px;
@@ -641,9 +766,11 @@ const tarifas = [
   cursor: pointer;
 }
 
+
 .welcome-popup-dismiss-btn:hover {
   text-decoration: underline;
 }
+
 
 /* Transición del popup */
 .fade-popup-enter-active,
@@ -651,19 +778,23 @@ const tarifas = [
   transition: opacity 0.25s ease;
 }
 
+
 .fade-popup-enter-from,
 .fade-popup-leave-to {
   opacity: 0;
 }
+
 
 .fade-popup-enter-active .welcome-popup-card,
 .fade-popup-leave-active .welcome-popup-card {
   transition: transform 0.25s ease;
 }
 
+
 .fade-popup-enter-from .welcome-popup-card {
   transform: scale(0.92) translateY(10px);
 }
+
 
 @media (max-width: 480px) {
   .welcome-popup-card {
@@ -671,10 +802,12 @@ const tarifas = [
     border-radius: 24px;
   }
 
+
   .welcome-popup-title {
     font-size: 1.2rem;
   }
 }
+
 
 /* ===== CARRUSEL PRINCIPAL DE VIDEOS ===== */
 .main-video-carousel {
@@ -684,6 +817,7 @@ const tarifas = [
   background: #000;
   overflow: hidden;
 }
+
 
 .main-video-overlay {
   position: absolute;
@@ -695,6 +829,7 @@ const tarifas = [
   align-items: center;
 }
 
+
 .main-video-title {
   font-size: 48px;
   color: #ffffff;
@@ -705,6 +840,9 @@ const tarifas = [
   pointer-events: none;
 }
 
+
+/* Wrapper: le da altura real al bloque; sin esta regla base los videos
+   (que estan en position:absolute) no aportan altura y todo colapsa. */
 .main-video-wrapper {
   position: relative;
   width: 100%;
@@ -714,13 +852,61 @@ const tarifas = [
   overflow: hidden;
 }
 
-.main-video-player {
+
+.video-layer-group {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+
+
+/* Capa de fondo: mismo video, cover + blur, rellena los espacios
+   que deja el video principal sin recortar su contenido */
+.main-video-bg {
+  position: absolute;
+  top: 0; left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
-  display: block;
+  filter: blur(40px) brightness(0.55) saturate(1.3);
+  transform: scale(1.2);
+  z-index: 1;
 }
+
+
+/* Video principal: contain + zoom calculado dinamicamente por JS
+   segun la proporcion real de cada video (variable --video-zoom) */
+.main-video-player {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  z-index: 3;
+  transform: scale(var(--video-zoom, 1));
+  transform-origin: center;
+  transition: transform 0.3s ease;
+}
+
+
+/* Viñeta que disuelve el borde del video nitido hacia el fondo borroso */
+.video-layer-group::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(to right,
+      rgba(0,0,0,0.35) 0%,
+      rgba(0,0,0,0) 12%,
+      rgba(0,0,0,0) 88%,
+      rgba(0,0,0,0.35) 100%);
+}
+
 
 .main-video-nav {
   position: absolute;
@@ -741,14 +927,17 @@ const tarifas = [
   backdrop-filter: blur(4px);
 }
 
+
 .main-video-nav:hover {
   background: rgba(233,30,129,0.85);
   border-color: transparent;
   transform: translateY(-50%) scale(1.08);
 }
 
+
 .main-video-nav-left  { left: 16px; }
 .main-video-nav-right { right: 16px; }
+
 
 .main-video-dots {
   position: absolute;
@@ -761,6 +950,7 @@ const tarifas = [
   pointer-events: none;
 }
 
+
 .main-video-dots span {
   width: 12px; height: 12px;
   border-radius: 50%;
@@ -770,10 +960,12 @@ const tarifas = [
   pointer-events: all;
 }
 
+
 .main-video-dots .active {
   background: #FFD200;
   transform: scale(1.2);
 }
+
 
 .pet-area{
   position: absolute;
@@ -784,12 +976,14 @@ const tarifas = [
   z-index: 15;
 }
 
+
 @media (max-width: 768px) {
   .pet-area{
     width: 40px;
     height: 30px;
   }
 }
+
 
 .fade-video-enter-active,
 .fade-video-leave-active {
@@ -799,8 +993,10 @@ const tarifas = [
   width: 100%; height: 100%;
 }
 
+
 .fade-video-enter-from,
 .fade-video-leave-to { opacity: 0; }
+
 
 .intro-section {
   display: flex;
@@ -808,9 +1004,10 @@ const tarifas = [
   justify-content: center;
   gap: 48px;
   max-width: 1000px;
-  margin: 60px auto;
+  margin: 24px auto;
   padding: 0 24px;
 }
+
 
 .text-home {
   flex: 1;
@@ -822,10 +1019,12 @@ const tarifas = [
   color: #2D3E94;
 }
 
+
 @keyframes float-mascot {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
+
 
 /* ===== RESTO ===== */
 .title-home {
@@ -840,6 +1039,7 @@ const tarifas = [
   background-clip: text;
 }
 
+
 .title-home::after {
   content: '';
   width: 60px; height: 4px;
@@ -851,7 +1051,9 @@ const tarifas = [
   border-radius: 5px;
 }
 
+
 .proms-area { text-align: center; margin: 40px 0; }
+
 
 .prom-access-button {
   background: linear-gradient(135deg, #E91E81, #2D3E94);
@@ -865,12 +1067,14 @@ const tarifas = [
   transition: all 0.3s ease;
 }
 
+
 .our-products-wrapper {
   position: relative;
   width: 100%;
   padding: 40px 60px;
   overflow: visible;
 }
+
 
 .our-products {
   display: flex;
@@ -882,11 +1086,13 @@ const tarifas = [
   padding: 20px 0;
 }
 
+
 .our-products::-webkit-scrollbar { height: 8px; }
 .our-products::-webkit-scrollbar-thumb {
   background: rgba(233,30,129,0.3);
   border-radius: 10px;
 }
+
 
 .products-nav {
   position: absolute;
@@ -906,14 +1112,17 @@ const tarifas = [
   transition: all 0.3s ease;
 }
 
+
 .products-nav:hover {
   background: linear-gradient(135deg, #E91E81, #C2185B);
   color: #FFFFFF;
   border-color: transparent;
 }
 
+
 .products-nav-left  { left: 14px; }
 .products-nav-right { right: 14px; }
+
 
 .logs-item {
   scroll-snap-align: start;
@@ -934,10 +1143,12 @@ const tarifas = [
   transition: 0.25s;
 }
 
+
 .logs-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 32px rgba(0,0,0,0.14);
 }
+
 
 .card-icons {
   width: calc(100% - 20px);
@@ -951,6 +1162,7 @@ const tarifas = [
   z-index: 2;
 }
 
+
 .product-mini-info {
   display: flex;
   flex-direction: column;
@@ -960,12 +1172,14 @@ const tarifas = [
   padding-top: 8px;
 }
 
+
 .product-mini-title {
   font-size: 0.95rem;
   font-weight: 600;
   color: #2D3E94;
   margin-bottom: 4px;
 }
+
 
 .product-mini-category {
   font-size: 0.75rem;
@@ -977,11 +1191,13 @@ const tarifas = [
   display: inline-block;
 }
 
+
 .product-mini-price {
   font-weight: bold;
   color: #E91E81;
   font-size: 1rem;
 }
+
 
 .product-mini-badge {
   position: absolute;
@@ -997,6 +1213,7 @@ const tarifas = [
   box-shadow: 0 2px 8px rgba(255,152,0,0.35);
 }
 
+
 .wave-divider {
   position: relative;
   margin-top: -2px;
@@ -1004,7 +1221,9 @@ const tarifas = [
   background: #000;
 }
 
+
 .wave-divider svg { width: 100%; height: 80px; display: block; }
+
 
 .wave-divider-hero {
   margin-top: -2px;
@@ -1012,7 +1231,9 @@ const tarifas = [
   background: linear-gradient(135deg, #E91E81 0%, #7B2D8B 50%, #2D3E94 100%);
 }
 
+
 .wave-divider-hero svg { width: 100%; height: 60px; display: block; }
+
 
 /* ===== HERO SECTION ===== */
 .hero-section {
@@ -1022,7 +1243,9 @@ const tarifas = [
   color: #FFFFFF;
 }
 
+
 .hero-title { font-size: 2.4rem; font-weight: 800; margin: 0 0 16px; line-height: 1.2; }
+
 
 .hero-subtitle {
   font-size: 1.1rem;
@@ -1032,7 +1255,9 @@ const tarifas = [
   line-height: 1.6;
 }
 
+
 .hero-stats { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
+
 
 .hero-stat {
   display: flex;
@@ -1043,8 +1268,10 @@ const tarifas = [
   min-width: 110px;
 }
 
+
 .hero-stat-number { font-size: 2rem; font-weight: 800; color: #FFD200; line-height: 1; }
 .hero-stat-label { font-size: 0.9rem; opacity: 0.9; white-space: nowrap; }
+
 
 /* ===== BENEFICIOS DE CUENTA ===== */
 .beneficios-section {
@@ -1056,6 +1283,7 @@ const tarifas = [
   font-family: 'Nunito', sans-serif;
 }
 
+
 .beneficios-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1063,6 +1291,7 @@ const tarifas = [
   max-width: 760px;
   margin: 0 auto 32px;
 }
+
 
 .beneficio-card {
   background: #FDF6EC;
@@ -1076,6 +1305,7 @@ const tarifas = [
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+
 /* --- Mobile --- */
 @media (max-width: 600px) {
   .beneficios-grid {
@@ -1084,6 +1314,7 @@ const tarifas = [
     padding: 0 16px;
     margin: 0 auto 20px;
   }
+
 
   .beneficio-card {
     padding: 14px 16px;
@@ -1094,22 +1325,26 @@ const tarifas = [
     text-align: left;
   }
 
+
   .beneficio-card img,
   .beneficio-card svg {
     width: 32px;
     height: 32px;
   }
 
+
   .beneficio-card h3 {
     font-size: 14px;
     margin: 0;
   }
+
 
   .beneficio-card p {
     font-size: 13px;
     margin: 0;
   }
 }
+
 
 .beneficio-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,0,0,0.08); }
 .beneficio-card-plata { border-top-color: #9CA3AF; }
@@ -1118,6 +1353,7 @@ const tarifas = [
 .beneficio-icon { font-size: 2.4rem; line-height: 1; }
 .beneficio-nivel { font-size: 1.05rem; font-weight: 800; color: #2D3E94; }
 .beneficio-descuento { font-size: 1.3rem; font-weight: 800; color: #E91E81; }
+
 
 .beneficios-cta-btn {
   display: inline-block;
@@ -1132,10 +1368,12 @@ const tarifas = [
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+
 .beneficios-cta-btn:hover {
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 10px 26px rgba(233,30,129,0.45);
 }
+
 
 /* ===== NUESTROS SERVICIOS ===== */
 .services-grid {
@@ -1144,6 +1382,7 @@ const tarifas = [
   gap: 24px;
   padding: 0 60px 40px;
 }
+
 
 .service-card {
   display: flex;
@@ -1160,6 +1399,7 @@ const tarifas = [
   cursor: pointer;
 }
 
+
 .service-card-shows   { background: #FFF9C4; }
 .service-card-games   { background: #E8F5E9; }
 .service-card-juegos  { background: #E3F2FD; }
@@ -1170,15 +1410,18 @@ const tarifas = [
   animation: shimmer-border 3s ease-in-out infinite;
 }
 
+
 @keyframes shimmer-border {
   0%, 100% { box-shadow: 0 2px 12px rgba(233,30,129,0.15); }
   50% { box-shadow: 0 2px 20px rgba(255,152,0,0.3); }
 }
 
+
 .service-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
 .service-icon { font-size: 2.8rem; line-height: 1; }
 .service-name { font-size: 1rem; font-weight: 700; margin: 0; text-align: center; }
 .service-desc { font-size: 0.82rem; margin: 0; text-align: center; opacity: 0.75; }
+
 
 /* ===== Reviews styles ===== */
 .review-card {
@@ -1195,7 +1438,9 @@ const tarifas = [
   color: inherit;
 }
 
+
 .review-stars { margin-bottom: 0.75rem; font-size: 0.9rem; }
+
 
 .review-text {
   font-size: 0.95rem;
@@ -1206,6 +1451,7 @@ const tarifas = [
   flex-grow: 1;
 }
 
+
 .review-meta {
   margin-top: auto;
   border-top: 1px solid #f0f0f0;
@@ -1215,9 +1461,11 @@ const tarifas = [
   align-items: center;
 }
 
+
 .review-author { font-weight: 600; color: #222222; }
 .review-date { font-size: 0.8rem; color: #999999; }
 .reviews-section { padding: 3rem 1rem; }
+
 
 .section-title {
   text-align: center;
@@ -1227,8 +1475,11 @@ const tarifas = [
 }
 
 
+
+
 /* ===== TARIFAS DE MOVILIDAD ===== */
 .movilidad-section { background: #ffffff; border-radius: 32px; margin: 0 40px 80px; padding: 60px; text-align: center; }
+
 
 .movilidad-badge {
   display: inline-block;
@@ -1243,7 +1494,9 @@ const tarifas = [
   margin-bottom: 8px;
 }
 
+
 .movilidad-subtitle { font-size: 0.95rem; color: #888; margin: 14px 0 36px; }
+
 
 .movilidad-grid {
   display: grid;
@@ -1252,6 +1505,7 @@ const tarifas = [
   max-width: 900px;
   margin: 0 auto;
 }
+
 
 .movilidad-card {
   background: white;
@@ -1266,19 +1520,24 @@ const tarifas = [
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+
 .movilidad-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(45,62,148,0.12); }
 .movilidad-distrito { font-weight: 600; color: #2D3E94; font-size: 0.9rem; margin: 0; flex: 1; }
 .movilidad-precio { font-size: 1.2rem; font-weight: 800; color: #E91E81; margin: 0; white-space: nowrap; margin-left: 12px; }
 .movilidad-nota { margin-top: 24px; font-size: 0.82rem; color: #aaa; }
 
+
 .faq-cta { margin-top: 18px; font-size: 0.95rem; color: #2D3E94; }
 .faq-cta a { color: #E91E81; font-weight: 700; text-decoration: none; }
 .faq-cta a:hover { text-decoration: underline; }
 
+
 .empty-carousel { padding: 40px 20px; color: #2D3E94; opacity: 0.5; font-size: 0.95rem; }
+
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) { .services-grid { grid-template-columns: repeat(3, 1fr); } }
+
 
 @media (max-width: 900px) {
   .services-grid { grid-template-columns: repeat(2, 1fr); padding: 0 30px 40px; }
@@ -1289,6 +1548,7 @@ const tarifas = [
   .beneficios-section { margin: 0 30px; padding: 44px 24px; }
   .intro-section { gap: 28px; }
 }
+
 
 @media (max-width: 768px) {
   .main-video-wrapper { height: 55vh; min-height: 280px; }
@@ -1307,12 +1567,15 @@ const tarifas = [
   .welcome-banner { border-radius: 20px; padding: 14px 20px; margin: 12px 20px 0; }
 }
 
+
 @media (max-width: 700px) {
   .our-products-wrapper { padding: 8px 10px; }
   .hero-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
+
 @media (max-width: 600px) { .services-grid { grid-template-columns: 1fr; } }
+
 
 @media (max-width: 480px) {
   .main-video-wrapper { height: 45vh; min-height: 220px; }
