@@ -10,6 +10,11 @@
 
       <!-- 2. LINKS (IZQUIERDA) -->
       <div class="link-style" :class="{ 'show-menu': menuOpen }">
+         
+        <div class="mobile-menu-logo">
+          <img src="@/assets/company-logo.png" alt="El Patio de Ani" />
+        </div>
+
         <router-link @click="closeMenu" to="/" class="text-navbar">Inicio</router-link>
         <router-link @click="closeMenu" to="/Product-item" class="text-navbar">Servicios</router-link>
         <router-link @click="closeMenu" to="/Contact-item" class="text-navbar">Contacto</router-link>
@@ -193,6 +198,28 @@ const { cartCount } = useCart();
     gap: 16px;
     padding: 80px 30px 30px;
   }
+
+  /* Logo dentro del menú móvil desplegado */
+  .mobile-menu-logo {
+    display: none; /* oculto por defecto; solo aparece cuando el menú está abierto */
+  }
+
+  .link-style.show-menu .mobile-menu-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .link-style.show-menu .mobile-menu-logo img {
+    height: 64px;
+    width: auto;
+    border-radius: 12px;
+    background: white;
+    padding: 6px;
+  }
+
+  /* ... el resto de tus reglas de .show-menu quedan igual ... */
+}
 
   /* --- BOTONES OUTLINE (fondo transparente, borde blanco) --- */
   .link-style.show-menu .text-navbar {
