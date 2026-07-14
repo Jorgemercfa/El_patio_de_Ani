@@ -2,7 +2,7 @@
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useRouter } from 'vue-router';
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
 import { fetchGlobalReviews } from '@/auth/reviewServicesRepo';
@@ -250,6 +250,24 @@ onMounted(async () => {
   startVideoTimer();
   reviews.value = await fetchGlobalReviews();
   window.addEventListener('resize', recalcZoomOnResize);
+  window.addEventListener('orientationchange', recalcZoomOnResize); // los móviles rotan pantalla, hay que recalcular el zoom
+
+
+  // Fallback contra una condición de carrera del PRIMER video: en algunos
+  // navegadores (sobre todo móviles, que precargan/cachean video de forma
+  // agresiva) el evento 'loadedmetadata' puede dispararse ANTES de que
+  // Vue termine de enlazar el listener @loadedmetadata en el <video>.
+  // Cuando eso pasa, el evento se pierde y --video-zoom se queda en su
+  // valor por defecto, mostrando el video chico y "flotando" con mucho
+  // blur alrededor. Aquí revisamos manualmente si el video ya tiene
+  // metadata disponible (readyState >= 1) y, si es así, aplicamos el
+  // zoom nosotros mismos en vez de esperar a un evento que ya pasó.
+  await nextTick();
+  if (videoRef.value && videoRef.value.readyState >= 1) {
+    applyModerateZoom({ target: videoRef.value });
+  }
+
+
   if (isAuthenticated.value && state.user) {
     const alreadyShown = sessionStorage.getItem(WELCOME_POPUP_SESSION_KEY);
     if (!alreadyShown) {
@@ -264,6 +282,7 @@ onBeforeUnmount(() => {
   stopVideoTimer();
   clearTimeout(videoEndedTimeout.value);
   window.removeEventListener('resize', recalcZoomOnResize);
+  window.removeEventListener('orientationchange', recalcZoomOnResize);
 });
 
 
@@ -398,7 +417,10 @@ const tarifas = [
 
 
     <div class="proms-area">
-      <button @click="$router.push('/Promotions-item')" class="prom-access-button">Promociones</button>
+      <button @click="$router.push('/Promotions-item')" class="prom-access-button">
+        <img src="@/assets/transparent_pet_logo.png" alt="" class="prom-rhino-icon" />
+        Promociones
+      </button>
     </div>
 
 
@@ -876,7 +898,9 @@ const tarifas = [
 
 
 /* Video principal: contain + zoom calculado dinamicamente por JS
-   segun la proporcion real de cada video (variable --video-zoom) */
+   segun la proporcion real de cada video (variable --video-zoom).
+   El valor por defecto (1.5) es un respaldo visual mientras el JS
+   calcula el zoom exacto, para que el primer frame no se vea "chico". */
 .main-video-player {
   position: relative;
   width: 100%;
@@ -885,7 +909,7 @@ const tarifas = [
   object-position: center;
   display: block;
   z-index: 3;
-  transform: scale(var(--video-zoom, 1));
+  transform: scale(var(--video-zoom, 1.5));
   transform-origin: center;
   transition: transform 0.3s ease;
 }
@@ -1056,6 +1080,9 @@ const tarifas = [
 
 
 .prom-access-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: linear-gradient(135deg, #E91E81, #2D3E94);
   color: white;
   border: none;
@@ -1065,6 +1092,22 @@ const tarifas = [
   border-radius: 25px;
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+
+/* Icono del rinoceronte, chiquito, con un balanceo suave e infinito
+   para llamar la atención sin distraer del texto del botón */
+.prom-rhino-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  animation: rhino-bounce 1.8s ease-in-out infinite;
+}
+
+
+@keyframes rhino-bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(-6deg); }
 }
 
 
@@ -1449,6 +1492,9 @@ const tarifas = [
   font-style: italic;
   margin: 0 0 1rem 0;
   flex-grow: 1;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 
 
