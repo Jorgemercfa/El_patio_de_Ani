@@ -218,9 +218,6 @@ const { cartCount } = useCart();
     padding: 6px;
   }
 
-  /* ... el resto de tus reglas de .show-menu quedan igual ... */
-}
-
   /* --- BOTONES OUTLINE (fondo transparente, borde blanco) --- */
   .link-style.show-menu .text-navbar {
     font-size: 1.1rem;
