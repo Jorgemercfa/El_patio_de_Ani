@@ -73,12 +73,35 @@ function snacksWithoutDate() {
 function buildWhatsAppMessage(items, total, totalWithDiscount, discount, discountAmt, loyalty) {
   // Recibe todos los valores como parámetros (snapshot) para evitar
   // que computed reactivos se lean DESPUÉS de que checkout() limpie el carrito
-  const lines = items.map((item) => {
-    let line = `- ${item.name} x${item.quantity}: S/ ${(getItemPrice(item) * item.quantity).toFixed(2)}`;
-    if (item.reservationDate) {
-      line += ` (Fecha: ${item.reservationDate})`;
+  const lines = items.flatMap((item) => {
+    const base = `- ${item.name} x${item.quantity}: S/ ${(getItemPrice(item) * item.quantity).toFixed(2)}`;
+    const dateLine = item.reservationDate ? ` (Fecha: ${item.reservationDate})` : '';
+    const itemLines = [base + dateLine];
+
+    // Si el item viene con el detalle completo del formulario de reserva
+    // (dirección, horario, suelo, agua, etc.), lo agregamos como líneas
+    // adicionales indentadas debajo del item correspondiente.
+    if (item.eventDetails) {
+      const d = item.eventDetails;
+      itemLines.push(
+        `   Responsable: ${d.responsable}`,
+        `   Dirección: ${d.direccion}, ${d.distrito}`,
+        `   Tipo de evento: ${d.tipoEvento}`,
+        `   Horario: ${d.horario}`,
+        `   Logística eléctrica: ${d.electrica}`,
+        `   Espacio: ${d.espacio} (${d.suelo})`,
+        `   Niños: ${d.invitados} (${d.edades})`,
+        `   Acceso: ${d.acceso}`,
+        `   Medidas: ${d.medida}${
+          d.telefonoMedida && d.telefonoMedida !== 'No indicado' ? ' - Tel: ' + d.telefonoMedida : ''
+        }`,
+      );
+      if (d.aguaConexion && d.aguaConexion !== 'No aplica') {
+        itemLines.push(`   Agua: ${d.aguaConexion} / Drenaje: ${d.aguaDrenaje}`);
+      }
     }
-    return line;
+
+    return itemLines;
   });
 
   const parts = [
@@ -190,6 +213,17 @@ function confirmReservation() {
                 <p class="item-price">
                   S/ {{ getItemPrice(item).toFixed(2) }}
                 </p>
+
+                <div v-if="item.eventDetails" class="event-details">
+                  <p><strong>📍</strong> {{ item.eventDetails.direccion }}, {{ item.eventDetails.distrito }}</p>
+                  <p><strong>🎉</strong> {{ item.eventDetails.tipoEvento }}</p>
+                  <p><strong>🕒</strong> {{ item.eventDetails.horario }}</p>
+                  <p><strong>📐</strong> {{ item.eventDetails.espacio }} — {{ item.eventDetails.suelo }}</p>
+                  <p><strong>👧</strong> {{ item.eventDetails.invitados }} ({{ item.eventDetails.edades }})</p>
+                  <p v-if="item.eventDetails.aguaConexion && item.eventDetails.aguaConexion !== 'No aplica'">
+                    <strong>💧</strong> {{ item.eventDetails.aguaConexion }}
+                  </p>
+                </div>
               </div>
 
               <div v-if="shouldShowQuantityControls(item)" class="cart-controls">
@@ -388,6 +422,26 @@ function confirmReservation() {
   font-size: 0.9rem;
   color: #E91E81;
   margin: 0;
+}
+
+.event-details {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.event-details p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #555;
+  line-height: 1.4;
+}
+
+.event-details strong {
+  margin-right: 2px;
 }
 
 .cart-controls {

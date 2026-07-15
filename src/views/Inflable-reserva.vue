@@ -427,7 +427,10 @@ function validateForm() {
 function submitReservation() {
   if (!validateForm() || !selectedProduct.value) return;
   saveReservationDate(form.value.eventDate);
-  addToCart(selectedProduct.value.id, form.value.eventDate);
+  // Se envía también reservationSummary.value como tercer argumento para que
+  // TODO el detalle del formulario (dirección, horario, suelo, agua, etc.)
+  // quede guardado junto al item del carrito y no solo la fecha del evento.
+  addToCart(selectedProduct.value.id, form.value.eventDate, reservationSummary.value);
   showConfirmationModal.value = true;
 }
 

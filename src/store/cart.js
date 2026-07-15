@@ -41,7 +41,11 @@ export function useCart() {
   const { state: sessionState } = useSession();
   const products = computed(() => getCompanyproducts());
 
-  function addToCart(productId, reservationDate = null) {
+  // eventDetails: objeto opcional con el detalle completo de la reserva
+  // (dirección, distrito, horario, espacio, suelo, invitados, agua, etc.)
+  // que arma ReservationForm.vue. Se guarda tal cual junto al item del
+  // carrito para que Cart.vue pueda mostrarlo y enviarlo por WhatsApp.
+  function addToCart(productId, reservationDate = null, eventDetails = null) {
     const product = products.value.find((p) => p.id === productId);
     const isServiceProduct = SERVICE_CATEGORIES.includes(product?.category);
     const existing = state.items.find((i) => i.productId === productId);
@@ -51,8 +55,9 @@ export function useCart() {
       // detallada) no debe duplicar la cantidad reservada.
       existing.quantity = isServiceProduct ? 1 : existing.quantity + 1;
       if (reservationDate) existing.reservationDate = reservationDate;
+      if (eventDetails) existing.eventDetails = eventDetails;
     } else {
-      state.items.push({ productId, quantity: 1, reservationDate });
+      state.items.push({ productId, quantity: 1, reservationDate, eventDetails });
     }
     persist();
   }
@@ -97,6 +102,7 @@ export function useCart() {
           ...product,
           quantity: item.quantity,
           reservationDate: item.reservationDate ?? null,
+          eventDetails: item.eventDetails ?? null,
         };
       })
       .filter(Boolean),
@@ -123,6 +129,7 @@ export function useCart() {
           ...product,
           quantity: cartItem.quantity,
           reservationDate: cartItem.reservationDate ?? null,
+          eventDetails: cartItem.eventDetails ?? null,
           orderId: `${Date.now()}-${index}-${product.id}-${Math.random().toString(36).slice(2, 8)}`,
           purchasedAt: new Date().toISOString(),
           userId,
