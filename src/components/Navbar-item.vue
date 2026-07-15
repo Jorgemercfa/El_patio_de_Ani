@@ -3,10 +3,13 @@
     <nav class="navbar-area">
       <!-- 1. LOGO -->
       <div class="nav-logo">
-        <router-link to="/">
-          <img class="logo" src="@/assets/company-logo.png" alt="Logo" />
-        </router-link>
-      </div>
+      <router-link to="/">
+        <div class="logo-water-wrap">
+          <div class="logo-water-bg"></div>
+             <img class="logo" src="@/assets/company-logo.png" alt="Logo" />
+          </div>
+      </router-link>
+</div>
 
       <!-- 2. LINKS (IZQUIERDA) -->
       <div class="link-style" :class="{ 'show-menu': menuOpen }">
@@ -99,10 +102,36 @@ const { cartCount } = useCart();
   box-sizing: border-box;
 }
 
-.nav-logo img.logo {
-  height: 50px;
-  border-radius: 8px;
+.logo-water-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  overflow: hidden;
   margin-right: 25px;
+}
+
+.logo-water-bg {
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(255,255,255,0.35) 0%, transparent 50%),
+    radial-gradient(circle at 70% 60%, rgba(255,255,255,0.28) 0%, transparent 45%),
+    linear-gradient(135deg, #2D3E94, #E91E81);
+  animation: logoWaterMove 6s ease-in-out infinite;
+  z-index: 1;
+}
+
+.logo-water-wrap .logo {
+  position: relative;
+  z-index: 2;
+  margin-right: 0;
+}
+
+@keyframes logoWaterMove {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(8%, -5%) scale(1.08); }
 }
 
 .link-style {
