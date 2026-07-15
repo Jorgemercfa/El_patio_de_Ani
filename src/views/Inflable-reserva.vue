@@ -122,10 +122,16 @@ const form = ref({
   accessConfirmed: false,
   measureVisitChoice: '',
   measureVisitPhone: '',
+  waterMode: '',
   waterConnection: '',
   waterDrainType: '',
   waterResponsible: false,
 });
+
+const WATER_MODE_LABELS = {
+  pelotas: '🎈 Modalidad seca (con pelotitas)',
+  agua: '💧 Modalidad con agua',
+};
 
 const showElectricityWarning = computed(
   () => form.value.electricLogistics === 'no-electricity',
@@ -184,6 +190,7 @@ const isWaterInflable = computed(() => {
   const productName = (selectedProduct.value.name || '').toLowerCase();
   return WATER_INFLABLE_NAMES.some((keyword) => productName.includes(keyword));
 });
+
 const formErrors = ref({});
 const showConfirmationModal = ref(false);
 const premiumPriceLabel = `${CURRENCY_PREFIX} ${PREMIUM_INFLABLE_PRICE}+`;
@@ -312,8 +319,13 @@ const reservationSummary = computed(() => ({
       ? form.value.measureVisitChoice
       : 'No aplica',
   telefonoMedida: form.value.measureVisitPhone || 'No indicado',
-  aguaConexion: isWaterInflable.value ? form.value.waterConnection : 'No aplica',
-  aguaDrenaje: isWaterInflable.value ? form.value.waterDrainType : 'No aplica',
+  modalidadInflable: isWaterInflable.value
+    ? WATER_MODE_LABELS[form.value.waterMode] || 'No seleccionado'
+    : 'No aplica',
+  aguaConexion:
+    isWaterInflable.value && form.value.waterMode === 'agua' ? form.value.waterConnection : 'No aplica',
+  aguaDrenaje:
+    isWaterInflable.value && form.value.waterMode === 'agua' ? form.value.waterDrainType : 'No aplica',
 }));
 
 const whatsappUrl = computed(() => {
@@ -334,7 +346,8 @@ const whatsappUrl = computed(() => {
     `Ruta de acceso: ${reservationSummary.value.acceso}`,
     `Visita de medidas: ${reservationSummary.value.medida}`,
     `Teléfono visita: ${reservationSummary.value.telefonoMedida}`,
-    ...(isWaterInflable.value ? [
+    ...(isWaterInflable.value ? [`Modalidad: ${reservationSummary.value.modalidadInflable}`] : []),
+    ...(isWaterInflable.value && form.value.waterMode === 'agua' ? [
       `Conexión de agua: ${reservationSummary.value.aguaConexion}`,
       `Tipo de drenaje: ${reservationSummary.value.aguaDrenaje}`,
     ] : []),
@@ -409,14 +422,20 @@ function validateForm() {
   }
 
   if (isWaterInflable.value) {
-    if (!form.value.waterConnection) {
-      errors.waterConnection = 'Selecciona el tipo de conexión de agua disponible';
+    if (!form.value.waterMode) {
+      errors.waterMode = 'Selecciona si prefieres modalidad con pelotitas o con agua';
     }
-    if (!form.value.waterDrainType) {
-      errors.waterDrainType = 'Selecciona cómo se gestionará el agua utilizada';
-    }
-    if (!form.value.waterResponsible) {
-      errors.waterResponsible = 'Debes confirmar la responsabilidad sobre el uso del agua';
+
+    if (form.value.waterMode === 'agua') {
+      if (!form.value.waterConnection) {
+        errors.waterConnection = 'Selecciona el tipo de conexión de agua disponible';
+      }
+      if (!form.value.waterDrainType) {
+        errors.waterDrainType = 'Selecciona cómo se gestionará el agua utilizada';
+      }
+      if (!form.value.waterResponsible) {
+        errors.waterResponsible = 'Debes confirmar la responsabilidad sobre el uso del agua';
+      }
     }
   }
 
@@ -631,12 +650,31 @@ onMounted(async () => {
               <div class="alert info-alert">{{ floorInfo }}</div>
             </section>
 
-            <!-- SECCIÓN DE AGUA (solo para inflables acuáticos) -->
-            <section v-if="isWaterInflable" class="form-section water-section">
+            <!-- SELECCIÓN DE MODALIDAD (solo para inflables acuáticos) -->
+            <section v-if="isWaterInflable" class="form-section water-mode-section">
+              <h2>💦 Modalidad del inflable</h2>
+              <p class="water-mode-intro">
+                Este inflable puede funcionar en modalidad seca (con pelotitas) o en modalidad con agua. Selecciona la que prefieras para tu evento:
+              </p>
+              <div class="radios">
+                <label>
+                  <input v-model="form.waterMode" type="radio" value="pelotas" />
+                  🎈 Modalidad seca (con pelotitas) — no requiere conexión de agua
+                </label>
+                <label>
+                  <input v-model="form.waterMode" type="radio" value="agua" />
+                  💧 Modalidad con agua — requiere conexión de agua en el lugar del evento
+                </label>
+              </div>
+              <p v-if="formErrors.waterMode" class="error-text">{{ formErrors.waterMode }}</p>
+            </section>
+
+            <!-- SECCIÓN DE AGUA (solo si eligieron modalidad con agua) -->
+            <section v-if="isWaterInflable && form.waterMode === 'agua'" class="form-section water-section">
               <h2>💧 Conexiones de Agua</h2>
 
               <div class="water-banner">
-                💧 Este inflable requiere <strong>conexión de agua</strong>. Por favor completa la información sobre las instalaciones disponibles en el lugar del evento.
+                💧 Elegiste la modalidad con agua. Por favor completa la información sobre las instalaciones disponibles en el lugar del evento.
               </div>
 
               <div class="field full-width">
@@ -1225,5 +1263,21 @@ select:focus {
   font-size: 0.92rem;
   line-height: 1.5;
   margin-bottom: 16px;
+}
+
+.water-mode-section {
+  border: 2px solid #2D9CDB;
+  border-radius: 14px;
+  padding: 16px;
+  background: #f0f8ff;
+}
+.water-mode-section h2 {
+  color: #1a6b9a !important;
+}
+.water-mode-intro {
+  margin: 0 0 12px;
+  color: #1a4d6e;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 </style>
