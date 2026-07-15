@@ -3,17 +3,17 @@
     <nav class="navbar-area">
       <!-- 1. LOGO -->
       <div class="nav-logo">
-      <router-link to="/">
-        <div class="logo-water-wrap">
-          <div class="logo-water-bg"></div>
-             <img class="logo" src="@/assets/company-logo.png" alt="Logo" />
+        <router-link to="/">
+          <div class="logo-water-wrap">
+            <div class="logo-water-bg"></div>
+            <img class="logo" src="@/assets/company-logo.png" alt="Logo" />
           </div>
-      </router-link>
-</div>
+        </router-link>
+      </div>
 
       <!-- 2. LINKS (IZQUIERDA) -->
       <div class="link-style" :class="{ 'show-menu': menuOpen }">
-         
+
         <div class="mobile-menu-logo">
           <img src="@/assets/company-logo.png" alt="El Patio de Ani" />
         </div>
@@ -23,10 +23,10 @@
         <router-link @click="closeMenu" to="/Contact-item" class="text-navbar">Contacto</router-link>
         <router-link @click="closeMenu" to="/Reviews-item" class="text-navbar">Reseñas</router-link>
         <router-link @click="closeMenu" to="/About-item" class="text-navbar">Nosotros</router-link>
+
         <!-- CONTENEDOR DEL CARRITO -->
         <router-link @click="closeMenu" to="/Cart" class="text-navbar cart-link">
           <i class="pi pi-shopping-cart"></i>
-          <!-- El puntito de notificación -->
           <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
         </router-link>
 
@@ -48,21 +48,38 @@
         >
           <i class="pi pi-user"></i> Mi perfil
         </router-link>
-      </div>
-          
-      <div class="pet-logo">
-           <img src="@/assets/rhinoceros.jpeg" class="pet-image" alt="Mascota" />
-      </div>
 
-      <!-- 3. REDES SOCIALES (DERECHA) -->
-      <div class="social-media">
+        <!-- REDES SOCIALES DENTRO DEL MENÚ MÓVIL -->
+        <div class="social-media-mobile">
           <a href="https://www.facebook.com/people/Alquiler-de-Juegos-Infantiles-El-Patio-de-Ani/100093147260858/" target="_blank"><i class="pi pi-facebook"></i></a>
           <a href="https://www.instagram.com/elpatiode.ani" target="_blank"><i class="pi pi-instagram"></i></a>
           <a href="https://www.tiktok.com/@elpatiode.ani" target="_blank"><i class="pi pi-tiktok"></i></a>
-          <!-- <a href="https://www.youtube.com/@elpatiode.ani" target="_blank"><i class="pi pi-youtube"></i></a> -->
+        </div>
       </div>
 
-      <div class="hamburger" @click="toggleMenu">☰</div>
+      <div class="pet-logo">
+        <img src="@/assets/rhinoceros.jpeg" class="pet-image" alt="Mascota" />
+      </div>
+
+      <!-- 3. REDES SOCIALES (DERECHA) - solo desktop -->
+      <div class="social-media">
+        <a href="https://www.facebook.com/people/Alquiler-de-Juegos-Infantiles-El-Patio-de-Ani/100093147260858/" target="_blank"><i class="pi pi-facebook"></i></a>
+        <a href="https://www.instagram.com/elpatiode.ani" target="_blank"><i class="pi pi-instagram"></i></a>
+        <a href="https://www.tiktok.com/@elpatiode.ani" target="_blank"><i class="pi pi-tiktok"></i></a>
+        <!-- <a href="https://www.youtube.com/@elpatiode.ani" target="_blank"><i class="pi pi-youtube"></i></a> -->
+      </div>
+
+      <!-- HAMBURGUESA / CIERRE ANIMADO -->
+      <button
+        class="hamburger"
+        :class="{ 'is-active': menuOpen }"
+        @click="toggleMenu"
+        aria-label="Abrir menú"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </nav>
   </div>
 </template>
@@ -102,14 +119,26 @@ const { cartCount } = useCart();
   box-sizing: border-box;
 }
 
+/* ============================================= */
+/* LOGO — ESTA ES LA CORRECCIÓN PRINCIPAL DEL BUG */
+/* La imagen no tenía tamaño definido y se        */
+/* renderizaba a su tamaño natural (enorme).      */
+/* ============================================= */
+.nav-logo {
+  flex-shrink: 0; /* evita que el navbar lo comprima */
+}
+
 .logo-water-wrap {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 54px;
+  height: 54px;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: hidden; /* recorta cualquier exceso de la imagen */
   margin-right: 25px;
+  flex-shrink: 0;
 }
 
 .logo-water-bg {
@@ -126,6 +155,9 @@ const { cartCount } = useCart();
 .logo-water-wrap .logo {
   position: relative;
   z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* mantiene proporción, ya no se desborda */
   margin-right: 0;
 }
 
@@ -150,7 +182,7 @@ const { cartCount } = useCart();
 
 /* --- SOLUCIÓN AL CARRITO --- */
 .cart-link {
-  position: relative; /* ESTO ES LO MÁS IMPORTANTE: Ancla la notificación */
+  position: relative;
   display: flex;
   align-items: center;
   padding: 5px;
@@ -158,9 +190,9 @@ const { cartCount } = useCart();
 
 .cart-badge {
   position: absolute;
-  top: -6px;      /* Ajusta hacia arriba */
-  right: -8px;    /* Ajusta hacia la derecha */
-  background: #ff4757; /* Rojo */
+  top: -6px;
+  right: -8px;
+  background: #ff4757;
   color: white;
   border-radius: 50%;
   min-width: 18px;
@@ -170,9 +202,7 @@ const { cartCount } = useCart();
   display: flex;
   align-items: center;
   justify-content: center;
-  /* border: 2px solid #2D3E94; */
 }
-/* --------------------------- */
 
 .btn-perfil {
   background: rgba(255, 255, 255, 0.15);
@@ -188,16 +218,18 @@ const { cartCount } = useCart();
   height: 50px;
   border-radius: 8px;
   margin: 0 25px;
+  flex-shrink: 0;
 }
 
 .pet-image {
   height: 50px;
   width: 80px;
   border-radius: 8px;
+  object-fit: cover;
 }
 
 .social-media {
-  margin-left: auto; /* Empuja redes a la derecha */
+  margin-left: auto;
   display: flex;
   gap: 15px;
 }
@@ -207,14 +239,51 @@ const { cartCount } = useCart();
   font-size: 24px;
 }
 
+/* Redes sociales dentro del menú móvil: ocultas en desktop */
+.social-media-mobile {
+  display: none;
+}
+
+/* ============================================= */
+/* HAMBURGUESA ANIMADA (☰ -> ✕)                   */
+/* ============================================= */
 .hamburger {
   display: none;
-  color: white;
-  font-size: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  position: relative;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 1001;
+  flex-shrink: 0;
+}
+
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  border-radius: 3px;
+  background: white;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.hamburger.is-active span:nth-child(1) {
+  transform: translateY(10.5px) rotate(45deg);
+}
+.hamburger.is-active span:nth-child(2) {
+  opacity: 0;
+}
+.hamburger.is-active span:nth-child(3) {
+  transform: translateY(-10.5px) rotate(-45deg);
 }
 
 @media (max-width: 950px) {
   .link-style { display: none; }
+
   .link-style.show-menu {
     display: flex;
     flex-direction: column;
@@ -225,12 +294,18 @@ const { cartCount } = useCart();
     justify-content: center;
     align-items: center;
     gap: 16px;
-    padding: 80px 30px 30px;
+    padding: 80px 30px 40px;
+    overflow-y: auto;
+    animation: fadeInMenu 0.2s ease;
   }
 
-  /* Logo dentro del menú móvil desplegado */
+  @keyframes fadeInMenu {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
   .mobile-menu-logo {
-    display: none; /* oculto por defecto; solo aparece cuando el menú está abierto */
+    display: none;
   }
 
   .link-style.show-menu .mobile-menu-logo {
@@ -245,9 +320,9 @@ const { cartCount } = useCart();
     border-radius: 12px;
     background: white;
     padding: 6px;
+    object-fit: contain;
   }
 
-  /* --- BOTONES OUTLINE (fondo transparente, borde blanco) --- */
   .link-style.show-menu .text-navbar {
     font-size: 1.1rem;
     font-weight: 800;
@@ -255,6 +330,7 @@ const { cartCount } = useCart();
     background: transparent;
     padding: 14px 24px;
     width: 80%;
+    max-width: 320px;
     text-align: center;
     border-radius: 999px;
     border: 2px solid white;
@@ -266,21 +342,13 @@ const { cartCount } = useCart();
     background: rgba(255, 255, 255, 0.1);
   }
 
-  /* Link de la ruta activa: fondo blanco sólido, texto rosa */
   .link-style.show-menu .text-navbar.router-link-exact-active {
     background: white;
     color: #E91E81;
   }
 
-  /* Carrito: mismo estilo outline */
   .link-style.show-menu .cart-link {
     justify-content: center;
-    width: 80%;
-    padding: 14px 24px;
-    gap: 10px;
-  }
-
-  .link-style.show-menu .cart-link {
     border: none;
     width: auto;
     padding: 14px;
@@ -290,28 +358,38 @@ const { cartCount } = useCart();
     font-size: 1.6rem;
   }
 
-  /* Botón de perfil/login: mismo outline, sin gradiente */
   .link-style.show-menu .btn-perfil {
     background: transparent;
     color: white;
     border: 2px solid white;
     justify-content: center;
     width: 80%;
+    max-width: 320px;
     padding: 14px 24px;
     font-weight: 800;
     margin-top: 8px;
   }
 
-  .hamburger { display: block; margin-left: auto; z-index: 1001; position: relative; }
-
-  .social-media-mobile {
+  /* Redes sociales visibles solo dentro del menú móvil abierto */
+  .link-style.show-menu .social-media-mobile {
     display: flex;
-    gap: 20px;
-    margin-top: 16px;
+    gap: 24px;
+    margin-top: 20px;
   }
+
   .social-media-mobile i {
     color: white;
-    font-size: 26px;
+    font-size: 28px;
+  }
+
+  /* Oculta las redes de la barra fija en mobile (ya están en el menú) */
+  .social-media {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+    margin-left: auto;
   }
 }
 </style>
