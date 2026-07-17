@@ -96,6 +96,9 @@ function buildWhatsAppMessage(items, total, totalWithDiscount, discount, discoun
           d.telefonoMedida && d.telefonoMedida !== 'No indicado' ? ' - Tel: ' + d.telefonoMedida : ''
         }`,
       );
+      if (d.modalidadInflable && d.modalidadInflable !== 'No aplica') {
+        itemLines.push(`   Modalidad: ${d.modalidadInflable}`);
+      }
       if (d.aguaConexion && d.aguaConexion !== 'No aplica') {
         itemLines.push(`   Agua: ${d.aguaConexion} / Drenaje: ${d.aguaDrenaje}`);
       }
@@ -220,6 +223,9 @@ function confirmReservation() {
                   <p><strong>🕒</strong> {{ item.eventDetails.horario }}</p>
                   <p><strong>📐</strong> {{ item.eventDetails.espacio }} — {{ item.eventDetails.suelo }}</p>
                   <p><strong>👧</strong> {{ item.eventDetails.invitados }} ({{ item.eventDetails.edades }})</p>
+                  <p v-if="item.eventDetails.modalidadInflable && item.eventDetails.modalidadInflable !== 'No aplica'">
+                    <strong>💦</strong> {{ item.eventDetails.modalidadInflable }}
+                  </p>
                   <p v-if="item.eventDetails.aguaConexion && item.eventDetails.aguaConexion !== 'No aplica'">
                     <strong>💧</strong> {{ item.eventDetails.aguaConexion }}
                   </p>
