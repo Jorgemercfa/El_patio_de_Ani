@@ -14,7 +14,7 @@ import {
 
 const route = useRoute();
 const router = useRouter();
-const { state, isAuthenticated } = useSession();
+const { state } = useSession();
 const { addToCart } = useCart();
 const CURRENCY_PREFIX = 'S/';
 const RESERVATIONS_STORAGE_KEY = 'patio-reservas';
@@ -194,7 +194,6 @@ const isWaterInflable = computed(() => {
 const formErrors = ref({});
 const showConfirmationModal = ref(false);
 const premiumPriceLabel = `${CURRENCY_PREFIX} ${PREMIUM_INFLABLE_PRICE}+`;
-const firstContactWhatsappUrl = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=Hola!%20Quiero%20reservar%20un%20inflable%20para%20mi%20evento`;
 const calendarMonthLabel = computed(() => {
   const label = currentCalendarDate.value.toLocaleDateString('es-PE', {
     month: 'long',
@@ -480,25 +479,12 @@ onMounted(async () => {
             Inflable seleccionado: <strong>{{ selectedProduct.name }}</strong>
           </p>
 
-          <template v-if="!isAuthenticated">
-            <div class="warning-panel">
-              <p class="warning-message">¿Eres nuevo con nosotros? ¡Contáctanos por WhatsApp para coordinar tu primera reserva!</p>
-              <a
-                class="whatsapp-cta"
-                :href="firstContactWhatsappUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                💬 Contactar por WhatsApp
-              </a>
-              <p class="secondary-text">
-                ¿Ya eres cliente?
-                <router-link to="/Sign-in">Inicia sesión para reservar directamente</router-link>
-              </p>
-            </div>
-          </template>
-
-          <form v-else class="reservation-form" @submit.prevent="submitReservation">
+          <!--
+            El formulario de reserva se muestra siempre, sin importar si el
+            usuario inició sesión o no. Cualquier visitante puede completarlo
+            y agregar el inflable al carrito.
+          -->
+          <form class="reservation-form" @submit.prevent="submitReservation">
             <section class="form-section availability-section">
               <h2>📅 Disponibilidad</h2>
 
