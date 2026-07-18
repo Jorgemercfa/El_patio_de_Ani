@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useCart } from '@/store/cart.js';
+import { useReservasServicio } from '@/store/reservas';
 import { useSession } from '@/auth/session';
 import { useLoyaltyManual } from '@/store/loyaltyManual';
 
@@ -12,6 +13,7 @@ const SNACK_CATEGORY = 'Carritos Snacks';
 
 const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, updateReservationDate, checkout } =
   useCart();
+const { isDateAvailable } = useReservasServicio();
 const { state: sessionState } = useSession();
 const { getLoyaltyData, getDescuento, addReserva } = useLoyaltyManual();
 
@@ -29,6 +31,7 @@ const cartTotalWithDiscount = computed(() =>
 const showConfirmation = ref(false);
 const submitting = ref(false);
 const missingDateError = ref('');
+const snackDateErrors = ref({}); // { [itemId]: mensaje } — fechas sin stock disponible
 const whatsappBlockedUrl = ref(''); // fallback visible si el navegador bloquea la apertura automática
 
 const todayDate = new Date().toLocaleDateString('en-CA');
@@ -62,7 +65,26 @@ function decreaseQuantity(item) {
 }
 
 function onDateChange(item, event) {
-  updateReservationDate(item.id, event.target.value);
+  const newDate = event.target.value;
+
+  // Antes de aplicar la fecha, se valida contra las reservas ya
+  // activas (confirmadas o pendientes vigentes) de otros clientes para
+  // este mismo producto. Esto evita, por ejemplo, vender más popcorn
+  // del stock disponible (POPCORN_MAX_STOCK) para una misma fecha.
+  if (newDate && !isDateAvailable(item.id, newDate)) {
+    snackDateErrors.value = {
+      ...snackDateErrors.value,
+      [item.id]: 'Esa fecha ya no tiene disponibilidad para este producto. Elige otra.',
+    };
+    event.target.value = item.reservationDate || '';
+    return;
+  }
+
+  const remainingErrors = { ...snackDateErrors.value };
+  delete remainingErrors[item.id];
+  snackDateErrors.value = remainingErrors;
+
+  updateReservationDate(item.id, newDate);
   missingDateError.value = '';
 }
 
@@ -265,6 +287,9 @@ function confirmReservation() {
                   @change="onDateChange(item, $event)"
                 />
                 <span v-if="!item.reservationDate" class="snack-date-required">Requerida</span>
+                <span v-if="snackDateErrors[item.id]" class="snack-date-required">
+                  {{ snackDateErrors[item.id] }}
+                </span>
               </div>
 
               <div v-else-if="isService(item)" class="service-quantity">
