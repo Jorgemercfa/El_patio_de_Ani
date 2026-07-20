@@ -98,37 +98,96 @@ const onVideoEnded = () => {
    ZOOM DINÁMICO DEL VIDEO PRINCIPAL
    Calcula, para cada video segun su proporcion real,
    cuanto "cover" moderado aplicar sin recortar de mas.
+
+   NOTA (fix móvil): el cálculo depende de dos cosas que en móvil no
+   siempre están listas al mismo tiempo: (1) las dimensiones reales del
+   video (videoWidth/videoHeight, que llegan con loadedmetadata) y
+   (2) el tamaño real del wrapper (clientWidth/clientHeight, que en
+   móvil puede ser 0 o incorrecto muy temprano porque depende de "vh",
+   y "vh" cambia según si la barra de direcciones del navegador está
+   visible o no). Antes solo se intentaba aplicar el zoom UNA vez
+   (evento loadedmetadata + un chequeo puntual en onMounted), y si en
+   ese instante faltaba cualquiera de los dos datos, el zoom se
+   quedaba para siempre en el valor por defecto (video chico y con
+   mucho blur alrededor). Ahora se reintenta con backoff corto hasta
+   que ambos valores estén disponibles, y se escucha en más eventos
+   del video además de loadedmetadata (loadeddata, canplay), porque
+   Safari iOS es conocido por no disparar loadedmetadata de forma
+   confiable en videos autoplay+muted+playsinline.
 ============================= */
 const ZOOM_CAP = 1.9; // tope maximo de recorte permitido, calibrado para el contenedor de 80vh
+const MAX_ZOOM_RETRIES = 12;
+const ZOOM_RETRY_DELAY = 150; // ms
+const zoomRetryTimeoutId = ref(null);
 
 
-const applyModerateZoom = (event) => {
-  const videoEl = event.target;
-  const wrapperEl = mainWrapperRef.value;
-  if (!wrapperEl || !videoEl.videoWidth || !videoEl.videoHeight) return;
-
-
+const computeZoom = (videoEl, wrapperEl) => {
   const vw = videoEl.videoWidth;
   const vh = videoEl.videoHeight;
   const cw = wrapperEl.clientWidth;
   const ch = wrapperEl.clientHeight;
 
+  // Si falta cualquiera de los cuatro valores todavia no podemos
+  // calcular un zoom confiable (evita divisiones por 0 / NaN / Infinity)
+  if (!vw || !vh || !cw || !ch) return null;
 
   const containScale = Math.min(cw / vw, ch / vh);
   const coverScale = Math.max(cw / vw, ch / vh);
   const fullCoverZoom = coverScale / containScale;
 
+  return Math.min(fullCoverZoom, ZOOM_CAP);
+};
 
-  const zoom = Math.min(fullCoverZoom, ZOOM_CAP);
+
+const applyModerateZoom = (event) => {
+  const videoEl = event.target;
+  const wrapperEl = mainWrapperRef.value;
+  if (!wrapperEl) return;
+
+  const zoom = computeZoom(videoEl, wrapperEl);
+  if (zoom !== null) {
+    videoEl.style.setProperty('--video-zoom', zoom.toFixed(3));
+  }
+};
 
 
-  videoEl.style.setProperty('--video-zoom', zoom.toFixed(3));
+// Reintenta aplicar el zoom hasta MAX_ZOOM_RETRIES veces, esperando
+// ZOOM_RETRY_DELAY ms entre cada intento, hasta que tanto el video
+// como el wrapper tengan dimensiones reales disponibles. Esto cubre
+// el caso móvil donde ni el evento loadedmetadata ni un chequeo
+// puntual alcanzan a capturar el momento exacto en que ambos datos
+// están listos.
+const tryApplyZoomWithRetry = (videoEl, attempt = 0) => {
+  clearTimeout(zoomRetryTimeoutId.value);
+
+  const wrapperEl = mainWrapperRef.value;
+  if (!videoEl || !wrapperEl) return;
+
+  const zoom = computeZoom(videoEl, wrapperEl);
+  if (zoom !== null) {
+    videoEl.style.setProperty('--video-zoom', zoom.toFixed(3));
+    return;
+  }
+
+  if (attempt < MAX_ZOOM_RETRIES) {
+    zoomRetryTimeoutId.value = setTimeout(
+      () => tryApplyZoomWithRetry(videoEl, attempt + 1),
+      ZOOM_RETRY_DELAY,
+    );
+  }
 };
 
 
 const recalcZoomOnResize = () => {
-  if (videoRef.value) applyModerateZoom({ target: videoRef.value });
+  if (videoRef.value) tryApplyZoomWithRetry(videoRef.value);
 };
+
+
+// Recalcula el zoom cuando el TAMAÑO REAL del wrapper cambia, incluso
+// si ese cambio no dispara un evento "resize" de window. Esto pasa,
+// por ejemplo, cuando en Safari iOS aparece/desaparece la barra de
+// direcciones y el alto en "vh" cambia sin que la ventana "se resize".
+let wrapperResizeObserver = null;
 
 
 /* =============================
@@ -253,18 +312,25 @@ onMounted(async () => {
   window.addEventListener('orientationchange', recalcZoomOnResize); // los móviles rotan pantalla, hay que recalcular el zoom
 
 
-  // Fallback contra una condición de carrera del PRIMER video: en algunos
-  // navegadores (sobre todo móviles, que precargan/cachean video de forma
-  // agresiva) el evento 'loadedmetadata' puede dispararse ANTES de que
-  // Vue termine de enlazar el listener @loadedmetadata en el <video>.
-  // Cuando eso pasa, el evento se pierde y --video-zoom se queda en su
-  // valor por defecto, mostrando el video chico y "flotando" con mucho
-  // blur alrededor. Aquí revisamos manualmente si el video ya tiene
-  // metadata disponible (readyState >= 1) y, si es así, aplicamos el
-  // zoom nosotros mismos en vez de esperar a un evento que ya pasó.
+  // Fallback contra la condición de carrera del PRIMER video (fix móvil):
+  // en vez de un único chequeo puntual, reintentamos con backoff corto
+  // hasta que el video tenga videoWidth/videoHeight Y el wrapper tenga
+  // clientWidth/clientHeight reales. Esto cubre tanto el caso en que el
+  // evento 'loadedmetadata' se pierde (se dispara antes de que Vue
+  // termine de enlazar el listener) como el caso en que el video tarda
+  // más en cargar metadata de lo que tarda este onMounted en ejecutarse,
+  // que es justamente el escenario típico en redes móviles.
   await nextTick();
-  if (videoRef.value && videoRef.value.readyState >= 1) {
-    applyModerateZoom({ target: videoRef.value });
+  if (videoRef.value) {
+    tryApplyZoomWithRetry(videoRef.value);
+  }
+
+  // Recalcula el zoom si el tamaño real del wrapper cambia sin que se
+  // dispare un evento "resize" de window (p. ej. cuando la barra de
+  // direcciones de Safari iOS aparece/desaparece y cambia el "vh").
+  if (mainWrapperRef.value && 'ResizeObserver' in window) {
+    wrapperResizeObserver = new ResizeObserver(() => recalcZoomOnResize());
+    wrapperResizeObserver.observe(mainWrapperRef.value);
   }
 
 
@@ -281,8 +347,13 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   stopVideoTimer();
   clearTimeout(videoEndedTimeout.value);
+  clearTimeout(zoomRetryTimeoutId.value);
   window.removeEventListener('resize', recalcZoomOnResize);
   window.removeEventListener('orientationchange', recalcZoomOnResize);
+  if (wrapperResizeObserver) {
+    wrapperResizeObserver.disconnect();
+    wrapperResizeObserver = null;
+  }
 });
 
 
@@ -335,6 +406,8 @@ const tarifas = [
               autoplay muted playsinline preload="auto"
               @ended="onVideoEnded"
               @loadedmetadata="applyModerateZoom"
+              @loadeddata="applyModerateZoom"
+              @canplay="applyModerateZoom"
             ></video>
           </div>
         </transition>
@@ -354,6 +427,8 @@ const tarifas = [
               autoplay muted playsinline preload="auto"
               @ended="onVideoEnded"
               @loadedmetadata="applyModerateZoom"
+              @loadeddata="applyModerateZoom"
+              @canplay="applyModerateZoom"
             ></video>
           </div>
         </transition>
