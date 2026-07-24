@@ -9,29 +9,24 @@ import { fetchGlobalReviews } from '@/auth/reviewServicesRepo';
 const { isAuthenticated, state } = useSession();
 const router = useRouter();
 
-
 /* =============================
    POPUP DE BIENVENIDA
 ============================= */
 const showWelcomePopup = ref(false);
 const WELCOME_POPUP_SESSION_KEY = 'welcomePopupShown';
 
-
 const closeWelcomePopup = () => {
   showWelcomePopup.value = false;
 };
-
 
 const goToProfileFromPopup = () => {
   showWelcomePopup.value = false;
   router.push('/Profile');
 };
 
-
 /* =============================
    CARRUSEL PRINCIPAL DE VIDEOS (LOCALES)
 ============================= */
-
 
 const videos = [
   new URL('@/assets/videos/video1.mp4', import.meta.url).href,
@@ -43,7 +38,6 @@ const videos = [
 const VIDEO_AUTO_ADVANCE_INTERVAL = 20000;
 const VIDEO_ENDED_DELAY = 1000;
 
-
 const currentVideoIndex = ref(0);
 const totalVideos = videos.length;
 const videoIntervalId = ref(null);
@@ -51,14 +45,11 @@ const videoRef = ref(null);
 const videoEndedTimeout = ref(null);
 const mainWrapperRef = ref(null);
 
-
 const currentVideoSrc = computed(() => videos[currentVideoIndex.value]);
-
 
 const nextVideo = () => {
   currentVideoIndex.value = (currentVideoIndex.value + 1) % totalVideos;
 };
-
 
 const goToVideo = (index) => {
   currentVideoIndex.value = index;
@@ -70,7 +61,6 @@ const startVideoTimer = () => {
   videoIntervalId.value = setInterval(nextVideo, VIDEO_AUTO_ADVANCE_INTERVAL);
 };
 
-
 const stopVideoTimer = () => {
   if (videoIntervalId.value) {
     clearInterval(videoIntervalId.value);
@@ -78,12 +68,10 @@ const stopVideoTimer = () => {
   }
 };
 
-
 const restartVideoTimer = () => {
   stopVideoTimer();
   startVideoTimer();
 };
-
 
 const onVideoEnded = () => {
   clearTimeout(videoEndedTimeout.value);
@@ -93,33 +81,10 @@ const onVideoEnded = () => {
   }, VIDEO_ENDED_DELAY);
 };
 
-
-/* =============================
-   ZOOM DINÁMICO DEL VIDEO PRINCIPAL
-   Calcula, para cada video segun su proporcion real,
-   cuanto "cover" moderado aplicar sin recortar de mas.
-
-   NOTA (fix móvil): el cálculo depende de dos cosas que en móvil no
-   siempre están listas al mismo tiempo: (1) las dimensiones reales del
-   video (videoWidth/videoHeight, que llegan con loadedmetadata) y
-   (2) el tamaño real del wrapper (clientWidth/clientHeight, que en
-   móvil puede ser 0 o incorrecto muy temprano porque depende de "vh",
-   y "vh" cambia según si la barra de direcciones del navegador está
-   visible o no). Antes solo se intentaba aplicar el zoom UNA vez
-   (evento loadedmetadata + un chequeo puntual en onMounted), y si en
-   ese instante faltaba cualquiera de los dos datos, el zoom se
-   quedaba para siempre en el valor por defecto (video chico y con
-   mucho blur alrededor). Ahora se reintenta con backoff corto hasta
-   que ambos valores estén disponibles, y se escucha en más eventos
-   del video además de loadedmetadata (loadeddata, canplay), porque
-   Safari iOS es conocido por no disparar loadedmetadata de forma
-   confiable en videos autoplay+muted+playsinline.
-============================= */
 const ZOOM_CAP = 1.9; // tope maximo de recorte permitido, calibrado para el contenedor de 80vh
 const MAX_ZOOM_RETRIES = 12;
 const ZOOM_RETRY_DELAY = 150; // ms
 const zoomRetryTimeoutId = ref(null);
-
 
 const computeZoom = (videoEl, wrapperEl) => {
   const vw = videoEl.videoWidth;
@@ -138,7 +103,6 @@ const computeZoom = (videoEl, wrapperEl) => {
   return Math.min(fullCoverZoom, ZOOM_CAP);
 };
 
-
 const applyModerateZoom = (event) => {
   const videoEl = event.target;
   const wrapperEl = mainWrapperRef.value;
@@ -150,13 +114,6 @@ const applyModerateZoom = (event) => {
   }
 };
 
-
-// Reintenta aplicar el zoom hasta MAX_ZOOM_RETRIES veces, esperando
-// ZOOM_RETRY_DELAY ms entre cada intento, hasta que tanto el video
-// como el wrapper tengan dimensiones reales disponibles. Esto cubre
-// el caso móvil donde ni el evento loadedmetadata ni un chequeo
-// puntual alcanzan a capturar el momento exacto en que ambos datos
-// están listos.
 const tryApplyZoomWithRetry = (videoEl, attempt = 0) => {
   clearTimeout(zoomRetryTimeoutId.value);
 
@@ -177,18 +134,11 @@ const tryApplyZoomWithRetry = (videoEl, attempt = 0) => {
   }
 };
 
-
 const recalcZoomOnResize = () => {
   if (videoRef.value) tryApplyZoomWithRetry(videoRef.value);
 };
 
-
-// Recalcula el zoom cuando el TAMAÑO REAL del wrapper cambia, incluso
-// si ese cambio no dispara un evento "resize" de window. Esto pasa,
-// por ejemplo, cuando en Safari iOS aparece/desaparece la barra de
-// direcciones y el alto en "vh" cambia sin que la ventana "se resize".
 let wrapperResizeObserver = null;
-
 
 /* =============================
    HELPERS
@@ -198,12 +148,10 @@ const getProductName = (product) => product.name ?? 'Producto sin nombre';
 const getProductCategory = (product) => product.category ?? '';
 const getProductImage = (product) => product.image ?? '';
 
-
 /* =============================
    CARRUSEL PRODUCTOS (HORIZONTAL)
 ============================= */
 const productsTrackRef = ref(null);
-
 
 const scrollproductsBy = (direction) => {
   const el = productsTrackRef.value;
@@ -213,32 +161,26 @@ const scrollproductsBy = (direction) => {
   el.scrollBy({ left: direction * (cardWidth + 20), behavior: 'smooth' });
 };
 
-
 const scrollproductsLeft = () => scrollproductsBy(-1);
 const scrollproductsRight = () => scrollproductsBy(1);
-
 
 /* =============================
    FILTRO POR CATEGORÍA
 ============================= */
 const products = computed(() => getCompanyproducts());
 
-
 const restaurantproducts = computed(() =>
   products.value.filter((c) => c.category === 'Shows Infantiles'),
 );
-
 
 const restaurantproducts2 = computed(() =>
   products.value.filter((c) => c.category === 'Inflables' || c.category === 'Juegos'),
 );
 
-
 /* =============================
    CARRUSEL SHOWS (scroll)
 ============================= */
 const restaurantTrackRef = ref(null);
-
 
 const scrollRestaurantsBy = (direction) => {
   const el = restaurantTrackRef.value;
@@ -248,16 +190,13 @@ const scrollRestaurantsBy = (direction) => {
   el.scrollBy({ left: direction * (cardWidth + 20), behavior: 'smooth' });
 };
 
-
 const scrollRestaurantsLeft = () => scrollRestaurantsBy(-1);
 const scrollRestaurantsRight = () => scrollRestaurantsBy(1);
-
 
 /* =============================
    CARRUSEL Inflables y Juegos (scroll)
 ============================= */
 const restaurantTrackRef2 = ref(null);
-
 
 const scrollRestaurantsBy2 = (direction) => {
   const el = restaurantTrackRef2.value;
@@ -267,10 +206,8 @@ const scrollRestaurantsBy2 = (direction) => {
   el.scrollBy({ left: direction * (cardWidth + 20), behavior: 'smooth' });
 };
 
-
 const scrollRestaurantsLeft2 = () => scrollRestaurantsBy2(-1);
 const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
-
 
 /* =============================
    CARRUSEL TESTIMONIOS (scroll)
@@ -278,13 +215,11 @@ const scrollRestaurantsRight2 = () => scrollRestaurantsBy2(1);
 const reviewsTrackRef = ref(null);
 const reviews = ref([]);
 
-
 const scrollReviewsLeft = () => {
   if (reviewsTrackRef.value) {
     reviewsTrackRef.value.scrollBy({ left: -320, behavior: 'smooth' });
   }
 };
-
 
 const scrollReviewsRight = () => {
   if (reviewsTrackRef.value) {
@@ -292,14 +227,10 @@ const scrollReviewsRight = () => {
   }
 };
 
-
 const formatDate = (date) => {
   if (!date) return '';
   return new Intl.DateTimeFormat('es-PE', { year: 'numeric', month: 'short' }).format(date);
 };
-
-
-
 
 /* =============================
    ÚNICO onMounted
@@ -311,28 +242,15 @@ onMounted(async () => {
   window.addEventListener('resize', recalcZoomOnResize);
   window.addEventListener('orientationchange', recalcZoomOnResize); // los móviles rotan pantalla, hay que recalcular el zoom
 
-
-  // Fallback contra la condición de carrera del PRIMER video (fix móvil):
-  // en vez de un único chequeo puntual, reintentamos con backoff corto
-  // hasta que el video tenga videoWidth/videoHeight Y el wrapper tenga
-  // clientWidth/clientHeight reales. Esto cubre tanto el caso en que el
-  // evento 'loadedmetadata' se pierde (se dispara antes de que Vue
-  // termine de enlazar el listener) como el caso en que el video tarda
-  // más en cargar metadata de lo que tarda este onMounted en ejecutarse,
-  // que es justamente el escenario típico en redes móviles.
   await nextTick();
   if (videoRef.value) {
     tryApplyZoomWithRetry(videoRef.value);
   }
 
-  // Recalcula el zoom si el tamaño real del wrapper cambia sin que se
-  // dispare un evento "resize" de window (p. ej. cuando la barra de
-  // direcciones de Safari iOS aparece/desaparece y cambia el "vh").
   if (mainWrapperRef.value && 'ResizeObserver' in window) {
     wrapperResizeObserver = new ResizeObserver(() => recalcZoomOnResize());
     wrapperResizeObserver.observe(mainWrapperRef.value);
   }
-
 
   if (isAuthenticated.value && state.user) {
     const alreadyShown = sessionStorage.getItem(WELCOME_POPUP_SESSION_KEY);
@@ -342,7 +260,6 @@ onMounted(async () => {
     }
   }
 });
-
 
 onBeforeUnmount(() => {
   stopVideoTimer();
@@ -355,7 +272,6 @@ onBeforeUnmount(() => {
     wrapperResizeObserver = null;
   }
 });
-
 
 /* =============================
    TARIFAS DE MOVILIDAD
@@ -374,15 +290,12 @@ const tarifas = [
 ];
 </script>
 
-
 <template>
   <header>
     <Navbar />
   </header>
 
-
   <div class="home-area">
-
 
     <!-- ===== CARRUSEL PRINCIPAL DE VIDEOS LOCALES ===== -->
     <div class="main-video-carousel">
@@ -390,31 +303,9 @@ const tarifas = [
         <h1 class="main-video-title">Productora de eventos infantiles</h1>
       </div>
 
-
       <div class="main-video-wrapper" ref="mainWrapperRef">
         <transition name="fade-video">
-          <div v-if="currentVideoIndex % 2 === 0" class="video-layer-group">
-            <video
-              class="main-video-bg"
-              :src="currentVideoSrc"
-              autoplay muted playsinline preload="auto"
-            ></video>
-            <video
-              ref="videoRef"
-              :src="currentVideoSrc"
-              class="main-video-player"
-              autoplay muted playsinline preload="auto"
-              @ended="onVideoEnded"
-              @loadedmetadata="applyModerateZoom"
-              @loadeddata="applyModerateZoom"
-              @canplay="applyModerateZoom"
-            ></video>
-          </div>
-        </transition>
-
-
-        <transition name="fade-video">
-          <div v-if="currentVideoIndex % 2 !== 0" class="video-layer-group">
+          <div :key="currentVideoIndex" class="video-layer-group">
             <video
               class="main-video-bg"
               :src="currentVideoSrc"
@@ -678,7 +569,6 @@ const tarifas = [
       <div class="our-products-wrapper">
         <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollReviewsLeft">‹</button>
 
-
         <div class="our-products" ref="reviewsTrackRef">
           <div
             v-for="review in reviews"
@@ -695,19 +585,13 @@ const tarifas = [
               <span v-if="review.createdAt" class="review-date">{{ formatDate(review.createdAt) }}</span>
             </div>
           </div>
-
-
           <div v-if="reviews.length === 0" class="empty-carousel">
             No hay testimonios todavía.
           </div>
         </div>
-
-
         <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollReviewsRight">›</button>
       </div>
     </section>
-
-
     <!-- ===== TARIFAS DE MOVILIDAD ===== -->
     <section class="movilidad-section">
       <div class="movilidad-badge">COBERTURA EN LIMA</div>
@@ -725,16 +609,11 @@ const tarifas = [
         <p>¿Tienes dudas? Revisa nuestras <router-link to="/FAQ">Preguntas Frecuentes</router-link></p>
       </div>
     </section>
-
-
   </div>
-
-
   <footer>
     <Footer />
   </footer>
 </template>
-
 
 <style>
 .main-video-carousel,
@@ -744,7 +623,6 @@ const tarifas = [
 .movilidad-section {
   font-family: 'Nunito', sans-serif;
 }
-
 
 /* ===== POPUP DE BIENVENIDA ===== */
 .welcome-popup-overlay {
@@ -759,7 +637,6 @@ const tarifas = [
   padding: 20px;
 }
 
-
 .welcome-popup-card {
   position: relative;
   background: #FFFFFF;
@@ -771,7 +648,6 @@ const tarifas = [
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   font-family: 'Nunito', sans-serif;
 }
-
 
 .welcome-popup-close {
   position: absolute;
@@ -791,19 +667,16 @@ const tarifas = [
   transition: background 0.2s ease;
 }
 
-
 .welcome-popup-close:hover {
   background: #ffe8f4;
   color: #E91E81;
 }
-
 
 .welcome-popup-icon {
   font-size: 3rem;
   display: block;
   margin-bottom: 12px;
 }
-
 
 .welcome-popup-title {
   font-size: 1.4rem;
@@ -813,11 +686,9 @@ const tarifas = [
   line-height: 1.35;
 }
 
-
 .welcome-popup-title strong {
   color: #E91E81;
 }
-
 
 .welcome-popup-subtitle {
   font-size: 0.95rem;
@@ -825,13 +696,11 @@ const tarifas = [
   margin: 0 0 28px;
 }
 
-
 .welcome-popup-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-
 
 .welcome-popup-profile-btn {
   padding: 14px;
@@ -846,11 +715,9 @@ const tarifas = [
   transition: transform 0.2s ease;
 }
 
-
 .welcome-popup-profile-btn:hover {
   transform: translateY(-2px);
 }
-
 
 .welcome-popup-dismiss-btn {
   padding: 12px;
@@ -863,11 +730,9 @@ const tarifas = [
   cursor: pointer;
 }
 
-
 .welcome-popup-dismiss-btn:hover {
   text-decoration: underline;
 }
-
 
 /* Transición del popup */
 .fade-popup-enter-active,
@@ -875,23 +740,19 @@ const tarifas = [
   transition: opacity 0.25s ease;
 }
 
-
 .fade-popup-enter-from,
 .fade-popup-leave-to {
   opacity: 0;
 }
-
 
 .fade-popup-enter-active .welcome-popup-card,
 .fade-popup-leave-active .welcome-popup-card {
   transition: transform 0.25s ease;
 }
 
-
 .fade-popup-enter-from .welcome-popup-card {
   transform: scale(0.92) translateY(10px);
 }
-
 
 @media (max-width: 480px) {
   .welcome-popup-card {
@@ -899,12 +760,10 @@ const tarifas = [
     border-radius: 24px;
   }
 
-
   .welcome-popup-title {
     font-size: 1.2rem;
   }
 }
-
 
 /* ===== CARRUSEL PRINCIPAL DE VIDEOS ===== */
 .main-video-carousel {
@@ -914,7 +773,6 @@ const tarifas = [
   background: #000;
   overflow: hidden;
 }
-
 
 .main-video-overlay {
   position: absolute;
@@ -926,7 +784,6 @@ const tarifas = [
   align-items: center;
 }
 
-
 .main-video-title {
   font-size: 48px;
   color: #ffffff;
@@ -937,9 +794,6 @@ const tarifas = [
   pointer-events: none;
 }
 
-
-/* Wrapper: le da altura real al bloque; sin esta regla base los videos
-   (que estan en position:absolute) no aportan altura y todo colapsa. */
 .main-video-wrapper {
   position: relative;
   width: 100%;
@@ -949,16 +803,12 @@ const tarifas = [
   overflow: hidden;
 }
 
-
 .video-layer-group {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
 }
 
-
-/* Capa de fondo: mismo video, cover + blur, rellena los espacios
-   que deja el video principal sin recortar su contenido */
 .main-video-bg {
   position: absolute;
   top: 0; left: 0;
@@ -971,11 +821,6 @@ const tarifas = [
   z-index: 1;
 }
 
-
-/* Video principal: contain + zoom calculado dinamicamente por JS
-   segun la proporcion real de cada video (variable --video-zoom).
-   El valor por defecto (1.5) es un respaldo visual mientras el JS
-   calcula el zoom exacto, para que el primer frame no se vea "chico". */
 .main-video-player {
   position: relative;
   width: 100%;
@@ -988,7 +833,6 @@ const tarifas = [
   transform-origin: center;
   transition: transform 0.3s ease;
 }
-
 
 /* Viñeta que disuelve el borde del video nitido hacia el fondo borroso */
 .video-layer-group::after {
@@ -1005,7 +849,6 @@ const tarifas = [
       rgba(0,0,0,0) 88%,
       rgba(0,0,0,0.35) 100%);
 }
-
 
 .main-video-nav {
   position: absolute;
@@ -1026,17 +869,14 @@ const tarifas = [
   backdrop-filter: blur(4px);
 }
 
-
 .main-video-nav:hover {
   background: rgba(233,30,129,0.85);
   border-color: transparent;
   transform: translateY(-50%) scale(1.08);
 }
 
-
 .main-video-nav-left  { left: 16px; }
 .main-video-nav-right { right: 16px; }
-
 
 .main-video-dots {
   position: absolute;
@@ -1049,7 +889,6 @@ const tarifas = [
   pointer-events: none;
 }
 
-
 .main-video-dots span {
   width: 12px; height: 12px;
   border-radius: 50%;
@@ -1059,12 +898,10 @@ const tarifas = [
   pointer-events: all;
 }
 
-
 .main-video-dots .active {
   background: #FFD200;
   transform: scale(1.2);
 }
-
 
 .pet-area{
   position: absolute;
@@ -1075,14 +912,12 @@ const tarifas = [
   z-index: 15;
 }
 
-
 @media (max-width: 768px) {
   .pet-area{
     width: 40px;
     height: 30px;
   }
 }
-
 
 .fade-video-enter-active,
 .fade-video-leave-active {
@@ -1092,10 +927,8 @@ const tarifas = [
   width: 100%; height: 100%;
 }
 
-
 .fade-video-enter-from,
 .fade-video-leave-to { opacity: 0; }
-
 
 .intro-section {
   display: flex;
@@ -1107,7 +940,6 @@ const tarifas = [
   padding: 0 24px;
 }
 
-
 .text-home {
   flex: 1;
   max-width: 560px;
@@ -1118,12 +950,10 @@ const tarifas = [
   color: #2D3E94;
 }
 
-
 @keyframes float-mascot {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
-
 
 /* ===== RESTO ===== */
 .title-home {
@@ -1138,7 +968,6 @@ const tarifas = [
   background-clip: text;
 }
 
-
 .title-home::after {
   content: '';
   width: 60px; height: 4px;
@@ -1150,9 +979,7 @@ const tarifas = [
   border-radius: 5px;
 }
 
-
 .proms-area { text-align: center; margin: 40px 0; }
-
 
 .prom-access-button {
   display: inline-flex;
@@ -1169,9 +996,6 @@ const tarifas = [
   transition: all 0.3s ease;
 }
 
-
-/* Icono del rinoceronte, chiquito, con un balanceo suave e infinito
-   para llamar la atención sin distraer del texto del botón */
 .prom-rhino-icon {
   width: 22px;
   height: 22px;
@@ -1179,12 +1003,10 @@ const tarifas = [
   animation: rhino-bounce 1.8s ease-in-out infinite;
 }
 
-
 @keyframes rhino-bounce {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   50% { transform: translateY(-3px) rotate(-6deg); }
 }
-
 
 .our-products-wrapper {
   position: relative;
@@ -1192,7 +1014,6 @@ const tarifas = [
   padding: 40px 60px;
   overflow: visible;
 }
-
 
 .our-products {
   display: flex;
@@ -1204,13 +1025,11 @@ const tarifas = [
   padding: 20px 0;
 }
 
-
 .our-products::-webkit-scrollbar { height: 8px; }
 .our-products::-webkit-scrollbar-thumb {
   background: rgba(233,30,129,0.3);
   border-radius: 10px;
 }
-
 
 .products-nav {
   position: absolute;
@@ -1230,17 +1049,14 @@ const tarifas = [
   transition: all 0.3s ease;
 }
 
-
 .products-nav:hover {
   background: linear-gradient(135deg, #E91E81, #C2185B);
   color: #FFFFFF;
   border-color: transparent;
 }
 
-
 .products-nav-left  { left: 14px; }
 .products-nav-right { right: 14px; }
-
 
 .logs-item {
   scroll-snap-align: start;
@@ -1261,12 +1077,10 @@ const tarifas = [
   transition: 0.25s;
 }
 
-
 .logs-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 32px rgba(0,0,0,0.14);
 }
-
 
 .card-icons {
   width: calc(100% - 20px);
@@ -1280,7 +1094,6 @@ const tarifas = [
   z-index: 2;
 }
 
-
 .product-mini-info {
   display: flex;
   flex-direction: column;
@@ -1290,14 +1103,12 @@ const tarifas = [
   padding-top: 8px;
 }
 
-
 .product-mini-title {
   font-size: 0.95rem;
   font-weight: 600;
   color: #2D3E94;
   margin-bottom: 4px;
 }
-
 
 .product-mini-category {
   font-size: 0.75rem;
@@ -1316,7 +1127,6 @@ const tarifas = [
   font-size: 1rem;
 }
 
-
 .product-mini-badge {
   position: absolute;
   top: 22px; right: 10px;
@@ -1331,7 +1141,6 @@ const tarifas = [
   box-shadow: 0 2px 8px rgba(255,152,0,0.35);
 }
 
-
 .wave-divider {
   position: relative;
   margin-top: -2px;
@@ -1339,9 +1148,7 @@ const tarifas = [
   background: #000;
 }
 
-
 .wave-divider svg { width: 100%; height: 80px; display: block; }
-
 
 .wave-divider-hero {
   margin-top: -2px;
@@ -1349,9 +1156,7 @@ const tarifas = [
   background: linear-gradient(135deg, #E91E81 0%, #7B2D8B 50%, #2D3E94 100%);
 }
 
-
 .wave-divider-hero svg { width: 100%; height: 60px; display: block; }
-
 
 /* ===== HERO SECTION ===== */
 .hero-section {
@@ -1361,9 +1166,7 @@ const tarifas = [
   color: #FFFFFF;
 }
 
-
 .hero-title { font-size: 2.4rem; font-weight: 800; margin: 0 0 16px; line-height: 1.2; }
-
 
 .hero-subtitle {
   font-size: 1.1rem;
@@ -1373,9 +1176,7 @@ const tarifas = [
   line-height: 1.6;
 }
 
-
 .hero-stats { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
-
 
 .hero-stat {
   display: flex;
@@ -1386,10 +1187,8 @@ const tarifas = [
   min-width: 110px;
 }
 
-
 .hero-stat-number { font-size: 2rem; font-weight: 800; color: #FFD200; line-height: 1; }
 .hero-stat-label { font-size: 0.9rem; opacity: 0.9; white-space: nowrap; }
-
 
 /* ===== BENEFICIOS DE CUENTA ===== */
 .beneficios-section {
@@ -1401,7 +1200,6 @@ const tarifas = [
   font-family: 'Nunito', sans-serif;
 }
 
-
 .beneficios-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1409,7 +1207,6 @@ const tarifas = [
   max-width: 760px;
   margin: 0 auto 32px;
 }
-
 
 .beneficio-card {
   background: #FDF6EC;
@@ -1423,7 +1220,6 @@ const tarifas = [
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-
 /* --- Mobile --- */
 @media (max-width: 600px) {
   .beneficios-grid {
@@ -1432,7 +1228,6 @@ const tarifas = [
     padding: 0 16px;
     margin: 0 auto 20px;
   }
-
 
   .beneficio-card {
     padding: 14px 16px;
@@ -1443,26 +1238,22 @@ const tarifas = [
     text-align: left;
   }
 
-
   .beneficio-card img,
   .beneficio-card svg {
     width: 32px;
     height: 32px;
   }
 
-
   .beneficio-card h3 {
     font-size: 14px;
     margin: 0;
   }
-
 
   .beneficio-card p {
     font-size: 13px;
     margin: 0;
   }
 }
-
 
 .beneficio-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,0,0,0.08); }
 .beneficio-card-plata { border-top-color: #9CA3AF; }
@@ -1471,7 +1262,6 @@ const tarifas = [
 .beneficio-icon { font-size: 2.4rem; line-height: 1; }
 .beneficio-nivel { font-size: 1.05rem; font-weight: 800; color: #2D3E94; }
 .beneficio-descuento { font-size: 1.3rem; font-weight: 800; color: #E91E81; }
-
 
 .beneficios-cta-btn {
   display: inline-block;
@@ -1486,12 +1276,10 @@ const tarifas = [
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-
 .beneficios-cta-btn:hover {
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 10px 26px rgba(233,30,129,0.45);
 }
-
 
 /* ===== NUESTROS SERVICIOS ===== */
 .services-grid {
@@ -1500,7 +1288,6 @@ const tarifas = [
   gap: 24px;
   padding: 0 60px 40px;
 }
-
 
 .service-card {
   display: flex;
@@ -1517,7 +1304,6 @@ const tarifas = [
   cursor: pointer;
 }
 
-
 .service-card-shows   { background: #FFF9C4; }
 .service-card-games   { background: #E8F5E9; }
 .service-card-juegos  { background: #E3F2FD; }
@@ -1528,18 +1314,15 @@ const tarifas = [
   animation: shimmer-border 3s ease-in-out infinite;
 }
 
-
 @keyframes shimmer-border {
   0%, 100% { box-shadow: 0 2px 12px rgba(233,30,129,0.15); }
   50% { box-shadow: 0 2px 20px rgba(255,152,0,0.3); }
 }
 
-
 .service-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
 .service-icon { font-size: 2.8rem; line-height: 1; }
 .service-name { font-size: 1rem; font-weight: 700; margin: 0; text-align: center; }
 .service-desc { font-size: 0.82rem; margin: 0; text-align: center; opacity: 0.75; }
-
 
 /* ===== Reviews styles ===== */
 .review-card {
@@ -1556,9 +1339,7 @@ const tarifas = [
   color: inherit;
 }
 
-
 .review-stars { margin-bottom: 0.75rem; font-size: 0.9rem; }
-
 
 .review-text {
   font-size: 0.95rem;
@@ -1572,7 +1353,6 @@ const tarifas = [
   white-space: normal;
 }
 
-
 .review-meta {
   margin-top: auto;
   border-top: 1px solid #f0f0f0;
@@ -1582,11 +1362,9 @@ const tarifas = [
   align-items: center;
 }
 
-
 .review-author { font-weight: 600; color: #222222; }
 .review-date { font-size: 0.8rem; color: #999999; }
 .reviews-section { padding: 3rem 1rem; }
-
 
 .section-title {
   text-align: center;
@@ -1595,12 +1373,8 @@ const tarifas = [
   color: #333;
 }
 
-
-
-
 /* ===== TARIFAS DE MOVILIDAD ===== */
 .movilidad-section { background: #ffffff; border-radius: 32px; margin: 0 40px 80px; padding: 60px; text-align: center; }
-
 
 .movilidad-badge {
   display: inline-block;
@@ -1615,9 +1389,7 @@ const tarifas = [
   margin-bottom: 8px;
 }
 
-
 .movilidad-subtitle { font-size: 0.95rem; color: #888; margin: 14px 0 36px; }
-
 
 .movilidad-grid {
   display: grid;
@@ -1626,7 +1398,6 @@ const tarifas = [
   max-width: 900px;
   margin: 0 auto;
 }
-
 
 .movilidad-card {
   background: white;
@@ -1641,24 +1412,19 @@ const tarifas = [
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-
 .movilidad-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(45,62,148,0.12); }
 .movilidad-distrito { font-weight: 600; color: #2D3E94; font-size: 0.9rem; margin: 0; flex: 1; }
 .movilidad-precio { font-size: 1.2rem; font-weight: 800; color: #E91E81; margin: 0; white-space: nowrap; margin-left: 12px; }
 .movilidad-nota { margin-top: 24px; font-size: 0.82rem; color: #aaa; }
 
-
 .faq-cta { margin-top: 18px; font-size: 0.95rem; color: #2D3E94; }
 .faq-cta a { color: #E91E81; font-weight: 700; text-decoration: none; }
 .faq-cta a:hover { text-decoration: underline; }
 
-
 .empty-carousel { padding: 40px 20px; color: #2D3E94; opacity: 0.5; font-size: 0.95rem; }
-
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) { .services-grid { grid-template-columns: repeat(3, 1fr); } }
-
 
 @media (max-width: 900px) {
   .services-grid { grid-template-columns: repeat(2, 1fr); padding: 0 30px 40px; }
@@ -1669,7 +1435,6 @@ const tarifas = [
   .beneficios-section { margin: 0 30px; padding: 44px 24px; }
   .intro-section { gap: 28px; }
 }
-
 
 @media (max-width: 768px) {
   .main-video-wrapper { height: 55vh; min-height: 280px; }
@@ -1688,15 +1453,12 @@ const tarifas = [
   .welcome-banner { border-radius: 20px; padding: 14px 20px; margin: 12px 20px 0; }
 }
 
-
 @media (max-width: 700px) {
   .our-products-wrapper { padding: 8px 10px; }
   .hero-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
-
 @media (max-width: 600px) { .services-grid { grid-template-columns: 1fr; } }
-
 
 @media (max-width: 480px) {
   .main-video-wrapper { height: 45vh; min-height: 220px; }
