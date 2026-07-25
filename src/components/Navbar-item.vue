@@ -259,7 +259,7 @@ const { cartCount } = useCart();
 
   .pet-image-mobile {
     height: 42px;
-    width: 42px; /* cuadrada, pensada para un ícono/cara del rino en vez del logo horizontal */
+    width: 82px; /* cuadrada, pensada para un ícono/cara del rino en vez del logo horizontal */
   }
 }
 
