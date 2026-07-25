@@ -58,8 +58,10 @@
       </div>
 
       <div class="pet-logo">
-        <img src="@/assets/rhinoceros.jpeg" class="pet-image" alt="Mascota" />
+        <img src="@/assets/rhinoceros.jpeg" class="pet-image pet-image-desktop" alt="Mascota" />
+        <img src="@/assets/transparent_pet_logo.png" class="pet-image pet-image-mobile" alt="Mascota" />
       </div>
+      
 
       <!-- 3. REDES SOCIALES (DERECHA) - solo desktop -->
       <div class="social-media">
@@ -215,10 +217,10 @@ const { cartCount } = useCart();
 }
 
 .pet-logo {
-  height: 50px;
   border-radius: 8px;
   margin: 0 25px;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .pet-image {
@@ -226,6 +228,39 @@ const { cartCount } = useCart();
   width: 80px;
   border-radius: 8px;
   object-fit: cover;
+  display: block;
+}
+
+/* Por defecto (desktop): se ve la versión completa, se oculta la de móvil */
+.pet-image-desktop {
+  display: block;
+}
+
+.pet-image-mobile {
+  display: none;
+}
+
+@media (max-width: 950px) {
+  /* En móvil se invierte */
+  .pet-image-desktop {
+    display: none;
+  }
+
+  .pet-image-mobile {
+    display: block;
+  }
+
+  /* Como en móvil el espacio es más reducido, achico un poco el
+     contenedor de la mascota para que no compita con el logo y
+     la hamburguesa */
+  .pet-logo {
+    margin: 0 12px;
+  }
+
+  .pet-image-mobile {
+    height: 42px;
+    width: 42px; /* cuadrada, pensada para un ícono/cara del rino en vez del logo horizontal */
+  }
 }
 
 .social-media {
