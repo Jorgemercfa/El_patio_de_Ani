@@ -38,7 +38,6 @@ const loyaltyLevelColorMap = {
   '🥇 Oro': '#FFD200',
   '💎 VIP': '#E91E81',
 };
-const silverReservasTarget = NIVELES.find((nivel) => nivel.nombre === '🥈 Plata')?.minReservas || 3;
 const loyaltyLevelColor = computed(
   () => loyaltyLevelColorMap[loyaltyData.value.nivel] || '#2D3E94',
 );
@@ -52,14 +51,19 @@ const loyaltyProgress = computed(() => {
   const progressValue = loyaltyData.value.reservas - currentLevelMin;
   return Math.min(100, Math.max(0, (progressValue / progressRange) * 100));
 });
+// El mensaje de nivel ya NO expone el número exacto de reservas
+// acumuladas ni cuántas faltan: al ser un conteo manual (llevado por
+// Ani), mostrar cifras precisas puede no reflejar la realidad en tiempo
+// real. Solo se comunica el nivel actual, el beneficio, y que sigue
+// reservando para subir — sin mencionar el mecanismo de conteo.
 const loyaltyMessage = computed(() => {
   if (loyaltyData.value.nivel === '💎 VIP') {
     return '¡Eres cliente VIP! Disfruta del máximo descuento 💎';
   }
-  if (loyaltyData.value.nivel === '🥉 Bronce' && loyaltyData.value.reservas === 0) {
-    return `¡Completa ${silverReservasTarget} reservas para alcanzar el nivel Plata!`;
+  if (loyaltyData.value.reservasParaProximo > 0) {
+    return `Sigue reservando con nosotros para alcanzar el nivel ${loyaltyData.value.proximoNivel} y desbloquear más beneficios.`;
   }
-  return `Te faltan ${loyaltyData.value.reservasParaProximo} reserva(s) para ${loyaltyData.value.proximoNivel}.`;
+  return 'Has alcanzado el nivel máximo de beneficios.';
 });
 
 const upcomingBirthdays = computed(() => {
@@ -253,20 +257,19 @@ onBeforeUnmount(() => {
 
         <div class="loyalty-section">
           <h2 class="kids-title">🏆 Mi Nivel</h2>
+          <!--
+            Solo se muestra el nivel y el beneficio (% de descuento).
+            No se expone el número exacto de reservas acumuladas ni
+            cuántas faltan para el siguiente nivel, ya que el conteo es
+            manual (lo administra Ani) y no queremos que el cliente vea
+            el mecanismo de conteo en sí.
+          -->
           <div class="loyalty-badge" :style="{ borderColor: loyaltyLevelColor }">
             <span class="loyalty-level" :style="{ color: loyaltyLevelColor }">{{ loyaltyData.nivel }}</span>
-            <span class="loyalty-reservas">{{ loyaltyData.reservas }} reservas acumuladas</span>
           </div>
           <div class="loyalty-progress">
             <div class="loyalty-progress-fill" :style="{ width: `${loyaltyProgress}%`, backgroundColor: loyaltyLevelColor }"></div>
           </div>
-          <p class="loyalty-next-level" v-if="loyaltyData.reservasParaProximo > 0">
-            Faltan <strong>{{ loyaltyData.reservasParaProximo }}</strong> reserva(s) para
-            <strong>{{ loyaltyData.proximoNivel }}</strong>
-          </p>
-          <p class="loyalty-next-level" v-else>
-            Has alcanzado el nivel máximo de beneficios.
-          </p>
           <p class="loyalty-discount">{{ loyaltyData.descuento }}% de descuento activo</p>
           <p class="loyalty-message">{{ loyaltyMessage }}</p>
         </div>
