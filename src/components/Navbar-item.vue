@@ -1,13 +1,14 @@
 <template>
   <div class="navbar-wrapper font-nunito">
     <nav class="navbar-area">
-      <!-- 1. LOGO -->
+      <!-- 1. LOGO + MASCOTA DEBAJO -->
       <div class="nav-logo">
-        <router-link to="/">
+        <router-link to="/" class="nav-logo-link">
           <div class="logo-water-wrap">
             <div class="logo-water-bg"></div>
             <img class="logo" src="@/assets/company-logo.png" alt="Logo" />
           </div>
+          <img class="logo-mascot-below" src="@/assets/transparent_pet_logo.png" alt="Mascota" />
         </router-link>
       </div>
 
@@ -56,12 +57,6 @@
           <a href="https://www.tiktok.com/@elpatiode.ani" target="_blank"><i class="pi pi-tiktok"></i></a>
         </div>
       </div>
-
-      <div class="pet-logo">
-        <img src="@/assets/rhinoceros.jpeg" class="pet-image pet-image-desktop" alt="Mascota" />
-        <img src="@/assets/transparent_pet_logo.png" class="pet-image pet-image-mobile" alt="Mascota" />
-      </div>
-      
 
       <!-- 3. REDES SOCIALES (DERECHA) - solo desktop -->
       <div class="social-media">
@@ -119,15 +114,21 @@ const { cartCount } = useCart();
   box-shadow: 0 8px 32px rgba(233, 30, 129, 0.25);
   width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* ============================================= */
-/* LOGO — ESTA ES LA CORRECCIÓN PRINCIPAL DEL BUG */
-/* La imagen no tenía tamaño definido y se        */
-/* renderizaba a su tamaño natural (enorme).      */
+/* LOGO + MASCOTA DEBAJO                          */
 /* ============================================= */
 .nav-logo {
-  flex-shrink: 0; /* evita que el navbar lo comprima */
+  flex-shrink: 0;
+}
+
+.nav-logo-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 25px;
 }
 
 .logo-water-wrap {
@@ -138,8 +139,7 @@ const { cartCount } = useCart();
   width: 54px;
   height: 54px;
   border-radius: 12px;
-  overflow: hidden; /* recorta cualquier exceso de la imagen */
-  margin-right: 25px;
+  overflow: hidden;
   flex-shrink: 0;
 }
 
@@ -159,8 +159,16 @@ const { cartCount } = useCart();
   z-index: 2;
   width: 100%;
   height: 100%;
-  object-fit: contain; /* mantiene proporción, ya no se desborda */
-  margin-right: 0;
+  object-fit: contain;
+}
+
+/* Mascota chiquita, pegada debajo del logo principal — SOLO en móvil */
+.logo-mascot-below {
+  display: none;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  margin-top: 2px;
 }
 
 @keyframes logoWaterMove {
@@ -214,53 +222,6 @@ const { cartCount } = useCart();
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.pet-logo {
-  border-radius: 8px;
-  margin: 0 25px;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.pet-image {
-  height: 50px;
-  width: 80px;
-  border-radius: 8px;
-  object-fit: cover;
-  display: block;
-}
-
-/* Por defecto (desktop): se ve la versión completa, se oculta la de móvil */
-.pet-image-desktop {
-  display: block;
-}
-
-.pet-image-mobile {
-  display: none;
-}
-
-@media (max-width: 950px) {
-  /* En móvil se invierte */
-  .pet-image-desktop {
-    display: none;
-  }
-
-  .pet-image-mobile {
-    display: block;
-  }
-
-  /* Como en móvil el espacio es más reducido, achico un poco el
-     contenedor de la mascota para que no compita con el logo y
-     la hamburguesa */
-  .pet-logo {
-    margin: 0 12px;
-  }
-
-  .pet-image-mobile {
-    height: 42px;
-    width: 82px; /* cuadrada, pensada para un ícono/cara del rino en vez del logo horizontal */
-  }
 }
 
 .social-media {
@@ -317,6 +278,27 @@ const { cartCount } = useCart();
 }
 
 @media (max-width: 950px) {
+  .navbar-area {
+    height: auto;
+    min-height: 70px;
+    padding: 10px 20px;
+  }
+
+  .nav-logo-link {
+    margin-right: 12px;
+  }
+
+  .logo-water-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .logo-mascot-below {
+    display: block;
+    width: 16px;
+    height: 16px;
+  }
+
   .link-style { display: none; }
 
   .link-style.show-menu {
@@ -324,7 +306,7 @@ const { cartCount } = useCart();
     flex-direction: column;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: #E91E81;
+    background-color: #E91E81;
     z-index: 999;
     justify-content: center;
     align-items: center;
@@ -332,6 +314,25 @@ const { cartCount } = useCart();
     padding: 80px 30px 40px;
     overflow-y: auto;
     animation: fadeInMenu 0.2s ease;
+  }
+
+  .link-style.show-menu::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('@/assets/Backgruond_hamburger_mobile.PNG');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 60% auto;
+    opacity: 0.25;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .link-style.show-menu > * {
+    position: relative;
+    z-index: 1;
   }
 
   @keyframes fadeInMenu {
@@ -405,7 +406,6 @@ const { cartCount } = useCart();
     margin-top: 8px;
   }
 
-  /* Redes sociales visibles solo dentro del menú móvil abierto */
   .link-style.show-menu .social-media-mobile {
     display: flex;
     gap: 24px;
@@ -417,7 +417,6 @@ const { cartCount } = useCart();
     font-size: 28px;
   }
 
-  /* Oculta las redes de la barra fija en mobile (ya están en el menú) */
   .social-media {
     display: none;
   }
