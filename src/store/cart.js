@@ -1,8 +1,9 @@
-import { reactive, computed } from 'vue';
+import { reactive, computed, watch } from 'vue';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
 
-const STORAGE_KEY = 'al-toque-cart';
+const STORAGE_PREFIX = 'al-toque-cart';
+const GUEST_SCOPE = 'guest';
 
 // Categorías cuya reserva representa un único evento/servicio: nunca deben
 // acumular cantidad al volver a agregarse (ej. confirmar una reserva
@@ -17,19 +18,37 @@ function safeParse(json) {
   }
 }
 
-const stored = safeParse(localStorage.getItem(STORAGE_KEY)) || {
-  items: [],
-  purchasedproducts: [],
-};
+// Cada usuario (y el invitado) tiene su propia llave de localStorage, para
+// que el carrito de uno no se filtre al de otro dentro del mismo navegador.
+function scopeKey(userId) {
+  return `${STORAGE_PREFIX}:${userId || GUEST_SCOPE}`;
+}
+
+function loadScope(userId) {
+  const stored = safeParse(localStorage.getItem(scopeKey(userId))) || {
+    items: [],
+    purchasedproducts: [],
+  };
+  return {
+    items: stored.items || [],
+    purchasedproducts: stored.purchasedproducts || [],
+  };
+}
+
+// Arrancamos siempre como invitado; si ya hay sesión activa (ej. al
+// refrescar la página logueado), el watch de abajo la sincroniza apenas
+// se llama a useCart() por primera vez.
+let activeUserId = null;
+const initial = loadScope(activeUserId);
 
 const state = reactive({
-  items: stored.items || [],
-  purchasedproducts: stored.purchasedproducts || [],
+  items: initial.items,
+  purchasedproducts: initial.purchasedproducts,
 });
 
 function persist() {
   localStorage.setItem(
-    STORAGE_KEY,
+    scopeKey(activeUserId),
     JSON.stringify({
       items: state.items,
       purchasedproducts: state.purchasedproducts,
@@ -37,8 +56,32 @@ function persist() {
   );
 }
 
+let scopeWatcherStarted = false;
+
+// Cambia el "cajón" activo de localStorage cuando cambia el usuario logueado
+// (login o logout). El scope anterior ya quedó persistido (persist() se
+// llama en cada mutación), así que acá solo hay que cargar el del nuevo.
+function ensureScopeWatcher(sessionState) {
+  if (scopeWatcherStarted) return;
+  scopeWatcherStarted = true;
+
+  watch(
+    () => sessionState.user?.id ?? null,
+    (newUserId) => {
+      if (newUserId === activeUserId) return;
+      activeUserId = newUserId;
+      const scoped = loadScope(activeUserId);
+      state.items.splice(0, state.items.length, ...scoped.items);
+      state.purchasedproducts.splice(0, state.purchasedproducts.length, ...scoped.purchasedproducts);
+    },
+    { immediate: true },
+  );
+}
+
 export function useCart() {
   const { state: sessionState } = useSession();
+  ensureScopeWatcher(sessionState);
+
   const products = computed(() => getCompanyproducts());
 
   // eventDetails: objeto opcional con el detalle completo de la reserva
@@ -50,9 +93,6 @@ export function useCart() {
     const isServiceProduct = SERVICE_CATEGORIES.includes(product?.category);
     const existing = state.items.find((i) => i.productId === productId);
     if (existing) {
-      // Los servicios (inflables, shows, estética) son una única reserva:
-      // volver a "agregarla" (ej. al confirmar el formulario de reserva
-      // detallada) no debe duplicar la cantidad reservada.
       existing.quantity = isServiceProduct ? 1 : existing.quantity + 1;
       if (reservationDate) existing.reservationDate = reservationDate;
       if (eventDetails) existing.eventDetails = eventDetails;
@@ -142,7 +182,6 @@ export function useCart() {
   }
 
   function getPurchasedproducts(userId) {
-    // When userId is not provided, return all orders for admin views.
     if (userId === undefined || userId === null) return state.purchasedproducts;
     return state.purchasedproducts.filter((c) => c.userId === userId);
   }
