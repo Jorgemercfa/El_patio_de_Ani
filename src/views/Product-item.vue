@@ -22,7 +22,7 @@ const isLoading = ref(true) // ✅ skeleton loader
 onMounted(async () => {
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   await fetchCompanyproducts()
-  isLoading.value = false // ✅ apagar skeleton
+  isLoading.value = false
   if (route.query.category) {
     activeFilter.value = route.query.category
   }
@@ -30,6 +30,7 @@ onMounted(async () => {
     activeSubcategory.value = route.query.subcategory
   }
   await nextTick()
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   isRestoringFromUrl.value = false
 })
 
