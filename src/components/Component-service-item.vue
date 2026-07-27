@@ -240,31 +240,54 @@ function reserveInflable() {
   router.push({ path: '/Inflable-reserva', query: { id: product.value.id } });
 }
 
+// ─── SCROLL AL TOPE (con limpieza de timers pendientes) ────
+// Guardamos los IDs de los setTimeout diferidos para poder cancelarlos.
+// Es fundamental: si el usuario navega fuera de esta vista (ej. clic en
+// "Regresar") antes de que se cumplan esos 50ms/250ms, los timers
+// quedaban vivos y disparaban scrollTo(0) sobre la SIGUIENTE página
+// —el catálogo, justo cuando está restaurando su posición de scroll
+// guardada— arruinando esa restauración. Por eso se cancelan tanto al
+// reintentar forceScrollTop() como al desmontar el componente.
+const scrollForceTimeouts = ref([]);
+
+function clearScrollForceTimeouts() {
+  scrollForceTimeouts.value.forEach((id) => clearTimeout(id));
+  scrollForceTimeouts.value = [];
+}
+
 function getScrollContainer() {
   return document.scrollingElement || document.documentElement || document.body;
 }
 
 async function forceScrollTop() {
+  clearScrollForceTimeouts();
+
   await nextTick();
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
   const el = getScrollContainer();
   if (el) el.scrollTop = 0;
-  setTimeout(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    const el2 = getScrollContainer();
-    if (el2) el2.scrollTop = 0;
-  }, 50);
-  setTimeout(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    const el3 = getScrollContainer();
-    if (el3) el3.scrollTop = 0;
-  }, 250);
+
+  scrollForceTimeouts.value.push(
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      const el2 = getScrollContainer();
+      if (el2) el2.scrollTop = 0;
+    }, 50),
+  );
+
+  scrollForceTimeouts.value.push(
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      const el3 = getScrollContainer();
+      if (el3) el3.scrollTop = 0;
+    }, 250),
+  );
 }
 
 onMounted(async () => {
@@ -278,6 +301,10 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   stopCarouselAutoplay();
+  // Cancela cualquier scrollTo(0) diferido que aún esté pendiente, para
+  // que no se dispare sobre la página a la que se está navegando ahora
+  // (típicamente el catálogo, restaurando su scroll guardado).
+  clearScrollForceTimeouts();
 });
 
 watch(
