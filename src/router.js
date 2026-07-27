@@ -2,7 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 // Usuarios
 import Home from './views/Home-item.vue';
 import products from './views/Product-item.vue';
-import productsDetails from './components/Component-service-item.vue/index.js';
+import productsDetails from './components/Component-service-item.vue';
 import Proms from './views/Promotions-item.vue';
 import Reviews from './views/Reviews-item.vue';
 import About from './views/About-item.vue';
