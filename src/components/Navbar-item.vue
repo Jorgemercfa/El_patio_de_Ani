@@ -323,7 +323,7 @@ const { cartCount } = useCart();
     background-image: url('@/assets/Backgruond_hamburger_mobile.PNG');
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 95% auto;
+    background-size: 188%;
     opacity: 0.70;
     mix-blend-mode: screen;
     pointer-events: none;
@@ -363,13 +363,16 @@ const { cartCount } = useCart();
     font-size: 1.1rem;
     font-weight: 800;
     color: white;
-    background: transparent;
+    background: rgba(233, 30, 129, 0.45); /* Capa rosa semitransparente */
+    backdrop-filter: blur(8px);            /* Desenfoca el logo justo detrás del botón */
+    -webkit-backdrop-filter: blur(8px);    /* Compatibilidad con Safari/iOS */
     padding: 14px 24px;
     width: 80%;
     max-width: 320px;
     text-align: center;
     border-radius: 999px;
-    border: 2px solid white;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Contorno sutil al texto */
     transition: transform 0.15s ease, background 0.15s ease;
   }
 
