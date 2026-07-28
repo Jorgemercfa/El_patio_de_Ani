@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo'
@@ -23,7 +23,7 @@ const isLoading = ref(true) // ✅ skeleton loader
 onMounted(async () => {
   // Si guardamos una posición de scroll al salir hacia el detalle de este
   // mismo catálogo (misma categoría/subcategoría en la URL, ver
-  // onBeforeUnmount más abajo), la restauramos al volver. Si no hay nada
+  // onBeforeRouteLeave más abajo), la restauramos al volver. Si no hay nada
   // guardado (entrada nueva desde el Home, u otro filtro distinto), se
   // comporta como antes: arranca arriba.
   const savedY = popScrollPosition(route.fullPath)
@@ -90,14 +90,21 @@ watch(activeSubcategory, (newSub) => {
   })
 })
 
+// ⚠️ CLAVE DEL FIX: guardamos la posición de scroll en onBeforeRouteLeave,
+// NO en onBeforeUnmount. En Vue Router 4, el objeto `route` (useRoute())
+// ya apunta a la URL de DESTINO antes de que el componente viejo termine
+// de desmontarse — así que leer route.fullPath dentro de onBeforeUnmount
+// da la URL del detalle al que estás entrando, no la del catálogo que
+// estás dejando. Eso hacía que la posición se guardara con la clave
+// equivocada y nunca se encontrara al volver. onBeforeRouteLeave(to, from)
+// se ejecuta ANTES de que la navegación se confirme, así que `from`
+// siempre es la ruta correcta (la de este catálogo, con su filtro activo).
+onBeforeRouteLeave((to, from) => {
+  saveScrollPosition(from.fullPath, window.scrollY)
+})
+
 onBeforeUnmount(() => {
   if (filterScrollTimeout.value) clearTimeout(filterScrollTimeout.value)
-  // Guardamos dónde estaba el usuario en ESTE catálogo (con este filtro
-  // activo) justo antes de desmontar, típicamente porque entró al detalle
-  // de un producto. route.fullPath incluye category/subcategory, así que
-  // la posición sólo se restaura si vuelve exactamente a esa combinación
-  // de filtros (equivalente a mantener el filtro activo al regresar).
-  saveScrollPosition(route.fullPath, window.scrollY)
 })
 
 const normalizeText = (value) =>
