@@ -261,9 +261,18 @@ router.afterEach((to, from) => {
   const isBackFromDetail = from.name === 'productsDetails'
   if (isBackFromDetail) return;
 
+  // ⚠️ El elemento que realmente scrollea en este sitio es document.body
+  // (confirmado en consola: document.body.scrollTop > 0 mientras
+  // window.scrollY siempre devolvía 0). window.scrollTo() por sí solo no
+  // tenía ningún efecto real — por eso se agrega también
+  // document.body.scrollTop = 0 explícitamente.
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
   setTimeout(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
   }, DYNAMIC_CONTENT_SCROLL_DELAY);
 });
 

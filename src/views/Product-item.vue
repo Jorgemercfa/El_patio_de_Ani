@@ -4,7 +4,7 @@ import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo'
-import { saveScrollPosition, popScrollPosition } from '@/constants/scrollMemory'
+import { saveScrollPosition, popScrollPosition, getScrollY, setScrollY } from '@/constants/scrollMemory'
 
 const router = useRouter()
 const route = useRoute()
@@ -21,9 +21,14 @@ const isRestoringFromUrl = ref(true)
 const isLoading = ref(true) // ✅ skeleton loader
 
 onMounted(async () => {
+  // Si guardamos una posición de scroll al salir hacia el detalle de este
+  // mismo catálogo (misma categoría/subcategoría en la URL, ver
+  // onBeforeRouteLeave más abajo), la restauramos al volver. Si no hay nada
+  // guardado (entrada nueva desde el Home, u otro filtro distinto), se
+  // comporta como antes: arranca arriba.
   const savedY = popScrollPosition(route.fullPath)
   if (savedY === null) {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    setScrollY(0)
   }
 
   await fetchCompanyproducts()
@@ -36,13 +41,18 @@ onMounted(async () => {
   }
   await nextTick()
 
+  // El layout final (subcategorías + cards reales) recién está listo acá,
+  // así que este es el único lugar seguro para fijar el scroll definitivo:
+  // restaurando la posición guardada, o yendo arriba si no hay ninguna.
+  // setScrollY escribe sobre document.body (el elemento que realmente
+  // scrollea en este sitio) además de documentElement/window, para
+  // funcionar sin importar cuál sea el contenedor real.
   if (savedY !== null) {
-    window.scrollTo({ top: savedY, left: 0, behavior: 'instant' })
+    setScrollY(savedY)
   } else {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    setScrollY(0)
   }
   isRestoringFromUrl.value = false
-  console.log('[Product-item] MOUNT', { fullPath: route.fullPath, savedY })
 })
 
 const subcategoryMap = {
@@ -83,9 +93,17 @@ watch(activeSubcategory, (newSub) => {
   })
 })
 
+// ⚠️ CLAVE DEL FIX: guardamos la posición de scroll en onBeforeRouteLeave,
+// NO en onBeforeUnmount. En Vue Router 4, el objeto `route` (useRoute())
+// ya apunta a la URL de DESTINO antes de que el componente viejo termine
+// de desmontarse — así que leer route.fullPath dentro de onBeforeUnmount
+// da la URL del detalle al que estás entrando, no la del catálogo que
+// estás dejando. Eso hacía que la posición se guardara con la clave
+// equivocada y nunca se encontrara al volver. onBeforeRouteLeave(to, from)
+// se ejecuta ANTES de que la navegación se confirme, así que `from`
+// siempre es la ruta correcta (la de este catálogo, con su filtro activo).
 onBeforeRouteLeave((to, from) => {
-  saveScrollPosition(from.fullPath, window.scrollY)
-  console.log('[Product-item] LEAVE', { fromFullPath: from.fullPath, scrollY: window.scrollY })
+  saveScrollPosition(from.fullPath, getScrollY())
 })
 
 onBeforeUnmount(() => {

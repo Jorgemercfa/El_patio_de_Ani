@@ -10,3 +10,18 @@ export function popScrollPosition(key) {
   positions.delete(key);
   return y;
 }
+
+export function getScrollY() {
+  return (
+    document.body.scrollTop ||
+    document.documentElement.scrollTop ||
+    window.scrollY ||
+    0
+  );
+}
+
+export function setScrollY(y) {
+  document.body.scrollTop = y;
+  document.documentElement.scrollTop = y;
+  window.scrollTo({ top: y, left: 0, behavior: 'instant' });
+}
