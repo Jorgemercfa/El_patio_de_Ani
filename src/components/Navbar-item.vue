@@ -306,7 +306,7 @@ const { cartCount } = useCart();
     flex-direction: column;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #E91E81;
+    background-color: #eddcdc;
     z-index: 999;
     justify-content: center;
     align-items: center;
@@ -324,7 +324,7 @@ const { cartCount } = useCart();
     background-repeat: no-repeat;
     background-position: center;
     background-size: 188%;
-    opacity: 0.70;
+    opacity: 0.65;
     mix-blend-mode: screen;
     pointer-events: none;
     z-index: 0;
@@ -398,7 +398,7 @@ const { cartCount } = useCart();
   }
 
   .link-style.show-menu .btn-perfil {
-    background: transparent;
+    background: rgba(233, 30, 129, 0.45);
     color: white;
     border: 2px solid white;
     justify-content: center;
@@ -416,7 +416,7 @@ const { cartCount } = useCart();
   }
 
   .social-media-mobile i {
-    color: white;
+    color: #E91E81;
     font-size: 28px;
   }
 
