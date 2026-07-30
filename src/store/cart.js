@@ -1,4 +1,4 @@
-import { reactive, computed, watch } from 'vue';
+import { reactive, computed, watch, effectScope } from 'vue';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
 
@@ -65,17 +65,40 @@ function ensureScopeWatcher(sessionState) {
   if (scopeWatcherStarted) return;
   scopeWatcherStarted = true;
 
-  watch(
-    () => sessionState.user?.id ?? null,
-    (newUserId) => {
-      if (newUserId === activeUserId) return;
-      activeUserId = newUserId;
-      const scoped = loadScope(activeUserId);
-      state.items.splice(0, state.items.length, ...scoped.items);
-      state.purchasedproducts.splice(0, state.purchasedproducts.length, ...scoped.purchasedproducts);
-    },
-    { immediate: true },
-  );
+  // ⚠️ CLAVE: el watch() se registra dentro de un effectScope(true)
+  // ("detached"), NO directamente en el setup() del componente que llamó
+  // a useCart() por primera vez.
+  //
+  // useCart() se invoca típicamente desde dentro del setup() de algún
+  // componente (ej. Navbar-item.vue, que aparece en TODAS las vistas pero
+  // se desmonta y vuelve a montar en cada cambio de ruta, porque cada
+  // vista incluye su propio <Navbar/> en vez de vivir en un layout
+  // persistente en App.vue). Un watch() normal creado ahí queda atado al
+  // ciclo de vida de ESE componente puntual, y Vue lo destruye
+  // automáticamente en cuanto se desmonta -es decir, en la primera
+  // navegación a otra página-. Como scopeWatcherStarted ya quedó en true,
+  // ensureScopeWatcher() nunca lo volvía a registrar, y el carrito dejaba
+  // de sincronizarse con el login/logout para siempre después de esa
+  // primera navegación, sin ningún error visible.
+  //
+  // effectScope(true) crea un scope "desconectado" de cualquier
+  // componente: el watch() que corre dentro sobrevive indefinidamente,
+  // durante toda la vida de la aplicación, sin importar qué componente
+  // particular disparó su creación ni cuándo se desmonte.
+  const scope = effectScope(true);
+  scope.run(() => {
+    watch(
+      () => sessionState.user?.id ?? null,
+      (newUserId) => {
+        if (newUserId === activeUserId) return;
+        activeUserId = newUserId;
+        const scoped = loadScope(activeUserId);
+        state.items.splice(0, state.items.length, ...scoped.items);
+        state.purchasedproducts.splice(0, state.purchasedproducts.length, ...scoped.purchasedproducts);
+      },
+      { immediate: true },
+    );
+  });
 }
 
 export function useCart() {
