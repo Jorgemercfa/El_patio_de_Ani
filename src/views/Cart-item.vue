@@ -41,7 +41,7 @@ function getItemPrice(item) {
 }
 
 function isService(item) {
-  const serviceCategories = ['Inflables', 'Shows Infantiles', 'Estética Infantil'];
+  const serviceCategories = ['Inflables', 'Shows Infantiles', 'Juegos', 'Carritos Snacks', 'Estética Infantil'];
   return serviceCategories.includes(item.category);
 }
 
