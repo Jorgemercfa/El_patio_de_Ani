@@ -35,23 +35,22 @@ function ensureFirebaseReady() {
 
 // Crea (o reutiliza) una app secundaria de Firebase para dar de alta nuevos
 // administradores sin reemplazar la sesión del administrador que ya inició
-// sesión: `createUserWithEmailAndPassword` autentica automáticamente al
-// usuario recién creado en la instancia de Auth que se le pase, por lo que
-// usar una instancia aislada evita "expulsar" al administrador actual.
+// sesión.
 function getSecondaryAuth() {
   const existingApp = getApps().find((app) => app.name === SECONDARY_APP_NAME);
-  const secondaryApp = existingApp || initializeApp(auth.app.options, SECONDARY_APP_NAME);
+  const secondaryApp =
+    existingApp || initializeApp(auth.app.options, SECONDARY_APP_NAME);
   return getAuth(secondaryApp);
 }
 
 async function disposeSecondaryApp() {
   const existingApp = getApps().find((app) => app.name === SECONDARY_APP_NAME);
   if (existingApp) {
-    // Solo liberamos recursos de la app secundaria; un fallo aquí no afecta la
-    // sesión principal ni el alta ya persistida, por lo que únicamente lo
-    // registramos para diagnóstico.
     await deleteApp(existingApp).catch((cleanupError) => {
-      console.warn('[CompaniesRepo] No se pudo liberar la app secundaria de Auth:', cleanupError);
+      console.warn(
+        '[CompaniesRepo] No se pudo liberar la app secundaria de Auth:',
+        cleanupError,
+      );
     });
   }
 }
@@ -75,7 +74,11 @@ function mapCompany(uid, data, fallbackEmail = '') {
 }
 
 async function getNextCompanyId() {
-  const q = query(collection(db, COMPANIES_COLLECTION), orderBy('id', 'desc'), limit(1));
+  const q = query(
+    collection(db, COMPANIES_COLLECTION),
+    orderBy('id', 'desc'),
+    limit(1),
+  );
   const snapshot = await getDocs(q);
   if (snapshot.empty) return 1;
 
@@ -103,7 +106,10 @@ export async function findCompanyByEmail(email) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return null;
 
-  const q = query(collection(db, COMPANIES_COLLECTION), where('email', '==', normalizedEmail));
+  const q = query(
+    collection(db, COMPANIES_COLLECTION),
+    where('email', '==', normalizedEmail),
+  );
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
 
@@ -116,7 +122,7 @@ export async function addCompany(companyInput) {
 
   const normalizedEmail = normalizeEmail(companyInput?.email);
   const normalizedPassword = String(companyInput?.password || '');
-  
+
   if (!normalizedEmail) {
     throw new Error('Debes ingresar un email válido.');
   }
@@ -127,8 +133,7 @@ export async function addCompany(companyInput) {
   const secondaryAuth = getSecondaryAuth();
 
   try {
-    // Registramos en una instancia de Auth secundaria para no cerrar/reemplazar
-    // la sesión del administrador que está dando de alta al nuevo usuario.
+    // Registramos en instancia secundaria para no reemplazar sesión principal
     const credential = await createUserWithEmailAndPassword(
       secondaryAuth,
       normalizedEmail,
@@ -146,18 +151,15 @@ export async function addCompany(companyInput) {
       products: [],
     };
 
-    // Guardamos en Firestore (persiste el rol/perfil administrativo del nuevo usuario)
     await setDoc(doc(db, COMPANIES_COLLECTION, uid), payload);
 
     return mapCompany(uid, payload, normalizedEmail);
   } catch (error) {
-    // Controlamos de forma segura si el email ya existe en Firebase
     if (error.code === 'auth/email-already-in-use') {
       throw new Error('Ya existe una empresa registrada con ese email.');
     }
     throw error;
   } finally {
-    // Cerramos y liberamos la app secundaria; la sesión principal no se ve afectada.
     await disposeSecondaryApp();
   }
 }
@@ -166,7 +168,11 @@ export async function loginCompany({ email, password }) {
   ensureFirebaseReady();
 
   const normalizedEmail = normalizeEmail(email);
-  const credential = await signInWithEmailAndPassword(auth, normalizedEmail, String(password));
+  const credential = await signInWithEmailAndPassword(
+    auth,
+    normalizedEmail,
+    String(password),
+  );
   const firebaseUser = credential.user;
 
   const companyDoc = await getDoc(doc(db, COMPANIES_COLLECTION, firebaseUser.uid));
@@ -175,11 +181,55 @@ export async function loginCompany({ email, password }) {
     throw new Error('No existe un perfil de empresa asociado a esta cuenta.');
   }
 
-  return mapCompany(firebaseUser.uid, companyDoc.data(), firebaseUser.email || normalizedEmail);
+  return mapCompany(
+    firebaseUser.uid,
+    companyDoc.data(),
+    firebaseUser.email || normalizedEmail,
+  );
 }
 
+// Flujo clásico por correo (lo conservamos por compatibilidad)
 export async function sendCompanyResetPassword(email) {
   ensureFirebaseReady();
   const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) {
+    throw new Error('Debes ingresar un email válido.');
+  }
+
   await sendPasswordResetEmail(auth, normalizedEmail);
+  return true;
+}
+
+/**
+ * Cambio directo de contraseña por email (sin enviar correo).
+ * IMPORTANTE:
+ * - Desde frontend con Firebase Auth cliente NO se puede cambiar la contraseña
+ *   de otro usuario solo con email.
+ * - Esto debe resolverse en backend con Firebase Admin SDK (Cloud Function).
+ *
+ * Esta función deja la validación y una guía clara de error para que tu vista
+ * ya funcione contra esta API y solo te falte conectar backend.
+ */
+export async function resetCompanyPasswordDirect(email, newPassword) {
+  ensureFirebaseReady();
+
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedPassword = String(newPassword || '');
+
+  if (!normalizedEmail) {
+    throw new Error('Debes ingresar un email válido.');
+  }
+
+  if (normalizedPassword.length < 6) {
+    throw new Error('La contraseña debe tener al menos 6 caracteres.');
+  }
+
+  const company = await findCompanyByEmail(normalizedEmail);
+  if (!company?.uid) {
+    throw new Error('No existe una empresa registrada con ese email.');
+  }
+
+  throw new Error(
+    'Falta implementar backend seguro (Firebase Admin SDK) para cambiar contraseña directamente sin correo.',
+  );
 }
