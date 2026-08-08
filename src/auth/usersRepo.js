@@ -4,7 +4,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, setDoc, where, addDoc } from 'firebase/firestore';
 
 // ─── RUTAS DE IMPORTACIÓN CORREGIDAS ───
 import { auth } from '@/firebase/auth'; 
@@ -95,6 +95,36 @@ export async function addUser({ name, lastname, email, password }) {
     };
 
     await setDoc(doc(db, USERS_COLLECTION, uid), payload);
+
+    // Email de bienvenida (#26-A). Si esto falla, no debe romper el
+    // registro del usuario — por eso va en su propio try/catch.
+    try {
+      await addDoc(collection(db, 'mail'), {
+        to: normalizedEmail,
+        message: {
+          subject: '¡Bienvenido a El Patio de Ani! 🎉',
+          html: `
+            <div style="font-family: 'Nunito', sans-serif; max-width: 560px; margin: 0 auto;">
+              <h1 style="color: #2D3E94;">¡Hola ${payload.name}! 👋</h1>
+              <p>Gracias por crear tu cuenta en <strong>El Patio de Ani</strong>. Ahora eres parte de nuestra familia de eventos infantiles.</p>
+              <h2 style="color: #E91E81;">¿Qué puedes hacer con tu cuenta?</h2>
+              <ul>
+                <li>🥉 <strong>Nivel Bronce</strong> (inicial)</li>
+                <li>🥈 <strong>Nivel Plata</strong>: 5% de descuento</li>
+                <li>🥇 <strong>Nivel Oro</strong>: 10% de descuento</li>
+                <li>💎 <strong>Nivel VIP</strong>: 15% de descuento</li>
+              </ul>
+              <p>También recibirás recordatorios especiales en los cumpleaños de tus hijos registrados, además de promociones exclusivas.</p>
+              <p>¡Nos vemos pronto en tu próximo evento! 🎈</p>
+              <p style="color: #2D3E94; font-weight: bold;">El equipo de El Patio de Ani</p>
+            </div>
+          `,
+        },
+      });
+    } catch (mailError) {
+      console.error('[addUser] No se pudo encolar el email de bienvenida:', mailError);
+    }
+
     return mapUser(uid, payload, normalizedEmail);
   } catch (error) {
     if (error.code === 'auth/email-already-in-use') {

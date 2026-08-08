@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
@@ -179,6 +179,29 @@ const saveChildren = async () => {
     state.user.children = sanitizedChildren;
     showChildrenSavedMessage.value = true;
     profileNotice.value = 'Si las notificaciones por email están configuradas, recibirás una confirmación por el registro de hijos.';
+
+    // Email de confirmación (#26-B). No debe romper el guardado si falla.
+    if (sanitizedChildren.length > 0) {
+      try {
+        const nombresHijos = sanitizedChildren.map((c) => c.name).join(', ');
+        await addDoc(collection(db, 'mail'), {
+          to: state.user.email,
+          message: {
+            subject: '¡Gracias por registrar a tu familia! 🎂',
+            html: `
+              <div style="font-family: 'Nunito', sans-serif; max-width: 560px; margin: 0 auto;">
+                <h1 style="color: #2D3E94;">¡Hola ${state.user.name}!</h1>
+                <p>Registraste a <strong>${nombresHijos}</strong> en tu cuenta de El Patio de Ani.</p>
+                <p>Ahora te enviaremos recordatorios especiales cerca de sus cumpleaños, con descuentos pensados para celebrar en grande. 🎉</p>
+                <p style="color: #2D3E94; font-weight: bold;">El equipo de El Patio de Ani</p>
+              </div>
+            `,
+          },
+        });
+      } catch (mailError) {
+        console.error('[Perfil] No se pudo encolar el email de hijos:', mailError);
+      }
+    }
 
     if (childrenStorageTimer.value) {
       clearTimeout(childrenStorageTimer.value);
