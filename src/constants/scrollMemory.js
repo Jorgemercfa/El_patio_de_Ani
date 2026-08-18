@@ -23,5 +23,6 @@ export function getScrollY() {
 export function setScrollY(y) {
   document.body.scrollTop = y;
   document.documentElement.scrollTop = y;
-  window.scrollTo({ top: y, left: 0, behavior: 'instant' });
+  // 'auto' es más compatible que valores no estándar.
+  window.scrollTo({ top: y, left: 0, behavior: 'auto' });
 }
