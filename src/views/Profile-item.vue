@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { doc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -12,6 +12,17 @@ import { NIVELES, useLoyaltyManual } from '@/store/loyaltyManual';
 const router = useRouter();
 const route = useRoute();
 const { state, logout } = useSession();
+
+// Formulario local del usuario
+const userData = ref({
+  name: '',
+  lastName: '',
+  email: '',
+});
+const isSavingUser = ref(false);
+const userSaveSuccess = ref(false);
+const userSaveError = ref('');
+
 const children = ref([]);
 const showChildrenSavedMessage = ref(false);
 const childrenStorageTimer = ref(null);
@@ -20,6 +31,61 @@ const profileNotice = ref('');
 const ORDER_ID_DISPLAY_LENGTH = 12;
 const { getPurchasedproducts } = useCart();
 const { getLoyaltyData } = useLoyaltyManual();
+
+// Sincronizar estado global del usuario con el formulario local
+const initUserData = () => {
+  if (state.user) {
+    userData.value = {
+      name: state.user.name || '',
+      lastName: state.user.lastName || '',
+      email: state.user.email || '',
+    };
+  }
+};
+
+watch(() => state.user, () => {
+  initUserData();
+}, { immediate: true });
+
+// Iniciales corregidas usando lastName
+const initials = computed(() => {
+  const name = userData.value.name || '';
+  const lastName = userData.value.lastName || '';
+  const first = name.trim()[0] || '';
+  const second = lastName.trim()[0] || name.trim()[1] || '';
+  return `${first}${second}`.toUpperCase() || 'UA';
+});
+
+// Guardar Nombre y Apellido en Firestore y actualizar sesión
+const saveUserData = async () => {
+  if (!state.user?.uid) return;
+  isSavingUser.value = true;
+  userSaveError.value = '';
+  userSaveSuccess.value = false;
+
+  try {
+    const updatedFields = {
+      name: userData.value.name.trim(),
+      lastName: userData.value.lastName.trim(),
+    };
+
+    await updateDoc(doc(db, 'user', state.user.uid), updatedFields);
+
+    // Actualizar estado reactivo local en la sesión
+    state.user.name = updatedFields.name;
+    state.user.lastName = updatedFields.lastName;
+
+    userSaveSuccess.value = true;
+    setTimeout(() => {
+      userSaveSuccess.value = false;
+    }, 3000);
+  } catch (err) {
+    console.error('[Perfil] Error actualizando datos personales:', err);
+    userSaveError.value = 'No se pudieron actualizar los datos. Inténtalo nuevamente.';
+  } finally {
+    isSavingUser.value = false;
+  }
+};
 
 const purchasedproducts = computed(() =>
   state.user ? getPurchasedproducts(state.user.id) : [],
@@ -112,14 +178,6 @@ const upcomingBirthdays = computed(() => {
       diffDays,
     };
   });
-});
-
-const initials = computed(() => {
-  const name = state.user?.name || '';
-  const lastname = state.user?.lastname || '';
-  const first = name.trim()[0] || '';
-  const second = lastname.trim()[0] || name.trim()[1] || '';
-  return `${first}${second}`.toUpperCase() || 'UA';
 });
 
 function formatDate(iso) {
@@ -244,35 +302,65 @@ onBeforeUnmount(() => {
         <h1 class="main-title">Perfil</h1>
 
         <div class="contact-card">
-          <div class="profile-header">
-            <div class="avatar">{{ initials }}</div>
-            <div>
-              <h2 class="profile-name">{{ state.user?.name }}</h2>
-              <h2 class="profile-lastname">{{ state.user?.lastname }}</h2>
-              <p class="profile-email">{{ state.user?.email }}</p>
-            </div>
-          </div>
-          <div class="form-area">
-            <div class="form-group">
-              <label>Nombre</label>
-              <input :value="state.user?.name" disabled />
-            </div>
+  <div class="profile-header">
+    <div class="avatar">{{ initials }}</div>
+    <div>
+      <h2 class="profile-name">
+        {{ userData.name }} {{ userData.lastName }}
+      </h2>
+      <p class="profile-email">{{ userData.email }}</p>
+    </div>
+  </div>
 
-            <div class="form-group">
-              <label>Apellido</label>
-              <input :value="state.user?.lastname" disabled />
-            </div>
+  <form class="form-area" @submit.prevent="saveUserData">
+    <div class="form-group">
+      <label for="profile-name">Nombre</label>
+      <input 
+        id="profile-name"
+        v-model="userData.name" 
+        type="text" 
+        placeholder="Tu nombre" 
+        required 
+      />
+    </div>
 
-            <div class="form-group">
-              <label>Email</label>
-              <input :value="state.user?.email" disabled />
-            </div>
+    <div class="form-group">
+      <label for="profile-lastname">Apellido</label>
+      <input 
+        id="profile-lastname"
+        v-model="userData.lastName" 
+        type="text" 
+        placeholder="Tu apellido" 
+        required 
+      />
+    </div>
 
-            <button class="submit-btn" type="button" @click="onLogout">
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
+    <div class="form-group">
+      <label for="profile-email">Email</label>
+      <input id="profile-email" :value="userData.email" disabled />
+    </div>
+
+    <div class="profile-actions">
+      <button 
+        class="save-profile-btn" 
+        type="submit" 
+        :disabled="isSavingUser"
+      >
+        {{ isSavingUser ? 'Guardando...' : 'Guardar datos' }}
+      </button>
+      <button class="submit-btn" type="button" @click="onLogout">
+        Cerrar sesión
+      </button>
+    </div>
+
+    <p v-if="userSaveSuccess" class="save-children-message">
+      ¡Datos actualizados con éxito! 🎉
+    </p>
+    <p v-if="userSaveError" class="save-children-error">
+      {{ userSaveError }}
+    </p>
+  </form>
+</div>
 
         <p v-if="profileNotice" class="profile-notice">
           {{ profileNotice }}
@@ -489,6 +577,33 @@ onBeforeUnmount(() => {
   border: none;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
+
+.profile-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.save-profile-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 999px;
+  border: none;
+  background-color: #FFD200;
+  color: #2D3E94;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-profile-btn:hover {
+  background-color: #f2c500;
+}
+
+.save-profile-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .profile-header {
   display: flex;
   align-items: center;

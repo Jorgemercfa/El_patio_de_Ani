@@ -29,7 +29,8 @@ function mapUser(uid, data, fallbackEmail = '') {
     id: uid,
     uid,
     name: data?.name || '',
-    lastname: data?.lastname || '',
+    // Soporta tanto CamelCase (lastName) como minúsculas (lastname)
+    lastName: data?.lastName || data?.lastname || '',
     email: data?.email || fallbackEmail || '',
     products: Array.isArray(data?.products) ? data.products : [],
     children: Array.isArray(data?.children) ? data.children : [],
@@ -69,7 +70,7 @@ export async function getUserByUid(uid) {
   return mapUser(uid, userDoc.data());
 }
 
-export async function addUser({ name, lastname, email, password }) {
+export async function addUser({ name, lastName, lastname, email, password }) {
   const normalizedEmail = normalizeEmail(email);
   const normalizedPassword = String(password || '');
   
@@ -84,10 +85,12 @@ export async function addUser({ name, lastname, email, password }) {
     const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, normalizedPassword);
     const uid = credential.user.uid;
 
+    const userLastName = String(lastName || lastname || '').trim();
+
     const payload = {
       uid,
       name: String(name || '').trim(),
-      lastname: String(lastname || '').trim(),
+      lastName: userLastName,
       email: normalizedEmail,
       products: [],
       children: [],
@@ -96,8 +99,7 @@ export async function addUser({ name, lastname, email, password }) {
 
     await setDoc(doc(db, USERS_COLLECTION, uid), payload);
 
-    // Email de bienvenida (#26-A). Si esto falla, no debe romper el
-    // registro del usuario — por eso va en su propio try/catch.
+    // Email de bienvenida (#26-A).
     try {
       await addDoc(collection(db, 'mail'), {
         to: normalizedEmail,
