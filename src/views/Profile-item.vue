@@ -8,6 +8,7 @@ import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
 import { useCart } from '@/store/cart.js';
 import { NIVELES, useLoyaltyManual } from '@/store/loyaltyManual';
+import { deleteAccount } from '@/auth/usersRepo';
 
 const router = useRouter();
 const route = useRoute();
@@ -22,6 +23,10 @@ const userData = ref({
 const isSavingUser = ref(false);
 const userSaveSuccess = ref(false);
 const userSaveError = ref('');
+
+// Estado para la eliminación de cuenta
+const isDeleting = ref(false);
+const deleteError = ref('');
 
 const children = ref([]);
 const showChildrenSavedMessage = ref(false);
@@ -71,7 +76,6 @@ const saveUserData = async () => {
 
     await updateDoc(doc(db, 'user', state.user.uid), updatedFields);
 
-    // Actualizar estado reactivo local en la sesión
     state.user.name = updatedFields.name;
     state.user.lastName = updatedFields.lastName;
 
@@ -84,6 +88,33 @@ const saveUserData = async () => {
     userSaveError.value = 'No se pudieron actualizar los datos. Inténtalo nuevamente.';
   } finally {
     isSavingUser.value = false;
+  }
+};
+
+// Función para eliminar cuenta
+const onDeleteAccount = async () => {
+  const confirmed = window.confirm(
+    '¿Estás seguro de que deseas eliminar tu cuenta? Se borrarán tus datos de perfil y el historial. Esta acción no se puede deshacer.'
+  );
+
+  if (!confirmed) return;
+
+  isDeleting.value = true;
+  deleteError.value = '';
+
+  try {
+    await deleteAccount();
+    await logout();
+    router.push({ name: 'Home' });
+  } catch (error) {
+    console.error('[Perfil] Error eliminando cuenta:', error);
+    if (error.code === 'auth/requires-recent-login') {
+      deleteError.value = 'Por motivos de seguridad, debes cerrar sesión e iniciar sesión nuevamente para eliminar tu cuenta.';
+    } else {
+      deleteError.value = 'No se pudo eliminar la cuenta. Inténtalo de nuevo más tarde.';
+    }
+  } finally {
+    isDeleting.value = false;
   }
 };
 
@@ -117,11 +148,7 @@ const loyaltyProgress = computed(() => {
   const progressValue = loyaltyData.value.reservas - currentLevelMin;
   return Math.min(100, Math.max(0, (progressValue / progressRange) * 100));
 });
-// El mensaje de nivel ya NO expone el número exacto de reservas
-// acumuladas ni cuántas faltan: al ser un conteo manual (llevado por
-// Ani), mostrar cifras precisas puede no reflejar la realidad en tiempo
-// real. Solo se comunica el nivel actual, el beneficio, y que sigue
-// reservando para subir — sin mencionar el mecanismo de conteo.
+
 const loyaltyMessage = computed(() => {
   if (loyaltyData.value.nivel === '💎 VIP') {
     return '¡Eres cliente VIP! Disfruta del máximo descuento 💎';
@@ -141,7 +168,6 @@ const upcomingBirthdays = computed(() => {
   return children.value.filter((child) => {
     if (!child.birthday) return false;
 
-    // Construir la fecha de cumpleaños de este año
     const bday = new Date(child.birthday);
     const thisYearBday = new Date(
       today.getFullYear(),
@@ -149,7 +175,6 @@ const upcomingBirthdays = computed(() => {
       bday.getDate(),
     );
 
-    // Si ya pasó este año, calcular para el año siguiente
     if (thisYearBday < today) {
       thisYearBday.setFullYear(today.getFullYear() + 1);
     }
@@ -238,7 +263,6 @@ const saveChildren = async () => {
     showChildrenSavedMessage.value = true;
     profileNotice.value = 'Si las notificaciones por email están configuradas, recibirás una confirmación por el registro de hijos.';
 
-    // Email de confirmación (#26-B). No debe romper el guardado si falla.
     if (sanitizedChildren.length > 0) {
       try {
         const nombresHijos = sanitizedChildren.map((c) => c.name).join(', ');
@@ -302,65 +326,78 @@ onBeforeUnmount(() => {
         <h1 class="main-title">Perfil</h1>
 
         <div class="contact-card">
-  <div class="profile-header">
-    <div class="avatar">{{ initials }}</div>
-    <div>
-      <h2 class="profile-name">
-        {{ userData.name }} {{ userData.lastName }}
-      </h2>
-      <p class="profile-email">{{ userData.email }}</p>
-    </div>
-  </div>
+          <div class="profile-header">
+            <div class="avatar">{{ initials }}</div>
+            <div>
+              <h2 class="profile-name">
+                {{ userData.name }} {{ userData.lastName }}
+              </h2>
+              <p class="profile-email">{{ userData.email }}</p>
+            </div>
+          </div>
 
-  <form class="form-area" @submit.prevent="saveUserData">
-    <div class="form-group">
-      <label for="profile-name">Nombre</label>
-      <input 
-        id="profile-name"
-        v-model="userData.name" 
-        type="text" 
-        placeholder="Tu nombre" 
-        required 
-      />
-    </div>
+          <form class="form-area" @submit.prevent="saveUserData">
+            <div class="form-group">
+              <label for="profile-name">Nombre</label>
+              <input 
+                id="profile-name"
+                v-model="userData.name" 
+                type="text" 
+                placeholder="Tu nombre" 
+                required 
+              />
+            </div>
 
-    <div class="form-group">
-      <label for="profile-lastname">Apellido</label>
-      <input 
-        id="profile-lastname"
-        v-model="userData.lastName" 
-        type="text" 
-        placeholder="Tu apellido" 
-        required 
-      />
-    </div>
+            <div class="form-group">
+              <label for="profile-lastname">Apellido</label>
+              <input 
+                id="profile-lastname"
+                v-model="userData.lastName" 
+                type="text" 
+                placeholder="Tu apellido" 
+                required 
+              />
+            </div>
 
-    <div class="form-group">
-      <label for="profile-email">Email</label>
-      <input id="profile-email" :value="userData.email" disabled />
-    </div>
+            <div class="form-group">
+              <label for="profile-email">Email</label>
+              <input id="profile-email" :value="userData.email" disabled />
+            </div>
 
-    <div class="profile-actions">
-      <button 
-        class="save-profile-btn" 
-        type="submit" 
-        :disabled="isSavingUser"
-      >
-        {{ isSavingUser ? 'Guardando...' : 'Guardar datos' }}
-      </button>
-      <button class="submit-btn" type="button" @click="onLogout">
-        Cerrar sesión
-      </button>
-    </div>
+            <div class="profile-actions">
+              <button 
+                class="save-profile-btn" 
+                type="submit" 
+                :disabled="isSavingUser"
+              >
+                {{ isSavingUser ? 'Guardando...' : 'Guardar datos' }}
+              </button>
+              <button class="submit-btn" type="button" @click="onLogout">
+                Cerrar sesión
+              </button>
+            </div>
 
-    <p v-if="userSaveSuccess" class="save-children-message">
-      ¡Datos actualizados con éxito! 🎉
-    </p>
-    <p v-if="userSaveError" class="save-children-error">
-      {{ userSaveError }}
-    </p>
-  </form>
-</div>
+            <p v-if="userSaveSuccess" class="save-children-message">
+              ¡Datos actualizados con éxito! 🎉
+            </p>
+            <p v-if="userSaveError" class="save-children-error">
+              {{ userSaveError }}
+            </p>
+          </form>
+
+          <!-- Zona de Peligro: Eliminar Cuenta -->
+          <div class="danger-zone">
+            <button 
+              class="delete-account-btn" 
+              type="button" 
+              :disabled="isDeleting"
+              @click="onDeleteAccount"
+            >
+              {{ isDeleting ? 'Eliminando...' : 'Eliminar mi cuenta' }}
+            </button>
+            <p v-if="deleteError" class="save-children-error">{{ deleteError }}</p>
+          </div>
+        </div>
 
         <p v-if="profileNotice" class="profile-notice">
           {{ profileNotice }}
@@ -368,13 +405,6 @@ onBeforeUnmount(() => {
 
         <div class="loyalty-section">
           <h2 class="kids-title">🏆 Mi Nivel</h2>
-          <!--
-            Solo se muestra el nivel y el beneficio (% de descuento).
-            No se expone el número exacto de reservas acumuladas ni
-            cuántas faltan para el siguiente nivel, ya que el conteo es
-            manual (lo administra Ani) y no queremos que el cliente vea
-            el mecanismo de conteo en sí.
-          -->
           <div class="loyalty-badge" :style="{ borderColor: loyaltyLevelColor }">
             <span class="loyalty-level" :style="{ color: loyaltyLevelColor }">{{ loyaltyData.nivel }}</span>
           </div>
@@ -451,30 +481,30 @@ onBeforeUnmount(() => {
           </p>
         </div>
 
-        <!-- ===== AVISO DE CUMPLEAÑOS ===== -->
-<div v-if="upcomingBirthdays.length > 0" class="birthday-alert">
-  <div
-    v-for="(kid, index) in upcomingBirthdays"
-    :key="index"
-    class="birthday-alert-item"
-  >
-    <span class="birthday-alert-icon">🎂</span>
-    <div class="birthday-alert-text">
-      <strong>
-        {{ kid.diffDays === 0
-          ? `¡Hoy es el cumpleaños de ${kid.name}!`
-          : kid.diffDays === 1
-            ? `¡Mañana es el cumpleaños de ${kid.name}!`
-            : `¡El cumpleaños de ${kid.name} es en ${kid.diffDays} días!`
-        }}
-      </strong>
-      <p>Reserva con tiempo y celebra con El Patio de Ani 🎉</p>
-    </div>
-    <router-link to="/Product-item" class="birthday-alert-btn">
-      Ver servicios →
-    </router-link>
-  </div>
-</div>
+        <!-- AVISO DE CUMPLEAÑOS -->
+        <div v-if="upcomingBirthdays.length > 0" class="birthday-alert">
+          <div
+            v-for="(kid, index) in upcomingBirthdays"
+            :key="index"
+            class="birthday-alert-item"
+          >
+            <span class="birthday-alert-icon">🎂</span>
+            <div class="birthday-alert-text">
+              <strong>
+                {{ kid.diffDays === 0
+                  ? `¡Hoy es el cumpleaños de ${kid.name}!`
+                  : kid.diffDays === 1
+                    ? `¡Mañana es el cumpleaños de ${kid.name}!`
+                    : `¡El cumpleaños de ${kid.name} es en ${kid.diffDays} días!`
+                }}
+              </strong>
+              <p>Reserva con tiempo y celebra con El Patio de Ani 🎉</p>
+            </div>
+            <router-link to="/Product-item" class="birthday-alert-btn">
+              Ver servicios →
+            </router-link>
+          </div>
+        </div>
 
         <div class="orders-section">
           <h2 class="kids-title">📦 Mis Pedidos</h2>
@@ -532,7 +562,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* puedes reutilizar estilos parecidos a Sign-in */
 .page-wrapper {
   display: flex;
   flex-direction: column;
@@ -601,6 +630,37 @@ onBeforeUnmount(() => {
 
 .save-profile-btn:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.danger-zone {
+  margin-top: 10px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.delete-account-btn {
+  background: transparent;
+  color: #b00020;
+  border: 2px solid #b00020;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.delete-account-btn:hover {
+  background: #b00020;
+  color: #ffffff;
+}
+
+.delete-account-btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -965,7 +1025,6 @@ onBeforeUnmount(() => {
   .orders-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  
 }
 
 @media (min-width: 1080px) {
@@ -975,12 +1034,8 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 600px) {
-  /* .contact-section {
-    padding: 80px 0 40px 0;
-  } */
   .profile-email{
     font-size: 10px;
   }
 }
-
 </style>

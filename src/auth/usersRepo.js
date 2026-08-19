@@ -3,8 +3,9 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
+  deleteUser,
 } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, query, setDoc, where, addDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, setDoc, where, addDoc, deleteDoc } from 'firebase/firestore';
 
 // ─── RUTAS DE IMPORTACIÓN CORREGIDAS ───
 import { auth } from '@/firebase/auth'; 
@@ -29,7 +30,6 @@ function mapUser(uid, data, fallbackEmail = '') {
     id: uid,
     uid,
     name: data?.name || '',
-    // Soporta tanto CamelCase (lastName) como minúsculas (lastname)
     lastName: data?.lastName || data?.lastname || '',
     email: data?.email || fallbackEmail || '',
     products: Array.isArray(data?.products) ? data.products : [],
@@ -99,7 +99,6 @@ export async function addUser({ name, lastName, lastname, email, password }) {
 
     await setDoc(doc(db, USERS_COLLECTION, uid), payload);
 
-    // Email de bienvenida (#26-A).
     try {
       await addDoc(collection(db, 'mail'), {
         to: normalizedEmail,
@@ -153,4 +152,20 @@ export async function loginUser({ email, password }) {
 export async function sendUserResetPassword(email) {
   const normalizedEmail = normalizeEmail(email);
   await sendPasswordResetEmail(auth, normalizedEmail);
+}
+
+// ─── ELIMINACIÓN DE CUENTA DE USUARIO ───
+export async function deleteAccount() {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('No hay un usuario autenticado activo.');
+  }
+
+  const uid = user.uid;
+
+  // 1. Eliminar el documento de Firestore
+  await deleteDoc(doc(db, USERS_COLLECTION, uid));
+
+  // 2. Eliminar la cuenta de Firebase Auth
+  await deleteUser(user);
 }
