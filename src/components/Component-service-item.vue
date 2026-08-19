@@ -1,78 +1,38 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+/* eslint-disable no-unused-vars, no-empty */
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
+import { useSession } from '@/auth/session';
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart.js';
-import { useReservasServicio } from '@/store/reservas';
-import { useSession } from '@/auth/session';
-import { useReviews } from '@/store/reviews.js';
-import { PREMIUM_INFLABLE_PRICE } from '@/constants/inflables';
+import {
+  PREMIUM_INFLABLE_PRICE,
+  MAX_GUEST_COUNT,
+  WHATSAPP_BUSINESS_NUMBER,
+} from '@/constants/inflables';
 
 const route = useRoute();
 const router = useRouter();
+const { state } = useSession();
 const { addToCart } = useCart();
-const { state: sessionState, isAuthenticated } = useSession();
-const { isDateAvailable } = useReservasServicio();
-const { fetchReviews, addReview, getAverageRating, reviewsCache } = useReviews();
+const CURRENCY_PREFIX = 'S/';
+const RESERVATIONS_STORAGE_KEY = 'patio-reservas';
+const CALENDAR_WEEK_DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
-const reviews = computed(() => reviewsCache.value[Number(route.params.id)] || []);
-const avgRating = computed(() => getAverageRating(route.params.id));
-const reviewForm = ref({ rating: 5, comment: '' });
-const reviewSubmitting = ref(false);
-const reviewError = ref('');
-const reviewSuccess = ref(false);
-
-async function submitReview() {
-  if (!isAuthenticated.value) {
-    router.push('/Sign-in');
-    return;
-  }
-  if (!reviewForm.value.comment.trim()) {
-    reviewError.value = 'Escribe un comentario antes de enviar.';
-    return;
-  }
-  reviewSubmitting.value = true;
-  reviewError.value = '';
-  try {
-    await addReview(
-      route.params.id,
-      sessionState.user.uid,
-      sessionState.user.name || sessionState.user.email,
-      reviewForm.value.rating,
-      reviewForm.value.comment,
-    );
-    reviewForm.value = { rating: 5, comment: '' };
-    reviewSuccess.value = true;
-    setTimeout(() => { reviewSuccess.value = false; }, 3000);
-  } catch (err) {
-    console.error('[Reviews] Error enviando reseña:', err);
-    reviewError.value = 'No se pudo enviar la reseña. Intenta de nuevo.';
-  } finally {
-    reviewSubmitting.value = false;
-  }
-}
-
-function formatReviewDate(createdAt) {
-  const ms = createdAt?.seconds ? createdAt.seconds * 1000 : createdAt;
-  return new Date(ms).toLocaleDateString('es-PE');
-}
-
-const products = computed(() => getCompanyproducts());
-
-const product = computed(() =>
-  products.value.find((s) => s.id === Number(route.params.id)),
+const allProducts = computed(() => getCompanyproducts());
+const selectedProduct = computed(() =>
+  allProducts.value.find((product) => product.id === Number(route.query.id)),
 );
 
 const parsePrice = (value) => {
-  if (value === null || value === undefined || value === '') return null;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  if (typeof value !== 'string') return null;
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value !== 'string') return 0;
 
   const cleaned = value.trim().replace(/[^\d.,-]/g, '');
-  if (!cleaned) return null;
+  if (!cleaned) return 0;
 
   const lastComma = cleaned.lastIndexOf(',');
   const lastDot = cleaned.lastIndexOf('.');
@@ -86,168 +46,458 @@ const parsePrice = (value) => {
       : cleaned.replace(/[.,]/g, '');
 
   const parsed = Number(normalizedValue);
-  return Number.isFinite(parsed) ? parsed : null;
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const displayPrice = computed(() => {
-  const currentProduct = product.value;
-  if (!currentProduct) return null;
-
+const selectedPrice = computed(() => {
+  if (!selectedProduct.value) return 0;
   return (
-    parsePrice(currentProduct.price) ??
-    parsePrice(currentProduct.discount_price) ??
-    parsePrice(currentProduct.originalPrice) ??
-    parsePrice(currentProduct.tributo)
+    parsePrice(selectedProduct.value.price) ||
+    parsePrice(selectedProduct.value.discount_price) ||
+    parsePrice(selectedProduct.value.originalPrice) ||
+    parsePrice(selectedProduct.value.tributo)
   );
 });
 
-const isInflable = computed(() => product.value?.category === 'Inflables');
-const isSnack = computed(() => product.value?.category === 'Carritos Snacks');
+const inflableType = computed(() => {
+  const product = selectedProduct.value;
+  if (!product) return 'mediano';
 
-const inflableSubcategory = computed(() => {
-  const sub = product.value?.subcategory?.toLowerCase() || '';
-  if (sub.includes('bebé') || sub.includes('bebe') || sub.includes('baby')) return 'bebes';
-  if (sub.includes('grande')) return 'grande';
+  const sub = (product.subcategory || '').toLowerCase();
+  const name = (product.name || '').toLowerCase();
+  const ageRange = (product.age_range || '').toLowerCase();
+
+  if (
+    sub.includes('bebé') ||
+    sub.includes('bebe') ||
+    sub.includes('baby') ||
+    name.includes('bebé') ||
+    name.includes('bebe') ||
+    name.includes('baby') ||
+    name.includes('cubito') ||
+    ageRange.includes('0-2') ||
+    ageRange.includes('0-3')
+  ) {
+    return 'bebes';
+  }
+
+  if (sub.includes('grande') || selectedPrice.value > PREMIUM_INFLABLE_PRICE) {
+    return 'grande';
+  }
+
   return 'mediano';
 });
 
-const inflableDisplayTier = computed(() => {
-  if (!isInflable.value) return null;
-  if ((displayPrice.value || 0) > PREMIUM_INFLABLE_PRICE || inflableSubcategory.value === 'grande') {
-    return 'grande';
+const requiredSpace = computed(() => {
+  if (inflableType.value === 'bebes') return { length: 3, width: 3 };
+  if (inflableType.value === 'grande') return { length: 8, width: 6 };
+  return { length: 5, width: 4 };
+});
+
+const getLocalDate = () => {
+  const now = new Date();
+  const timezoneOffset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - timezoneOffset).toISOString().split('T')[0];
+};
+const today = getLocalDate();
+const reservedDates = ref([]);
+const initialCalendarDate = new Date();
+const currentCalendarDate = ref(
+  new Date(initialCalendarDate.getFullYear(), initialCalendarDate.getMonth(), 1),
+);
+
+const form = ref({
+  responsibleName: state.user?.name || '',
+  eventAddress: '',
+  district: '',
+  eventType: '',
+  eventDate: '',
+  startTime: '',
+  endTime: '',
+  electricLogistics: '',
+  spaceLength: '',
+  spaceWidth: '',
+  floorType: '',
+  guestCount: '',
+  ageRange: '',
+  accessConfirmed: false,
+  measureVisitChoice: '',
+  measureVisitPhone: '',
+  waterMode: '',
+  waterConnection: '',
+  waterDrainType: '',
+  waterResponsible: false,
+});
+
+const WATER_MODE_LABELS = {
+  pelotas: '🎈 Modalidad seca (con pelotitas)',
+  agua: '💧 Modalidad con agua',
+};
+
+const showElectricityWarning = computed(
+  () => form.value.electricLogistics === 'no-electricity',
+);
+
+const hasSpaceWarning = computed(() => {
+  const length = Number(form.value.spaceLength);
+  const width = Number(form.value.spaceWidth);
+  if (!length || !width) return false;
+
+  return (
+    length < requiredSpace.value.length || width < requiredSpace.value.width
+  );
+});
+
+const spaceWarningMessage = computed(
+  () =>
+    `⚠️ Este inflable requiere al menos ${requiredSpace.value.length}m x ${requiredSpace.value.width}m de espacio. Las dimensiones ingresadas podrían no ser suficientes. Confirma con nuestro equipo.`,
+);
+
+const floorInfo = computed(() => {
+  if (form.value.floorType === 'Césped (Estacas)') {
+    return 'Usaremos estacas para fijar el inflable de forma segura.';
   }
-  return inflableSubcategory.value;
+  if (form.value.floorType === 'Cemento / Asfalto (Bolsas de arena)') {
+    return 'Usaremos bolsas de arena y anclajes especiales para estabilidad.';
+  }
+  if (form.value.floorType === 'Tierra') {
+    return 'Verificaremos compactación del suelo para una instalación segura.';
+  }
+  if (form.value.floorType === 'Interior (piso duro interior)') {
+    return 'Revisaremos altura libre, puertas y protección del piso interior.';
+  }
+  return 'Selecciona el tipo de suelo para mostrar recomendaciones de instalación.';
 });
 
-const inflableBadgeLabel = computed(() => {
-  if (inflableDisplayTier.value === 'bebes') return '👶 Para Bebés';
-  if (inflableDisplayTier.value === 'grande') return '🏰 Grande';
-  if (inflableDisplayTier.value === 'mediano') return '🎪 Mediano';
-  return '';
+const ageRecommendation = computed(() => {
+  if (inflableType.value === 'bebes') {
+    return 'Este inflable es recomendado para niños de 0-3 años';
+  }
+  if (inflableType.value === 'grande') {
+    return 'Recomendado para niños de 4-12 años';
+  }
+  return 'Recomendado para niños de 2-8 años';
 });
 
-// ─── CARRUSEL DE FOTOS ─────────────────────────────────────
-const activeImageIndex = ref(0);
-let carouselInterval = null;
-const CAROUSEL_INTERVAL_MS = 4000;
+const requiresMeasureVisit = computed(() => selectedPrice.value > PREMIUM_INFLABLE_PRICE);
 
-const productImages = computed(() => {
-  if (!product.value) return [];
-  const imgs = [];
-  if (product.value.image) imgs.push(product.value.image);
-  if (Array.isArray(product.value.images)) {
-    product.value.images.forEach((url) => {
-      if (url && !imgs.includes(url)) imgs.push(url);
+const WATER_INFLABLE_IDS = [8, 9, 10, 14];
+const WATER_INFLABLE_NAMES = ['tropical', 'splash', 'lava', 'acuático', 'acuatico'];
+
+const isWaterInflable = computed(() => {
+  if (!selectedProduct.value) return false;
+  const productId = Number(selectedProduct.value.id);
+  if (WATER_INFLABLE_IDS.includes(productId)) return true;
+  const productName = (selectedProduct.value.name || '').toLowerCase();
+  return WATER_INFLABLE_NAMES.some((keyword) => productName.includes(keyword));
+});
+
+const formErrors = ref({});
+const showConfirmationModal = ref(false);
+const premiumPriceLabel = `${CURRENCY_PREFIX} ${PREMIUM_INFLABLE_PRICE}+`;
+const calendarMonthLabel = computed(() => {
+  const label = currentCalendarDate.value.toLocaleDateString('es-PE', {
+    month: 'long',
+    year: 'numeric',
+  });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+});
+const reservedDatesSet = computed(() => new Set(reservedDates.value));
+const calendarDays = computed(() => {
+  const year = currentCalendarDate.value.getFullYear();
+  const month = currentCalendarDate.value.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
+  const totalCells = Math.ceil((firstDayOffset + daysInMonth) / 7) * 7;
+  const days = [];
+
+  for (let index = 0; index < totalCells; index += 1) {
+    const dayNumber = index - firstDayOffset + 1;
+    if (dayNumber < 1 || dayNumber > daysInMonth) {
+      days.push(null);
+      continue;
+    }
+
+    const dateString = formatDateForStorage(new Date(year, month, dayNumber));
+    const isPast = dateString < today;
+    const isReserved = reservedDatesSet.value.has(dateString);
+    const isSelected = form.value.eventDate === dateString;
+    days.push({
+      dayNumber,
+      dateString,
+      isPast,
+      isReserved,
+      isSelected,
+      isAvailable: !isPast && !isReserved,
     });
   }
-  return imgs.slice(0, 3);
+
+  return days;
 });
 
-const nextSlide = () => {
-  if (productImages.value.length <= 1) return;
-  activeImageIndex.value = (activeImageIndex.value + 1) % productImages.value.length;
+const formatDateForStorage = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
-const prevSlide = () => {
-  if (productImages.value.length <= 1) return;
-  activeImageIndex.value =
-    (activeImageIndex.value - 1 + productImages.value.length) % productImages.value.length;
-};
-
-const goToSlide = (index) => {
-  activeImageIndex.value = index;
-};
-
-const startCarouselAutoplay = () => {
-  stopCarouselAutoplay();
-  if (productImages.value.length <= 1) return;
-  carouselInterval = setInterval(() => {
-    nextSlide();
-  }, CAROUSEL_INTERVAL_MS);
-};
-
-const stopCarouselAutoplay = () => {
-  if (carouselInterval) {
-    clearInterval(carouselInterval);
-    carouselInterval = null;
-  }
-};
-
-// Reinicia el autoplay cada vez que el usuario interactúa manualmente,
-// para que no "salte" justo después de un click.
-const handleManualNav = (action) => {
-  action();
-  startCarouselAutoplay();
-};
-
-// Resetear carrusel y reiniciar autoplay al cambiar de producto
-watch(
-  () => product.value?.id,
-  () => {
-    activeImageIndex.value = 0;
-    startCarouselAutoplay();
-  },
-);
-
-// Si las imágenes del producto cambian (ej. tras fetch async), reinicia autoplay
-watch(
-  () => productImages.value.length,
-  () => {
-    if (activeImageIndex.value >= productImages.value.length) {
-      activeImageIndex.value = 0;
+const loadReservedDates = () => {
+  try {
+    const raw = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
+    if (!raw) {
+      reservedDates.value = [];
+      return;
     }
-    startCarouselAutoplay();
-  },
-);
-// ───────────────────────────────────────────────────────────
 
-const addedFeedback = ref(false);
-const reservationDate = ref('');
-const reservationError = ref('');
-const todayDate = computed(() => new Date().toLocaleDateString('en-CA'));
-const isSelectedDateAvailable = computed(() => {
-  if (!reservationDate.value || !product.value || isInflable.value) return null;
-  return isDateAvailable(product.value.id, reservationDate.value);
-});
-const availabilityLabel = computed(() => {
-  if (!reservationDate.value) return 'Selecciona una fecha para verificar disponibilidad';
-  return isSelectedDateAvailable.value ? '✅ Fecha disponible' : '🔴 Fecha reservada';
-});
-
-function handleAddToCartSnack() {
-  reservationError.value = '';
-  addToCart(product.value.id, null);
-  addedFeedback.value = true;
-  setTimeout(() => { addedFeedback.value = false; }, 1500);
-}
-
-function handleAddToCartService() {
-  if (!reservationDate.value) {
-    reservationError.value = 'Selecciona la fecha del evento para continuar.';
-    return;
+    const parsed = JSON.parse(raw);
+    reservedDates.value = Array.isArray(parsed)
+      ? parsed.filter((date) => typeof date === 'string')
+      : [];
+  } catch (err) {
+    console.warn('loadReservedDates failed', err);
+    reservedDates.value = [];
   }
-  if (!isDateAvailable(product.value.id, reservationDate.value)) {
-    reservationError.value = 'La fecha seleccionada no está disponible para este servicio.';
-    return;
+};
+
+const saveReservationDate = (date) => {
+  if (!date) return;
+
+  let storageDates = [];
+  try {
+    const raw = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    storageDates = Array.isArray(parsed)
+      ? parsed.filter((item) => typeof item === 'string')
+      : [];
+  } catch (err) {
+    console.warn('saveReservationDate parse failed', err);
+    storageDates = [];
   }
-  reservationError.value = '';
-  addToCart(product.value.id, reservationDate.value);
-  addedFeedback.value = true;
-  setTimeout(() => { addedFeedback.value = false; }, 1500);
+
+  const updatedDates = Array.from(new Set([...storageDates, date])).sort();
+  reservedDates.value = updatedDates;
+  localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedDates));
+};
+
+const goToPreviousMonth = () => {
+  currentCalendarDate.value = new Date(
+    currentCalendarDate.value.getFullYear(),
+    currentCalendarDate.value.getMonth() - 1,
+    1,
+  );
+};
+
+const goToNextMonth = () => {
+  currentCalendarDate.value = new Date(
+    currentCalendarDate.value.getFullYear(),
+    currentCalendarDate.value.getMonth() + 1,
+    1,
+  );
+};
+
+const selectCalendarDate = (day) => {
+  if (!day?.isAvailable) return;
+  form.value.eventDate = day.dateString;
+  formErrors.value.eventDate = '';
+};
+
+const reservationSummary = computed(() => ({
+  producto: selectedProduct.value?.name || 'Inflable',
+  responsable: form.value.responsibleName,
+  direccion: form.value.eventAddress,
+  distrito: form.value.district,
+  tipoEvento: form.value.eventType,
+  fecha: form.value.eventDate,
+  horario: `${form.value.startTime} - ${form.value.endTime}`,
+  electrica: form.value.electricLogistics,
+  espacio: `${form.value.spaceLength}m x ${form.value.spaceWidth}m`,
+  suelo: form.value.floorType,
+  invitados: `${form.value.guestCount} niños`,
+  edades: form.value.ageRange,
+  acceso: form.value.accessConfirmed ? 'Confirmado' : 'No confirmado',
+  medida:
+    requiresMeasureVisit.value && form.value.measureVisitChoice
+      ? form.value.measureVisitChoice
+      : 'No aplica',
+  telefonoMedida: form.value.measureVisitPhone || 'No indicado',
+  modalidadInflable: isWaterInflable.value
+    ? WATER_MODE_LABELS[form.value.waterMode] || 'No seleccionado'
+    : 'No aplica',
+  aguaConexion:
+    isWaterInflable.value && form.value.waterMode === 'agua' ? form.value.waterConnection : 'No aplica',
+  aguaDrenaje:
+    isWaterInflable.value && form.value.waterMode === 'agua' ? form.value.waterDrainType : 'No aplica',
+}));
+
+const whatsappUrl = computed(() => {
+  const message = [
+    'RESERVA INFLABLE',
+    `Producto: ${reservationSummary.value.producto}`,
+    `Responsable: ${reservationSummary.value.responsable}`,
+    `Dirección: ${reservationSummary.value.direccion}`,
+    `Distrito: ${reservationSummary.value.distrito}`,
+    `Tipo de evento: ${reservationSummary.value.tipoEvento}`,
+    `Fecha: ${reservationSummary.value.fecha}`,
+    `Horario: ${reservationSummary.value.horario}`,
+    `Logística eléctrica: ${reservationSummary.value.electrica}`,
+    `Espacio disponible: ${reservationSummary.value.espacio}`,
+    `Tipo de suelo: ${reservationSummary.value.suelo}`,
+    `Cantidad de niños: ${reservationSummary.value.invitados}`,
+    `Rango de edades: ${reservationSummary.value.edades}`,
+    `Ruta de acceso: ${reservationSummary.value.acceso}`,
+    `Visita de medidas: ${reservationSummary.value.medida}`,
+    `Teléfono visita: ${reservationSummary.value.telefonoMedida}`,
+    ...(isWaterInflable.value ? [`Modalidad: ${reservationSummary.value.modalidadInflable}`] : []),
+    ...(isWaterInflable.value && form.value.waterMode === 'agua' ? [
+      `Conexión de agua: ${reservationSummary.value.aguaConexion}`,
+      `Tipo de drenaje: ${reservationSummary.value.aguaDrenaje}`,
+    ] : []),
+  ].join('\n');
+
+  return `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`;
+});
+
+function scrollToFirstError(errors) {
+  if (!errors || Object.keys(errors).length === 0) return;
+  const map = {
+    responsibleName: 'responsibleName',
+    eventAddress: 'eventAddress',
+    district: 'district',
+    eventDate: 'eventDate',
+    startTime: 'startTime',
+    endTime: 'endTime',
+    spaceLength: 'spaceLength',
+    spaceWidth: 'spaceWidth',
+    floorType: 'floorType',
+    guestCount: 'guestCount',
+    ageRange: 'ageRange',
+    measureVisitPhone: 'measureVisitPhone',
+  };
+
+  const firstKey = Object.keys(errors).find((k) => !!map[k]);
+  if (!firstKey) return;
+  const id = map[firstKey];
+  nextTick(() => {
+    const el = document.getElementById(id);
+    if (el && el.scrollIntoView) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      try { if (typeof el.focus === 'function') el.focus(); } catch (e) { console.warn('focus failed', e); }
+    }
+  });
 }
 
-function reserveInflable() {
-  router.push({ path: '/Inflable-reserva', query: { id: product.value.id } });
+function validateForm() {
+  const errors = {};
+
+  if (!form.value.responsibleName.trim()) {
+    errors.responsibleName = 'Ingresa el nombre del responsable';
+  }
+  if (!form.value.eventAddress.trim()) {
+    errors.eventAddress = 'Ingresa la dirección del evento';
+  }
+  if (!form.value.district.trim()) {
+    errors.district = 'Ingresa el distrito';
+  }
+  if (!form.value.eventType) {
+    errors.eventType = 'Selecciona el tipo de evento';
+  }
+  if (!form.value.eventDate) {
+    errors.eventDate = 'Selecciona la fecha del evento';
+  }
+  if (!form.value.startTime) {
+    errors.startTime = 'Selecciona la hora de inicio';
+  }
+  if (!form.value.endTime) {
+    errors.endTime = 'Selecciona la hora de fin';
+  }
+  if (form.value.startTime && form.value.endTime && form.value.endTime <= form.value.startTime) {
+    errors.endTime = 'La hora de fin debe ser mayor a la hora de inicio';
+  }
+  if (!form.value.electricLogistics) {
+    errors.electricLogistics = 'Selecciona una opción de logística eléctrica';
+  }
+  if (!form.value.spaceLength || Number(form.value.spaceLength) < 1) {
+    errors.spaceLength = 'Ingresa un largo válido (mínimo 1m)';
+  }
+  if (!form.value.spaceWidth || Number(form.value.spaceWidth) < 1) {
+    errors.spaceWidth = 'Ingresa un ancho válido (mínimo 1m)';
+  }
+  if (!form.value.floorType) {
+    errors.floorType = 'Selecciona el tipo de suelo';
+  }
+  if (
+    !form.value.guestCount ||
+    Number(form.value.guestCount) < 1 ||
+    Number(form.value.guestCount) > MAX_GUEST_COUNT
+  ) {
+    errors.guestCount = `Ingresa una cantidad de niños entre 1 y ${MAX_GUEST_COUNT}`;
+  }
+  if (!form.value.ageRange.trim()) {
+    errors.ageRange = 'Ingresa el rango de edades';
+  }
+  if (!form.value.accessConfirmed) {
+    errors.accessConfirmed = 'Por favor confirma las condiciones de acceso';
+  }
+
+  if (requiresMeasureVisit.value && !form.value.measureVisitChoice) {
+    errors.measureVisitChoice = 'Selecciona una opción para la toma de medidas';
+  }
+
+  if (
+    requiresMeasureVisit.value &&
+    form.value.measureVisitChoice === 'Sí, quiero coordinar visita de medidas' &&
+    !form.value.measureVisitPhone.trim()
+  ) {
+    errors.measureVisitPhone = 'Ingresa un teléfono de contacto para la visita';
+  }
+
+  if (isWaterInflable.value) {
+    if (!form.value.waterMode) {
+      errors.waterMode = 'Selecciona si prefieres modalidad con pelotitas o con agua';
+    }
+
+    if (form.value.waterMode === 'agua') {
+      if (!form.value.waterConnection) {
+        errors.waterConnection = 'Selecciona el tipo de conexión de agua disponible';
+      }
+      if (!form.value.waterDrainType) {
+        errors.waterDrainType = 'Selecciona cómo se gestionará el agua utilizada';
+      }
+      if (!form.value.waterResponsible) {
+        errors.waterResponsible = 'Debes confirmar la responsabilidad sobre el uso del agua';
+      }
+    }
+  }
+
+  formErrors.value = errors;
+  const ok = Object.keys(errors).length === 0;
+  if (!ok) scrollToFirstError(errors);
+  return ok;
 }
 
-// ─── SCROLL AL TOPE (con limpieza de timers pendientes) ────
-// Guardamos los IDs de los setTimeout diferidos para poder cancelarlos.
-// Es fundamental: si el usuario navega fuera de esta vista (ej. clic en
-// "Regresar") antes de que se cumplan esos 50ms/250ms, los timers
-// quedaban vivos y disparaban scrollTo(0) sobre la SIGUIENTE página
-// —el catálogo, justo cuando está restaurando su posición de scroll
-// guardada— arruinando esa restauración. Por eso se cancelan tanto al
-// reintentar forceScrollTop() como al desmontar el componente.
+function submitReservation() {
+  if (!validateForm() || !selectedProduct.value) return;
+  saveReservationDate(form.value.eventDate);
+  addToCart(selectedProduct.value.id, form.value.eventDate, reservationSummary.value);
+  showConfirmationModal.value = true;
+}
+
+function goToCart() {
+  showConfirmationModal.value = false;
+  router.push('/Cart');
+}
+
+// ─── SCROLL AL TOPE (patrón robusto, mismo enfoque que Component-service-item.vue) ────
+// El problema original: al navegar desde Component-service-item.vue (que puede
+// haber quedado scrolleado en la sección de reseñas), el navegador aplica
+// "scroll anchoring": mientras el calendario, el carrusel de imágenes o las
+// secciones condicionales de agua/medidas terminan de calcular su altura,
+// el navegador reajusta el scroll intentando "mantener" la posición visual
+// previa, y termina reproduciendo el scroll de la vista anterior.
+// La solución es forzar el scroll a 0 en varios instantes (no solo una vez)
+// hasta que el layout se estabilice, y limpiar los timers pendientes al
+// desmontar para no afectar a la siguiente vista (p.ej. /Cart).
 const scrollForceTimeouts = ref([]);
 
 function clearScrollForceTimeouts() {
@@ -259,854 +509,857 @@ function getScrollContainer() {
   return document.scrollingElement || document.documentElement || document.body;
 }
 
-async function forceScrollTop() {
-  clearScrollForceTimeouts();
-
-  await nextTick();
-  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+function scrollAllToTop() {
+  try {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  } catch {}
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
   const el = getScrollContainer();
   if (el) el.scrollTop = 0;
+}
 
-  scrollForceTimeouts.value.push(
-    setTimeout(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      const el2 = getScrollContainer();
-      if (el2) el2.scrollTop = 0;
-    }, 50),
-  );
+async function forceScrollTop() {
+  clearScrollForceTimeouts();
 
-  scrollForceTimeouts.value.push(
-    setTimeout(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      const el3 = getScrollContainer();
-      if (el3) el3.scrollTop = 0;
-    }, 250),
-  );
+  await nextTick();
+  scrollAllToTop();
+
+  // Reintentos escalonados: cubren el pintado del carrusel/calendario y de
+  // las secciones condicionales (agua, medidas) que pueden tardar un poco
+  // más en montarse que en la vista de detalle de producto.
+  [50, 150, 300, 500].forEach((delay) => {
+    scrollForceTimeouts.value.push(setTimeout(scrollAllToTop, delay));
+  });
 }
 
 onMounted(async () => {
+  // Se llama antes del fetch para que el usuario nunca vea el salto,
+  // y otra vez después para cubrir el reflow que provoca pintar el
+  // producto seleccionado y sus secciones condicionales.
+  forceScrollTop();
   await fetchCompanyproducts();
   forceScrollTop();
-  startCarouselAutoplay();
-  if (route.params.id) {
-    await fetchReviews(route.params.id);
-  }
+  loadReservedDates();
 });
 
 onBeforeUnmount(() => {
-  stopCarouselAutoplay();
-  // Cancela cualquier scrollTo(0) diferido que aún esté pendiente, para
-  // que no se dispare sobre la página a la que se está navegando ahora
-  // (típicamente el catálogo, restaurando su scroll guardado).
   clearScrollForceTimeouts();
 });
-
-watch(
-  () => route.params.id,
-  async (newId) => {
-    forceScrollTop();
-    reservationDate.value = '';
-    reservationError.value = '';
-    if (newId) {
-      await fetchReviews(newId);
-    }
-  },
-);
-
-function goBack() {
-  const prev = router.options.history.state?.back;
-  if (prev) {
-    router.back();
-  } else {
-    const fromCat = route.query.fromCat;
-    const fromSub = route.query.fromSub;
-    const category = fromCat || product.value?.category;
-    const query = {};
-    if (category && category !== 'Todos') query.category = category;
-    if (fromSub) query.subcategory = fromSub;
-    router.push({ path: '/Product-item', query });
-  }
-}
 </script>
 
 <template>
-  <header>
-    <Navbar />
-  </header>
+  <div class="page-wrapper">
+    <header>
+      <Navbar />
+    </header>
 
-  <main class="container">
-    <div v-if="product" class="product-wrapper">
-      <button class="card-button return-area" @click="goBack()">Regresar</button>
+    <main class="page">
+      <section class="reservation-wrapper">
+        <div class="reservation-card">
+          <h1 class="title">Reserva de Inflables</h1>
 
-      <h1 class="title">{{ product.name }}</h1>
-
-      <div class="header-badges">
-        <span v-if="product.category" class="badge badge-category">{{ product.category }}</span>
-        <span v-if="product.subcategory" class="badge badge-subcategory">{{ product.subcategory }}</span>
-        <span
-          v-if="inflableBadgeLabel"
-          class="badge"
-          :class="`badge-inflable-${inflableDisplayTier}`"
-        >
-          {{ inflableBadgeLabel }}
-        </span>
-      </div>
-
-      <!-- ===== CARRUSEL DE FOTOS ===== -->
-      <div
-        v-if="productImages.length > 0"
-        class="product-carousel"
-        @mouseenter="stopCarouselAutoplay"
-        @mouseleave="startCarouselAutoplay"
-      >
-        <div class="carousel-container">
-          <div
-            v-for="(img, i) in productImages"
-            :key="i"
-            class="carousel-slide"
-            :class="{ active: i === activeImageIndex }"
-          >
-            <img :src="img" class="product-image-details" :alt="`${product.name} - foto ${i + 1}`" />
-          </div>
-        </div>
-
-        <template v-if="productImages.length > 1">
-          <button
-            class="carousel-btn prev"
-            @click="handleManualNav(prevSlide)"
-            aria-label="Foto anterior"
-            type="button"
-          >
-            <span>‹</span>
-          </button>
-          <button
-            class="carousel-btn next"
-            @click="handleManualNav(nextSlide)"
-            aria-label="Foto siguiente"
-            type="button"
-          >
-            <span>›</span>
-          </button>
-
-          <div class="carousel-dots">
-            <button
-              v-for="(img, i) in productImages"
-              :key="`dot-${i}`"
-              class="carousel-dot"
-              :class="{ active: i === activeImageIndex }"
-              @click="handleManualNav(() => goToSlide(i))"
-              :aria-label="`Foto ${i + 1}`"
-              type="button"
-            />
-          </div>
-        </template>
-      </div>
-      <!-- ================================ -->
-
-      <div class="product-prices">
-        <span class="discount-price">
-          S/ {{ displayPrice !== null ? displayPrice.toFixed(2) : '-' }}
-        </span>
-      </div>
-
-      <div class="text-product-type">
-        {{ product.longDescription }}
-      </div>
-
-      <div class="product-details">
-        <div class="product-info">
-          <div class="info-item" v-if="product.duration">
-            <span class="label">Duración</span>
-            <span class="value">{{ product.duration }}</span>
-          </div>
-          <div class="info-item" v-if="product.age_range">
-            <span class="label">Edad recomendada</span>
-            <span class="value">{{ product.age_range }}</span>
-          </div>
-          <div class="info-item" v-if="product.dimensions">
-            <span class="label">Dimensiones</span>
-            <span class="value">{{ product.dimensions }}</span>
-          </div>
-          <div class="info-item" v-if="product.capacity">
-            <span class="label">Capacidad</span>
-            <span class="value">{{ product.capacity }}</span>
-          </div>
-        </div>
-
-        <div class="product-options" v-if="product.options?.length">
-          <span class="label">Incluye</span>
-          <div class="options-tags">
-            <span class="option-tag" v-for="option in product.options" :key="option">
-              {{ option }}
-            </span>
-          </div>
-        </div>
-
-        <div class="product-terms" v-if="product.Terms_of_use">
-          <span class="label">Términos de uso</span>
-          <p class="terms-text">{{ product.Terms_of_use }}</p>
-        </div>
-
-        <!-- ===== INFLABLES ===== -->
-        <div v-if="isInflable" class="inflable-actions">
-          <button
-            class="buy-button primary-action-btn"
-            aria-label="Agregar al carrito"
-            @click="reserveInflable"
-          >
-            🛒 Agregar al carrito
-          </button>
-        </div>
-
-        <!-- ===== SNACKS ===== -->
-        <div v-else-if="isSnack" class="snack-actions">
-          <button class="buy-button primary-action-btn" @click="handleAddToCartSnack">
-            {{ addedFeedback ? '✓ Agregado al carrito' : '🛒 Agregar al carrito' }}
-          </button>
-        </div>
-
-        <!-- ===== OTROS SERVICIOS ===== -->
-        <template v-else>
-          <div class="reservation-date-section">
-            <label class="label" for="reservation-date">📅 Fecha del evento</label>
-            <input
-              id="reservation-date"
-              v-model="reservationDate"
-              class="reservation-date-input"
-              type="date"
-              :min="todayDate"
-              required
-              aria-required="true"
-            />
-            <p
-              class="availability-indicator"
-              :class="{ available: isSelectedDateAvailable === true, unavailable: isSelectedDateAvailable === false }"
-            >
-              {{ availabilityLabel }}
-            </p>
-            <p v-if="reservationError" class="reservation-error" aria-live="polite">
-              {{ reservationError }}
-            </p>
-          </div>
-
-          <button
-            class="buy-button"
-            :disabled="!reservationDate || isSelectedDateAvailable !== true"
-            :title="!reservationDate || isSelectedDateAvailable !== true ? 'Selecciona una fecha disponible para agregar al carrito' : 'Agregar al carrito'"
-            aria-label="Agregar al carrito"
-            @click="handleAddToCartService"
-          >
-            {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
-          </button>
-        </template>
-      </div>
-    </div>
-
-    <div v-else class="not-found">
-      <p>Servicio no encontrado.</p>
-    </div>
-  </main>
-
-  <!-- ===== SECCIÓN DE REVIEWS ===== -->
-  <section class="reviews-section">
-    <div class="reviews-container">
-      <div class="reviews-header">
-        <h2 class="reviews-title">⭐ Opiniones de clientes</h2>
-        <div v-if="reviews.length > 0" class="reviews-avg">
-          <span class="avg-number">{{ avgRating }}</span>
-          <div class="avg-stars">
-            <span v-for="n in 5" :key="n" :class="['star', n <= Math.round(avgRating) ? 'star--filled' : 'star--empty']">★</span>
-          </div>
-          <span class="avg-count">({{ reviews.length }} {{ reviews.length === 1 ? 'opinión' : 'opiniones' }})</span>
-        </div>
-      </div>
-
-      <div v-if="reviews.length > 0" class="reviews-list">
-        <div v-for="review in reviews" :key="review.id" class="review-card">
-          <div class="review-top">
-            <span class="review-author">👤 {{ review.userName }}</span>
-            <div class="review-stars">
-              <span v-for="n in 5" :key="n" :class="['star', n <= review.rating ? 'star--filled' : 'star--empty']">★</span>
-            </div>
-          </div>
-          <p class="review-comment">{{ review.comment }}</p>
-          <span class="review-date">{{ formatReviewDate(review.createdAt) }}</span>
-        </div>
-      </div>
-      <div v-else class="reviews-empty">
-        <p>Sé el primero en dejar tu opinión sobre este servicio ✨</p>
-      </div>
-
-      <div class="review-form-wrapper">
-        <h3 class="review-form-title">{{ isAuthenticated ? '📝 Deja tu opinión' : '🔑 Inicia sesión para comentar' }}</h3>
-        <template v-if="isAuthenticated">
-          <div class="review-rating-selector">
-            <span class="rating-label">Tu calificación:</span>
-            <div class="rating-stars-input">
-              <button
-                v-for="n in 5"
-                :key="n"
-                type="button"
-                class="star-btn"
-                :class="{ 'star-btn--active': n <= reviewForm.rating }"
-                @click="reviewForm.rating = n"
-              >★</button>
-            </div>
-          </div>
-          <textarea
-            v-model="reviewForm.comment"
-            class="review-textarea"
-            placeholder="Cuéntanos tu experiencia con este servicio..."
-            rows="4"
-            maxlength="500"
-          ></textarea>
-          <div class="review-form-footer">
-            <span class="char-count">{{ reviewForm.comment.length }}/500</span>
-            <p v-if="reviewError" class="review-error">{{ reviewError }}</p>
-            <p v-if="reviewSuccess" class="review-success">✅ ¡Gracias por tu opinión!</p>
-            <button class="review-submit-btn" :disabled="reviewSubmitting" @click="submitReview">
-              {{ reviewSubmitting ? 'Enviando...' : '📤 Enviar opinión' }}
-            </button>
-          </div>
-        </template>
-        <template v-else>
-          <p class="review-login-prompt">
-            <router-link to="/Sign-in" class="review-login-link">Inicia sesión</router-link> para dejar tu opinión.
+          <p class="selected-product" v-if="selectedProduct">
+            Inflable seleccionado: <strong>{{ selectedProduct.name }}</strong>
           </p>
-        </template>
-      </div>
-    </div>
-  </section>
 
-  <footer>
-    <Footer />
-  </footer>
+          <!--
+            El formulario de reserva se muestra siempre, sin importar si el
+            usuario inició sesión o no. Cualquier visitante puede completarlo
+            y agregar el inflable al carrito.
+          -->
+          <form class="reservation-form" @submit.prevent="submitReservation">
+            <section class="form-section availability-section">
+              <h2>📅 Disponibilidad</h2>
+
+              <div class="calendar-card">
+                <div class="calendar-header">
+                  <button type="button" class="calendar-nav-btn" @click="goToPreviousMonth">◀</button>
+                  <p class="calendar-month">{{ calendarMonthLabel }}</p>
+                  <button type="button" class="calendar-nav-btn" @click="goToNextMonth">▶</button>
+                </div>
+
+                <div class="calendar-weekdays">
+                  <span v-for="weekDay in CALENDAR_WEEK_DAYS" :key="weekDay">{{ weekDay }}</span>
+                </div>
+
+                <div class="calendar-grid">
+                  <template v-for="(day, index) in calendarDays" :key="day?.dateString || `empty-${index}`">
+                    <button
+                      v-if="day"
+                      type="button"
+                      class="calendar-day"
+                      :class="{
+                        'is-past': day.isPast,
+                        'is-reserved': day.isReserved,
+                        'is-selected': day.isSelected,
+                      }"
+                      :disabled="!day.isAvailable"
+                      @click="selectCalendarDate(day)"
+                    >
+                      <span>{{ day.dayNumber }}</span>
+                      <small v-if="day.isReserved">Reservado</small>
+                    </button>
+                    <div v-else class="calendar-day is-empty"></div>
+                  </template>
+                </div>
+
+                <div class="calendar-legend">
+                  <span>⚪ Disponible</span>
+                  <span>🔴 Reservado</span>
+                  <span>🟡 Seleccionado</span>
+                  <span>⬛ Pasado</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h2>1️⃣ 🎉 Datos del evento</h2>
+              <div class="section-grid">
+                <div class="field full-width">
+                  <label for="responsibleName">Nombre completo del responsable</label>
+                  <input id="responsibleName" v-model="form.responsibleName" type="text" placeholder="Ej: Ana Torres" />
+                  <p v-if="formErrors.responsibleName" class="error-text">{{ formErrors.responsibleName }}</p>
+                </div>
+
+                <div class="field full-width">
+                  <label for="eventAddress">Dirección completa del evento</label>
+                  <input id="eventAddress" v-model="form.eventAddress" type="text" placeholder="Av./Jr. + referencia" />
+                  <p v-if="formErrors.eventAddress" class="error-text">{{ formErrors.eventAddress }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="district">Distrito</label>
+                  <input id="district" v-model="form.district" type="text" placeholder="Ej: San Borja" />
+                  <p v-if="formErrors.district" class="error-text">{{ formErrors.district }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="eventType">Tipo de evento</label>
+                  <select id="eventType" v-model="form.eventType">
+                    <option value="">Selecciona el tipo de evento</option>
+                    <option value="🎂 Cumpleaños">🎂 Cumpleaños</option>
+                    <option value="👶 Baby Shower">👶 Baby Shower</option>
+                    <option value="🎒 Kermesse Escolar">🎒 Kermesse Escolar</option>
+                    <option value="🏢 Evento Empresarial">🏢 Evento Empresarial</option>
+                    <option value="🌸 Bautizo / Primera Comunión">🌸 Bautizo / Primera Comunión</option>
+                    <option value="🎊 Celebración Familiar">🎊 Celebración Familiar</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                  <p v-if="formErrors.eventType" class="error-text">{{ formErrors.eventType }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="eventDate">Fecha del evento</label>
+                  <input id="eventDate" v-model="form.eventDate" :min="today" type="date" />
+                  <p v-if="formErrors.eventDate" class="error-text">{{ formErrors.eventDate }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="startTime">Horario de inicio</label>
+                  <input id="startTime" v-model="form.startTime" type="time" />
+                  <p v-if="formErrors.startTime" class="error-text">{{ formErrors.startTime }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="endTime">Horario de fin</label>
+                  <input id="endTime" v-model="form.endTime" type="time" />
+                  <p v-if="formErrors.endTime" class="error-text">{{ formErrors.endTime }}</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h2>2️⃣ ⚡ Logística eléctrica</h2>
+              <div class="radios">
+                <label><input v-model="form.electricLogistics" type="radio" value="Sí, cuento con toma de corriente estable ✅" /> Sí, cuento con toma de corriente estable ✅</label>
+                <label><input v-model="form.electricLogistics" type="radio" value="Sí, cuento con grupo electrógeno ✅" /> Sí, cuento con grupo electrógeno ✅</label>
+                <label><input v-model="form.electricLogistics" type="radio" value="no-electricity" /> No cuento con suministro eléctrico ❌</label>
+              </div>
+              <p v-if="formErrors.electricLogistics" class="error-text">{{ formErrors.electricLogistics }}</p>
+
+              <div v-if="showElectricityWarning" class="alert warning-alert">
+                ⚠️ Los inflables requieren conexión eléctrica para funcionar. Sin suministro eléctrico no es posible instalar el servicio. Te recomendamos contactarnos por WhatsApp para evaluar opciones.
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h2>3️⃣ 📐 Dimensiones del espacio</h2>
+              <div class="section-grid">
+                <div class="field">
+                  <label for="spaceLength">Largo disponible (m)</label>
+                  <input id="spaceLength" v-model="form.spaceLength" min="1" type="number" placeholder="Ej: 5" />
+                  <p v-if="formErrors.spaceLength" class="error-text">{{ formErrors.spaceLength }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="spaceWidth">Ancho disponible (m)</label>
+                  <input id="spaceWidth" v-model="form.spaceWidth" min="1" type="number" placeholder="Ej: 4" />
+                  <p v-if="formErrors.spaceWidth" class="error-text">{{ formErrors.spaceWidth }}</p>
+                </div>
+              </div>
+
+              <div v-if="hasSpaceWarning" class="alert error-alert">
+                {{ spaceWarningMessage }}
+              </div>
+            </section>
+
+            <section class="form-section">
+              <h2>4️⃣ 🌱 Tipo de suelo</h2>
+              <div class="field full-width">
+                <label for="floorType">Tipo de suelo</label>
+                <select id="floorType" v-model="form.floorType">
+                  <option value="">Selecciona una opción</option>
+                  <option value="Césped (Estacas)">Césped (se instala con estacas)</option>
+                  <option value="Cemento / Asfalto (Bolsas de arena)">Cemento / Asfalto (se instala con bolsas de arena)</option>
+                  <option value="Tierra">Tierra</option>
+                  <option value="Interior (piso duro interior)">Interior (piso duro interior)</option>
+                </select>
+                <p v-if="formErrors.floorType" class="error-text">{{ formErrors.floorType }}</p>
+              </div>
+              <div class="alert info-alert">{{ floorInfo }}</div>
+            </section>
+
+            <!-- SELECCIÓN DE MODALIDAD (solo para inflables acuáticos) -->
+            <section v-if="isWaterInflable" class="form-section water-mode-section">
+              <h2>💦 Modalidad del inflable</h2>
+              <p class="water-mode-intro">
+                Este inflable puede funcionar en modalidad seca (con pelotitas) o en modalidad con agua. Selecciona la que prefieras para tu evento:
+              </p>
+              <div class="radios">
+                <label>
+                  <input v-model="form.waterMode" type="radio" value="pelotas" />
+                  🎈 Modalidad seca (con pelotitas) — no requiere conexión de agua
+                </label>
+                <label>
+                  <input v-model="form.waterMode" type="radio" value="agua" />
+                  💧 Modalidad con agua — requiere conexión de agua en el lugar del evento
+                </label>
+              </div>
+              <p v-if="formErrors.waterMode" class="error-text">{{ formErrors.waterMode }}</p>
+            </section>
+
+            <!-- SECCIÓN DE AGUA (solo si eligieron modalidad con agua) -->
+            <section v-if="isWaterInflable && form.waterMode === 'agua'" class="form-section water-section">
+              <h2>💧 Conexiones de Agua</h2>
+
+              <div class="water-banner">
+                💧 Elegiste la modalidad con agua. Por favor completa la información sobre las instalaciones disponibles en el lugar del evento.
+              </div>
+
+              <div class="field full-width">
+                <label>¿Con qué conexión de agua cuentas?</label>
+                <div class="radios">
+                  <label>
+                    <input v-model="form.waterConnection" type="radio" value="si-toma" />
+                    🚿 Sí, tengo toma de agua fija (grifo o tubería)
+                  </label>
+                  <label>
+                    <input v-model="form.waterConnection" type="radio" value="si-manguera" />
+                    🚰 Sí, tengo manguera de jardín accesible
+                  </label>
+                  <label>
+                    <input v-model="form.waterConnection" type="radio" value="no-agua" />
+                    ❌ No cuento con conexión de agua
+                  </label>
+                </div>
+                <p v-if="formErrors.waterConnection" class="error-text">{{ formErrors.waterConnection }}</p>
+
+                <div v-if="form.waterConnection === 'no-agua'" class="alert warning-alert">
+                  ⚠️ Sin conexión de agua no es posible instalar este inflable en modalidad acuática. Te recomendamos contactarnos para evaluar alternativas (modalidad seca con pelotitas).
+                </div>
+              </div>
+
+              <div class="field full-width">
+                <label>¿Cómo se gestionará el agua utilizada?</label>
+                <div class="radios">
+                  <label>
+                    <input v-model="form.waterDrainType" type="radio" value="tierra" />
+                    🌱 Se absorbe en el jardín / tierra
+                  </label>
+                  <label>
+                    <input v-model="form.waterDrainType" type="radio" value="desague" />
+                    🕳️ Hay desagüe cercano disponible
+                  </label>
+                  <label>
+                    <input v-model="form.waterDrainType" type="radio" value="sin-drenaje" />
+                    ⚠️ No hay sistema de drenaje disponible
+                  </label>
+                </div>
+                <p v-if="formErrors.waterDrainType" class="error-text">{{ formErrors.waterDrainType }}</p>
+
+                <div v-if="form.waterDrainType === 'sin-drenaje'" class="alert warning-alert">
+                  ⚠️ Sin drenaje el agua puede acumularse. Coordinaremos contigo para minimizar el impacto en el espacio.
+                </div>
+              </div>
+
+              <label class="checkbox-row">
+                <input v-model="form.waterResponsible" type="checkbox" />
+                Entiendo que soy responsable de proporcionar el acceso al agua y de la gestión del agua utilizada durante el evento.
+              </label>
+              <p v-if="formErrors.waterResponsible" class="error-text">{{ formErrors.waterResponsible }}</p>
+            </section>
+
+            <section class="form-section">
+              <h2>5️⃣ 👧 Detalles de los invitados</h2>
+              <div class="section-grid">
+                <div class="field">
+                  <label for="guestCount">Cantidad estimada de niños</label>
+                  <input id="guestCount" v-model="form.guestCount" min="1" :max="MAX_GUEST_COUNT" type="number" placeholder="Ej: 20" />
+                  <p v-if="formErrors.guestCount" class="error-text">{{ formErrors.guestCount }}</p>
+                </div>
+
+                <div class="field">
+                  <label for="ageRange">Rango de edades</label>
+                  <input id="ageRange" v-model="form.ageRange" type="text" placeholder="ej: 3-8 años" />
+                  <p v-if="formErrors.ageRange" class="error-text">{{ formErrors.ageRange }}</p>
+                </div>
+              </div>
+              <div class="alert info-alert">{{ ageRecommendation }}</div>
+            </section>
+
+            <section class="form-section">
+              <h2>6️⃣ 🚪 Ruta de acceso</h2>
+              <label class="checkbox-row">
+                <input v-model="form.accessConfirmed" type="checkbox" />
+                Confirmo que el camino hacia el área de instalación está libre de escaleras, puertas estrechas y obstáculos que impidan el paso de equipos grandes
+              </label>
+              <p v-if="formErrors.accessConfirmed" class="error-text">{{ formErrors.accessConfirmed }}</p>
+            </section>
+
+            <section class="form-section" v-if="requiresMeasureVisit">
+              <h2>7️⃣ 📏 Toma de medidas</h2>
+              <div class="alert warning-alert">
+                📏 Para inflables premium ({{ premiumPriceLabel }}), recomendamos una visita previa de toma de medidas sin costo. ¿Deseas coordinarla?
+              </div>
+              <div class="radios">
+                <label><input v-model="form.measureVisitChoice" type="radio" value="Sí, quiero coordinar visita de medidas" /> Sí, quiero coordinar visita de medidas</label>
+                <label><input v-model="form.measureVisitChoice" type="radio" value="No, confirmo que mi espacio es suficiente" /> No, confirmo que mi espacio es suficiente</label>
+              </div>
+              <p v-if="formErrors.measureVisitChoice" class="error-text">{{ formErrors.measureVisitChoice }}</p>
+
+              <div class="field" v-if="form.measureVisitChoice === 'Sí, quiero coordinar visita de medidas'">
+                <label for="measureVisitPhone">Teléfono de contacto</label>
+                <input id="measureVisitPhone" v-model="form.measureVisitPhone" type="tel" placeholder="Ej: 987654321" />
+                <p v-if="formErrors.measureVisitPhone" class="error-text">{{ formErrors.measureVisitPhone }}</p>
+              </div>
+            </section>
+
+            <div class="note">
+              <h3>📝 Nota</h3>
+              <p>
+                Los servicios se alquilan por 5 horas.
+              </p>
+            </div>
+
+            <button class="submit-btn" type="submit">✅ Confirmar Reserva</button>
+          </form>
+        </div>
+      </section>
+
+      <div v-if="showConfirmationModal" class="modal-overlay" @click.self="showConfirmationModal = false">
+        <div class="modal-card">
+          <h3>✅ Inflable agregado al carrito</h3>
+          <p><strong>Inflable:</strong> {{ reservationSummary.producto }}</p>
+          <p><strong>Responsable:</strong> {{ reservationSummary.responsable }}</p>
+          <p><strong>Tipo de evento:</strong> {{ reservationSummary.tipoEvento }}</p>
+          <p><strong>Fecha:</strong> {{ reservationSummary.fecha }}</p>
+          <p><strong>Horario:</strong> {{ reservationSummary.horario }}</p>
+          <button class="whatsapp-cta" type="button" @click="goToCart">
+            🛒 Ir al carrito de compras
+          </button>
+          <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="secondary-whatsapp-link">
+            Enviar confirmación por WhatsApp
+          </a>
+          <button class="secondary-close" @click="showConfirmationModal = false">Cerrar</button>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <Footer />
+    </footer>
+  </div>
 </template>
 
 <style scoped>
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 40px 20px;
-  font-family: Outfit, Inter, Avenir, Helvetica, Arial, sans-serif;
-}
-
-.product-wrapper {
+/* Contenedor raíz: fuerza un bloque de flujo normal (block formatting context)
+   que NO puede ser interceptado por position:absolute/fixed mal calculado
+   de componentes hijos (Navbar/Footer), ni por floats sueltos. */
+.page-wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  background: #fff;
-  border-radius: 16px;
-  padding: 24px;
+  min-height: 100vh;
+  width: 100%;
+  position: relative; /* ancla cualquier position:absolute mal usado dentro de Navbar/Footer a ESTE contenedor en vez del body */
+  isolation: isolate;  /* crea un nuevo stacking context: nada de afuera puede solaparse encima/debajo por z-index */
+  overflow-anchor: none; /* evita que el navegador reajuste el scroll automáticamente al crecer el layout (calendario, carrusel, secciones condicionales) */
 }
 
-.return-area {
-  align-self: flex-start;
-  margin-bottom: 16px;
+.page {
+  background: #ffffff;
+  flex: 1 0 auto; /* el main siempre crece para empujar el footer hacia abajo, sin importar la altura del calendario */
+  min-height: 0;
+  padding: 24px 14px 42px;
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  overflow: visible; /* evita que contenido dinámico (calendario con filas variables) se recorte o desborde encima del footer */
+}
+
+footer {
+  flex-shrink: 0; /* el footer nunca se comprime ni se superpone, sin importar cuánto crezca el calendario arriba */
+  position: relative;
+  z-index: 1;
+}
+
+.reservation-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.reservation-card {
+  width: 100%;
+  max-width: 800px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 16px;
 }
 
 .title {
-  font-size: 2.1rem;
-  margin-bottom: 14px;
-  position: relative;
-  display: inline-block;
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 2vw + 1rem, 2.2rem);
   background: linear-gradient(135deg, #E91E81, #2D3E94);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.title::after {
-  content: '';
-  width: 70px;
-  height: 4px;
-  background-color: #E91E81;
-  position: absolute;
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-radius: 6px;
+.selected-product {
+  color: #2D3E94;
+  margin: 0 0 16px;
 }
 
-.header-badges {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin: 8px 0 20px;
+.warning-panel {
+  background: #fffbea;
+  border: 2px solid #FFD200;
+  border-radius: 14px;
+  padding: 18px;
+  color: #7a5f00;
 }
 
-.badge {
-  font-size: 0.77rem;
+.warning-message {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.secondary-text {
+  margin: 14px 0 0;
+  color: #2D3E94;
+}
+
+.secondary-text a {
+  color: #E91E81;
   font-weight: 700;
-  border-radius: 999px;
-  padding: 5px 12px;
 }
 
-.badge-category { background: linear-gradient(135deg, #E91E81, #2D3E94); color: #fff; }
-.badge-subcategory { background: #f0f4ff; color: #1a2d7a; }
-.badge-inflable-bebes { background: #efe7ff; color: #4f3d9a; }
-.badge-inflable-mediano { background: #e6f8e8; color: #1b6b32; }
-.badge-inflable-grande { background: #fff2d9; color: #8a5b00; }
-
-/* ===== CARRUSEL ===== */
-.product-carousel {
-  width: 100%;
-  max-width: 820px;
-  position: relative;
-  margin-bottom: 26px;
+.reservation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-.carousel-container {
-  position: relative;
-  width: 100%;
-  max-height: 460px;
+.form-section {
+  border-bottom: 2px solid #f8d3e9;
+  padding-bottom: 14px;
+}
+
+.availability-section {
+  border: 2px solid #E91E81;
   border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(45, 62, 148, 0.16);
+  padding: 16px;
+  background: #fff9fc;
 }
 
-.carousel-slide {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.5s ease-in-out;
-}
-
-.carousel-slide.active {
-  position: relative;
-  opacity: 1;
-  visibility: visible;
-}
-
-.product-image-details {
-  width: 100%;
-  max-height: 460px;
-  object-fit: cover;
-  display: block;
-}
-
-.carousel-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(45, 62, 148, 0.45);
-  color: #fff;
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, transform 0.2s;
-  z-index: 2;
-}
-
-.carousel-btn:hover {
-  background: rgba(233, 30, 129, 0.85);
-  transform: translateY(-50%) scale(1.08);
-}
-
-.carousel-btn.prev { left: 14px; }
-.carousel-btn.next { right: 14px; }
-
-.carousel-dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.carousel-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(233, 30, 129, 0.25);
-  cursor: pointer;
-  padding: 0;
-  transition: background 0.2s, transform 0.2s;
-}
-
-.carousel-dot.active {
-  background: #E91E81;
-  transform: scale(1.3);
-}
-
-.carousel-dot:hover:not(.active) {
-  background: rgba(233, 30, 129, 0.5);
-}
-/* ==================== */
-
-.text-product-type {
-  max-width: 800px;
-  font-size: 1.05rem;
-  line-height: 1.7;
+.form-section h2 {
   color: #2D3E94;
-  opacity: 0.9;
-  margin-bottom: 28px;
-}
-
-.product-prices {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin: 0 0 18px;
-}
-
-.discount-price {
-  font-size: 1.9rem;
+  margin: 0 0 14px;
+  font-size: 1.03rem;
   font-weight: 800;
-  color: #E91E81;
 }
 
-.product-details {
-  width: 100%;
-  max-width: 720px;
-  margin-top: 8px;
-}
-
-.product-info {
+.section-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 14px;
-  margin-bottom: 24px;
-}
-
-.info-item {
-  background: rgba(233, 30, 129, 0.06);
-  border: 1px solid rgba(233, 30, 129, 0.2);
-  padding: 12px 14px;
-  border-radius: 12px;
-  text-align: left;
-}
-
-.label {
-  display: block;
-  font-size: 0.85rem;
-  color: #E91E81;
-  margin-bottom: 2px;
-}
-
-.value { font-weight: 600; color: #2D3E94; }
-
-.product-options {
-  width: 100%;
-  margin-bottom: 18px;
-  text-align: left;
-}
-
-.options-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.option-tag {
-  background: #FFD200;
-  color: #2D3E94;
-  font-size: 0.84rem;
-  font-weight: 700;
-  padding: 5px 12px;
-  border-radius: 20px;
-}
-
-.product-terms {
-  width: 100%;
-  background: rgba(233, 30, 129, 0.05);
-  border-left: 3px solid #E91E81;
-  border-radius: 0 10px 10px 0;
-  padding: 12px 16px;
-  margin-bottom: 22px;
-  text-align: left;
-}
-
-.terms-text {
-  font-size: 0.9rem;
-  color: #2D3E94;
-  opacity: 0.85;
-  margin: 4px 0 0;
-  line-height: 1.6;
-}
-
-.reservation-date-section {
-  margin-bottom: 16px;
-  text-align: left;
-}
-
-.reservation-date-input {
-  width: 100%;
-  border: 1.5px solid #ddd;
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-
-.reservation-date-input:focus {
-  outline: none;
-  border-color: #E91E81;
-  box-shadow: 0 0 0 3px rgba(233, 30, 129, 0.12);
-}
-
-.reservation-error {
-  margin: 6px 0 0;
-  color: #b00020;
-  font-size: 0.88rem;
-  font-weight: 600;
-}
-
-.availability-indicator {
-  margin: 10px 0 0;
-  font-size: 0.88rem;
-  font-weight: 700;
-}
-
-.availability-indicator.available { color: #1b6b32; }
-.availability-indicator.unavailable { color: #b00020; }
-
-.inflable-actions,
-.snack-actions {
-  display: grid;
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
-.reserve-service-btn { margin-bottom: 10px; }
-
-.buy-button,
-.wa-button,
-.secondary-login-button {
-  width: 100%;
-  border: none;
-  padding: 14px;
-  font-size: 1rem;
-  font-weight: 700;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, background-color 0.25s;
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.buy-button {
-  background: #FFD200;
+.field label,
+.checkbox-row {
   color: #2D3E94;
-  box-shadow: 0 4px 16px rgba(255, 210, 0, 0.4);
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
-.buy-button:hover { transform: scale(1.02); box-shadow: 0 6px 20px rgba(255, 210, 0, 0.55); }
-.buy-button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
-
-.wa-button {
-  background: #25D366;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.35);
+input,
+select {
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
 }
 
-.wa-button:hover { transform: scale(1.02); box-shadow: 0 7px 20px rgba(37, 211, 102, 0.5); }
+/* Esto evita el auto-zoom de iOS en inputs time al mantener 16px o más en focus. */
+.field input[type="time"] {
+  font-size: 16px;
+  min-height: 48px;
+  -webkit-appearance: none;
+  appearance: none;
+}
 
-.secondary-login-button {
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #E91E81;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.45;
+}
+
+.checkbox-row input {
+  margin-top: 2px;
+}
+
+.radios {
+  display: grid;
+  gap: 8px;
+}
+
+.radios label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #2D3E94;
+}
+
+.alert {
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid;
+  margin-top: 10px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.error-alert {
+  background: #fff0f5;
+  border-color: #E91E81;
+  color: #c0144e;
+}
+
+.warning-alert {
+  background: #fffbea;
+  border-color: #FFD200;
+  color: #7a5f00;
+}
+
+.info-alert {
+  background: #f0f4ff;
+  border-color: #2D3E94;
+  color: #1a2d7a;
+}
+
+.error-text {
+  margin: 2px 0 0;
+  color: #c0144e;
+  font-size: 0.83rem;
+  font-weight: 600;
+}
+
+.calendar-card {
+  border: 2px solid #2D3E94;
+  border-radius: 14px;
+  background: #fff;
+  padding: 14px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.calendar-month {
+  margin: 0;
+  font-weight: 800;
+  color: #2D3E94;
+  text-transform: capitalize;
+}
+
+.calendar-nav-btn {
+  border: 2px solid #E91E81;
   background: #fff;
   color: #E91E81;
-  border: 2px solid #E91E81;
-}
-
-.secondary-login-button:hover { transform: scale(1.02); background: #fff0f7; }
-
-.card-button {
-  background-color: #FFFFFF;
-  color: #2D3E94;
-  border: 2px solid #E91E81;
-  padding: 10px 22px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  border-radius: 10px;
+  border-radius: 12px;
+  width: 38px;
+  height: 38px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-weight: 800;
 }
 
-.card-button:hover { background-color: #E91E81; color: #FFFFFF; }
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
 
-.not-found {
+.calendar-weekdays {
+  margin-bottom: 8px;
+}
+
+.calendar-weekdays span {
   text-align: center;
-  padding: 40px 20px;
-  font-size: 1.2rem;
+  font-weight: 700;
   color: #2D3E94;
-  opacity: 0.6;
+  font-size: 0.82rem;
 }
 
-.login-cart-hint {
-  text-align: center;
-  font-size: 0.95rem;
+.calendar-day {
+  min-height: 64px;
+  border: 1px solid #d6d6d6;
+  border-radius: 12px;
+  background: #fff;
   color: #2D3E94;
-  margin: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.login-cart-link {
-  color: #E91E81;
+.calendar-day small {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #b30f45;
+}
+
+.calendar-day:hover:not(:disabled):not(.is-selected) {
+  background: #ebffe8;
+}
+
+.calendar-day.is-past {
+  background: #ececec;
+  color: #878787;
+  cursor: not-allowed;
+}
+
+.calendar-day.is-reserved {
+  background: #ffe3ef;
+  border-color: #E91E81;
+  cursor: not-allowed;
+}
+
+.calendar-day.is-selected {
+  border: 2px solid #FFD200;
+  box-shadow: 0 0 0 2px rgba(255, 210, 0, 0.24);
+}
+
+.calendar-day.is-empty {
+  border: none;
+  background: transparent;
+}
+
+.calendar-legend {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #2D3E94;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.submit-btn {
+  background: #FFD200;
+  color: #2D3E94;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(255, 210, 0, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  z-index: 2; /* asegura que quede por encima de cualquier widget flotante (ej. burbuja de WhatsApp) */
+}
+
+.submit-btn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 7px 24px rgba(255, 210, 0, 0.65);
+}
+
+.whatsapp-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  background: #25D366;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 18px rgba(37, 211, 102, 0.35);
+  width: 100%;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.secondary-whatsapp-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  width: 100%;
+  color: #128C7E;
   font-weight: 700;
   text-decoration: underline;
 }
 
-.login-cart-link:hover { opacity: 0.8; }
-
-@media (max-width: 700px) {
-  .container { padding: 24px 12px; }
-  .product-wrapper { padding: 16px; }
-  .title { font-size: 1.6rem; }
-  .discount-price { font-size: 1.5rem; }
-  .carousel-btn { width: 36px; height: 36px; font-size: 1.3rem; }
-  .primary-action-btn {
-    position: sticky;
-    bottom: 16px;
-    z-index: 10;
-    box-shadow: 0 8px 24px rgba(255, 210, 0, 0.6);
-    width: 100%;
-  }
-  .primary-action-btn:hover { transform: none; }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 999;
+  padding: 16px;
 }
 
-/* ===== REVIEWS ===== */
-.reviews-section {
-  background: #FDF6EC;
-  padding: 48px 20px;
-  font-family: 'Nunito', sans-serif;
-}
-.reviews-container { max-width: 800px; margin: 0 auto; }
-.reviews-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-  margin-bottom: 28px;
-}
-.reviews-title {
-  font-size: 1.6rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #E91E81, #2D3E94);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
-}
-.reviews-avg {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: white;
-  padding: 8px 16px;
-  border-radius: 999px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-}
-.avg-number { font-size: 1.6rem; font-weight: 900; color: #FFD200; }
-.avg-stars { display: flex; gap: 2px; }
-.avg-count { font-size: 0.85rem; color: #888; }
-.star--filled { color: #FFD200; }
-.star--empty { color: #ddd; }
-.reviews-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 32px;
-}
-.review-card {
-  background: white;
-  border-radius: 16px;
-  padding: 18px 20px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  border-left: 4px solid #E91E81;
-}
-.review-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-.review-author { font-weight: 700; color: #2D3E94; font-size: 0.95rem; }
-.review-stars { display: flex; gap: 2px; font-size: 1.1rem; }
-.review-comment { color: #444; line-height: 1.6; margin: 0 0 6px; font-size: 0.95rem; }
-.review-date { font-size: 0.78rem; color: #aaa; }
-.reviews-empty {
-  text-align: center;
-  padding: 32px;
-  background: white;
-  border-radius: 16px;
-  color: #888;
-  margin-bottom: 32px;
-}
-.review-form-wrapper {
-  background: white;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(233, 30, 129, 0.08);
-  border: 2px solid rgba(233, 30, 129, 0.15);
-}
-.review-form-title { font-size: 1.1rem; font-weight: 800; color: #2D3E94; margin: 0 0 16px; }
-.review-rating-selector {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.rating-label { font-weight: 700; color: #2D3E94; font-size: 0.95rem; }
-.rating-stars-input { display: flex; gap: 4px; }
-.star-btn {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  color: #ddd;
-  cursor: pointer;
-  transition: color 0.15s, transform 0.15s;
-  padding: 0;
-  line-height: 1;
-}
-.star-btn--active { color: #FFD200; }
-.star-btn:hover { transform: scale(1.2); color: #FFD200; }
-.review-textarea {
+.modal-card {
+  background: #fff;
+  border-radius: 14px;
   width: 100%;
-  border: 2px solid #e0e0e0;
+  max-width: 460px;
+  padding: 20px;
+  border: 2px solid #E91E81;
+}
+
+.modal-card h3 {
+  margin-top: 0;
+  color: #2D3E94;
+}
+
+.secondary-close {
+  margin-top: 10px;
+  width: 100%;
+  border: 2px solid #E91E81;
+  background: #fff;
+  color: #E91E81;
+  border-radius: 10px;
+  padding: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.note{
+  background: #f0f4ff;
+  border: 1px solid #2D3E94;
+  color: #1a2d7a;
   border-radius: 12px;
   padding: 12px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 0.95rem;
-  resize: vertical;
-  transition: border-color 0.2s;
-  box-sizing: border-box;
+  margin-top: 14px;
 }
-.review-textarea:focus { outline: none; border-color: #E91E81; }
-.review-form-footer {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  margin-top: 12px;
+
+@media (min-width: 900px) {
+  .section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
+
+  .reservation-card {
+    padding: 28px;
+  }
 }
-.char-count { font-size: 0.78rem; color: #aaa; }
-.review-error { color: #b00020; font-size: 0.88rem; font-weight: 600; margin: 0; }
-.review-success { color: #1b6b32; font-size: 0.9rem; font-weight: 700; margin: 0; }
-.review-submit-btn {
-  background: linear-gradient(135deg, #E91E81, #C2185B);
-  color: white;
-  border: none;
-  border-radius: 999px;
-  padding: 12px 28px;
-  font-weight: 800;
-  font-size: 1rem;
-  cursor: pointer;
-  font-family: 'Nunito', sans-serif;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 16px rgba(233, 30, 129, 0.35);
+
+@media (min-width: 520px) {
+  .section-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
 }
-.review-submit-btn:hover:not(:disabled) { transform: scale(1.04); }
-.review-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.review-login-prompt { color: #2D3E94; font-size: 0.95rem; }
-.review-login-link { color: #E91E81; font-weight: 700; }
+
+@media (max-width: 480px) {
+  .calendar-day { min-height: 42px; font-size: 0.8rem; border-radius: 8px; }
+  .calendar-day small { font-size: 0.5rem; }
+  .calendar-weekdays, .calendar-grid { gap: 3px; }
+  .calendar-weekdays span { font-size: 0.7rem; }
+}
+
+@media (max-width: 700px) {
+  /* Espacio extra para que la burbuja flotante de WhatsApp (position: fixed,
+     normalmente 56-72px de alto en la esquina inferior derecha) nunca quede
+     encima del botón "Confirmar Reserva" e intercepte el tap en móvil. */
+  .reservation-form {
+    padding-bottom: 90px;
+  }
+}
+
+.water-section {
+  border: 2px solid #2D9CDB;
+  border-radius: 14px;
+  padding: 16px;
+  background: #f0f8ff;
+}
+.water-section h2 {
+  color: #1a6b9a !important;
+}
+.water-banner {
+  background: #e0f3ff;
+  border: 1px solid #2D9CDB;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #1a4d6e;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.water-mode-section {
+  border: 2px solid #2D9CDB;
+  border-radius: 14px;
+  padding: 16px;
+  background: #f0f8ff;
+}
+.water-mode-section h2 {
+  color: #1a6b9a !important;
+}
+.water-mode-intro {
+  margin: 0 0 12px;
+  color: #1a4d6e;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
 </style>
