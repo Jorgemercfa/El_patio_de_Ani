@@ -1,6 +1,6 @@
 <script setup>
 /* eslint-disable no-unused-vars, no-empty */
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
@@ -21,10 +21,25 @@ const CURRENCY_PREFIX = 'S/';
 const RESERVATIONS_STORAGE_KEY = 'patio-reservas';
 const CALENDAR_WEEK_DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
-const allProducts = computed(() => getCompanyproducts());
-const selectedProduct = computed(() =>
-  allProducts.value.find((product) => product.id === Number(route.query.id)),
+// SOLUCIÓN AL BUG: Manejar los productos con un `ref` en lugar de evaluar getCompanyproducts() dentro de un computed.
+const productsList = ref([]);
+
+const loadProducts = () => {
+  productsList.value = getCompanyproducts() || [];
+};
+
+watch(
+  () => route.query.id,
+  () => {
+    loadProducts();
+  }
 );
+
+const selectedProduct = computed(() => {
+  const targetId = Number(route.query.id);
+  if (!targetId) return null;
+  return productsList.value.find((product) => product.id === targetId) || null;
+});
 
 const parsePrice = (value) => {
   if (value === null || value === undefined || value === '') return 0;
@@ -488,16 +503,6 @@ function goToCart() {
   router.push('/Cart');
 }
 
-// ─── SCROLL AL TOPE (patrón robusto, mismo enfoque que Component-service-item.vue) ────
-// El problema original: al navegar desde Component-service-item.vue (que puede
-// haber quedado scrolleado en la sección de reseñas), el navegador aplica
-// "scroll anchoring": mientras el calendario, el carrusel de imágenes o las
-// secciones condicionales de agua/medidas terminan de calcular su altura,
-// el navegador reajusta el scroll intentando "mantener" la posición visual
-// previa, y termina reproduciendo el scroll de la vista anterior.
-// La solución es forzar el scroll a 0 en varios instantes (no solo una vez)
-// hasta que el layout se estabilice, y limpiar los timers pendientes al
-// desmontar para no afectar a la siguiente vista (p.ej. /Cart).
 const scrollForceTimeouts = ref([]);
 
 function clearScrollForceTimeouts() {
@@ -525,20 +530,15 @@ async function forceScrollTop() {
   await nextTick();
   scrollAllToTop();
 
-  // Reintentos escalonados: cubren el pintado del carrusel/calendario y de
-  // las secciones condicionales (agua, medidas) que pueden tardar un poco
-  // más en montarse que en la vista de detalle de producto.
   [50, 150, 300, 500].forEach((delay) => {
     scrollForceTimeouts.value.push(setTimeout(scrollAllToTop, delay));
   });
 }
 
 onMounted(async () => {
-  // Se llama antes del fetch para que el usuario nunca vea el salto,
-  // y otra vez después para cubrir el reflow que provoca pintar el
-  // producto seleccionado y sus secciones condicionales.
   forceScrollTop();
   await fetchCompanyproducts();
+  loadProducts();
   forceScrollTop();
   loadReservedDates();
 });
@@ -563,11 +563,6 @@ onBeforeUnmount(() => {
             Inflable seleccionado: <strong>{{ selectedProduct.name }}</strong>
           </p>
 
-          <!--
-            El formulario de reserva se muestra siempre, sin importar si el
-            usuario inició sesión o no. Cualquier visitante puede completarlo
-            y agregar el inflable al carrito.
-          -->
           <form class="reservation-form" @submit.prevent="submitReservation">
             <section class="form-section availability-section">
               <h2>📅 Disponibilidad</h2>
@@ -720,7 +715,6 @@ onBeforeUnmount(() => {
               <div class="alert info-alert">{{ floorInfo }}</div>
             </section>
 
-            <!-- SELECCIÓN DE MODALIDAD (solo para inflables acuáticos) -->
             <section v-if="isWaterInflable" class="form-section water-mode-section">
               <h2>💦 Modalidad del inflable</h2>
               <p class="water-mode-intro">
@@ -739,7 +733,6 @@ onBeforeUnmount(() => {
               <p v-if="formErrors.waterMode" class="error-text">{{ formErrors.waterMode }}</p>
             </section>
 
-            <!-- SECCIÓN DE AGUA (solo si eligieron modalidad con agua) -->
             <section v-if="isWaterInflable && form.waterMode === 'agua'" class="form-section water-section">
               <h2>💧 Conexiones de Agua</h2>
 
@@ -883,30 +876,27 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* Contenedor raíz: fuerza un bloque de flujo normal (block formatting context)
-   que NO puede ser interceptado por position:absolute/fixed mal calculado
-   de componentes hijos (Navbar/Footer), ni por floats sueltos. */
 .page-wrapper {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
-  position: relative; /* ancla cualquier position:absolute mal usado dentro de Navbar/Footer a ESTE contenedor en vez del body */
-  isolation: isolate;  /* crea un nuevo stacking context: nada de afuera puede solaparse encima/debajo por z-index */
-  overflow-anchor: none; /* evita que el navegador reajuste el scroll automáticamente al crecer el layout (calendario, carrusel, secciones condicionales) */
+  position: relative;
+  isolation: isolate;
+  overflow-anchor: none;
 }
 
 .page {
   background: #ffffff;
-  flex: 1 0 auto; /* el main siempre crece para empujar el footer hacia abajo, sin importar la altura del calendario */
+  flex: 1 0 auto;
   min-height: 0;
   padding: 24px 14px 42px;
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  overflow: visible; /* evita que contenido dinámico (calendario con filas variables) se recorte o desborde encima del footer */
+  overflow: visible;
 }
 
 footer {
-  flex-shrink: 0; /* el footer nunca se comprime ni se superpone, sin importar cuánto crezca el calendario arriba */
+  flex-shrink: 0;
   position: relative;
   z-index: 1;
 }
@@ -1014,7 +1004,6 @@ select {
   font-family: inherit;
 }
 
-/* Esto evita el auto-zoom de iOS en inputs time al mantener 16px o más en focus. */
 .field input[type="time"] {
   font-size: 16px;
   min-height: 48px;
@@ -1276,7 +1265,7 @@ select:focus {
   cursor: pointer;
 }
 
-.note{
+.note {
   background: #f0f4ff;
   border: 1px solid #2D3E94;
   color: #1a2d7a;
