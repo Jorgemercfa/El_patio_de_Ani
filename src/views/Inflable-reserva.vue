@@ -21,7 +21,6 @@ const CURRENCY_PREFIX = 'S/';
 const RESERVATIONS_STORAGE_KEY = 'patio-reservas';
 const CALENDAR_WEEK_DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
-// SOLUCIÓN AL BUG: Manejar los productos con un `ref` en lugar de evaluar getCompanyproducts() dentro de un computed.
 const productsList = ref([]);
 
 const loadProducts = () => {
@@ -491,11 +490,43 @@ function validateForm() {
   return ok;
 }
 
-function submitReservation() {
-  if (!validateForm() || !selectedProduct.value) return;
-  saveReservationDate(form.value.eventDate);
-  addToCart(selectedProduct.value.id, form.value.eventDate, reservationSummary.value);
-  showConfirmationModal.value = true;
+// ─── ENVÍO DEL FORMULARIO CON RETROALIMENTACIÓN VISIBLE ───────────────
+// Antes, si selectedProduct.value era null (p.ej. en una red móvil lenta,
+// cuando fetchCompanyproducts()/loadProducts() aún no habían terminado de
+// poblar productsList al momento de tocar "Confirmar"), submitReservation()
+// salía en silencio: no pasaba nada, sin ningún mensaje ni estado de carga.
+// Ahora se muestra un error visible, se agrega un estado "Enviando..." y
+// cualquier excepción (p.ej. dentro de addToCart) se captura y se informa
+// en vez de dejar el botón "muerto".
+const isSubmitting = ref(false);
+const submitError = ref('');
+
+async function submitReservation() {
+  submitError.value = '';
+
+  if (!validateForm()) return;
+
+  if (!selectedProduct.value) {
+    submitError.value =
+      'No pudimos identificar el inflable seleccionado (puede deberse a una conexión lenta). Regresa a la vista anterior e inténtalo de nuevo.';
+    nextTick(() => {
+      const el = document.getElementById('submit-error-banner');
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return;
+  }
+
+  isSubmitting.value = true;
+  try {
+    saveReservationDate(form.value.eventDate);
+    addToCart(selectedProduct.value.id, form.value.eventDate, reservationSummary.value);
+    showConfirmationModal.value = true;
+  } catch (err) {
+    console.error('[Inflable-reserva] Error al confirmar la reserva:', err);
+    submitError.value = 'Ocurrió un error al procesar tu reserva. Intenta de nuevo.';
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 
 function goToCart() {
@@ -503,6 +534,16 @@ function goToCart() {
   router.push('/Cart');
 }
 
+// ─── SCROLL AL TOPE (con cancelación ante interacción del usuario) ─────
+// forceScrollTop() reintenta scrollTo(0,0) varias veces tras el montaje
+// (para ganarle al scroll anchoring mientras el calendario y las secciones
+// condicionales terminan de montarse). El bug reportado ("la pantalla
+// empieza a parpadear y se congela al hacer scroll hacia arriba") ocurre
+// cuando esos reintentos siguen activos justo cuando el usuario intenta
+// scrollear manualmente: el navegador queda "peleando" entre el scroll del
+// usuario y nuestro scrollTo(0) forzado. La solución es cancelar TODOS los
+// reintentos pendientes en cuanto detectamos cualquier gesto del usuario
+// (touch, wheel, tecla, puntero), para nunca competir con su scroll.
 const scrollForceTimeouts = ref([]);
 
 function clearScrollForceTimeouts() {
@@ -524,8 +565,27 @@ function scrollAllToTop() {
   if (el) el.scrollTop = 0;
 }
 
+const CANCEL_SCROLL_EVENTS = ['wheel', 'touchstart', 'pointerdown', 'keydown'];
+
+function stopForcedScrollOnUserInput() {
+  clearScrollForceTimeouts();
+}
+
+function attachScrollCancelListeners() {
+  CANCEL_SCROLL_EVENTS.forEach((evt) =>
+    window.addEventListener(evt, stopForcedScrollOnUserInput, { passive: true, once: true }),
+  );
+}
+
+function detachScrollCancelListeners() {
+  CANCEL_SCROLL_EVENTS.forEach((evt) =>
+    window.removeEventListener(evt, stopForcedScrollOnUserInput),
+  );
+}
+
 async function forceScrollTop() {
   clearScrollForceTimeouts();
+  detachScrollCancelListeners();
 
   await nextTick();
   scrollAllToTop();
@@ -533,6 +593,10 @@ async function forceScrollTop() {
   [50, 150, 300, 500].forEach((delay) => {
     scrollForceTimeouts.value.push(setTimeout(scrollAllToTop, delay));
   });
+
+  // Si el usuario toca/scrollea/usa el teclado antes de que terminen los
+  // 500ms, cancelamos el resto de reintentos de inmediato.
+  attachScrollCancelListeners();
 }
 
 onMounted(async () => {
@@ -545,6 +609,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   clearScrollForceTimeouts();
+  detachScrollCancelListeners();
 });
 </script>
 
@@ -562,6 +627,10 @@ onBeforeUnmount(() => {
           <p class="selected-product" v-if="selectedProduct">
             Inflable seleccionado: <strong>{{ selectedProduct.name }}</strong>
           </p>
+
+          <div v-if="submitError" id="submit-error-banner" class="alert error-alert" role="alert" aria-live="assertive">
+            {{ submitError }}
+          </div>
 
           <form class="reservation-form" @submit.prevent="submitReservation">
             <section class="form-section availability-section">
@@ -845,7 +914,9 @@ onBeforeUnmount(() => {
               </p>
             </div>
 
-            <button class="submit-btn" type="submit">✅ Confirmar Reserva</button>
+            <button class="submit-btn" type="submit" :disabled="isSubmitting">
+              {{ isSubmitting ? '⏳ Enviando...' : '✅ Confirmar Reserva' }}
+            </button>
           </form>
         </div>
       </section>
@@ -1192,11 +1263,19 @@ select:focus {
   cursor: pointer;
   box-shadow: 0 4px 20px rgba(255, 210, 0, 0.5);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  z-index: 2;
 }
 
 .submit-btn:hover {
   transform: scale(1.03);
   box-shadow: 0 7px 24px rgba(255, 210, 0, 0.65);
+}
+
+.submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .whatsapp-cta {
@@ -1303,6 +1382,12 @@ select:focus {
   .calendar-day small { font-size: 0.5rem; }
   .calendar-weekdays, .calendar-grid { gap: 3px; }
   .calendar-weekdays span { font-size: 0.7rem; }
+}
+
+@media (max-width: 700px) {
+  .reservation-form {
+    padding-bottom: 90px;
+  }
 }
 
 .water-section {
