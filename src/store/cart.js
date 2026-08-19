@@ -10,6 +10,12 @@ const GUEST_SCOPE = 'guest';
 // detallada de un inflable que ya estaba en el carrito).
 const SERVICE_CATEGORIES = ['Inflables', 'Juegos', 'Shows Infantiles', 'Carritos Snacks', 'Estética Infantil'];
 
+// Ventana de validez de una confirmación persistida. Si el usuario vuelve
+// del navegador/WhatsApp mucho después (ej. abrió la pestaña y la dejó
+// olvidada por horas), no queremos mostrarle un mensaje de confirmación
+// "viejo" que ya no corresponde a una acción reciente.
+const CONFIRMATION_TTL_MS = 10 * 60 * 1000;
+
 function safeParse(json) {
   try {
     return JSON.parse(json);
@@ -22,6 +28,14 @@ function safeParse(json) {
 // que el carrito de uno no se filtre al de otro dentro del mismo navegador.
 function scopeKey(userId) {
   return `${STORAGE_PREFIX}:${userId || GUEST_SCOPE}`;
+}
+
+// Llave separada para la señal de "última reserva confirmada". Vive aparte
+// del carrito porque necesita sobrevivir aunque checkout() ya haya vaciado
+// state.items, y necesita poder "consumirse" (leerse una vez y borrarse)
+// sin tocar el resto del estado del carrito.
+function confirmationKey(userId) {
+  return `${STORAGE_PREFIX}:last-confirmation:${userId || GUEST_SCOPE}`;
 }
 
 function loadScope(userId) {
@@ -54,6 +68,40 @@ function persist() {
       purchasedproducts: state.purchasedproducts,
     }),
   );
+}
+
+// ─── Confirmación persistida ───
+//
+// Problema que resuelve: en mobile (sobre todo iOS Safari y WebViews tipo
+// in-app browser), cuando wa.me abre la app de WhatsApp, el navegador suele
+// descargar/recargar la pestaña que quedó en background. Al volver, Vue se
+// remonta desde cero: cualquier estado que viviera solo en memoria (como un
+// simple `ref` en el componente) se pierde, y como checkout() ya vació el
+// carrito ANTES de intentar abrir WhatsApp, el usuario ve un carrito vacío
+// sin ningún mensaje que le confirme que su reserva sí se registró.
+//
+// La solución: guardar en localStorage un flag con timestamp justo antes de
+// intentar la redirección a WhatsApp. Cart.vue lo revisa al montarse
+// (onMounted corre tanto en la primera carga como en cualquier remount
+// forzado por el navegador) y, si lo encuentra vigente, muestra el mensaje
+// de confirmación y lo borra para que no reaparezca en visitas futuras.
+function saveLastConfirmation(userId) {
+  localStorage.setItem(confirmationKey(userId), JSON.stringify({ timestamp: Date.now() }));
+}
+
+function consumeLastConfirmation(userId) {
+  const raw = localStorage.getItem(confirmationKey(userId));
+  if (!raw) return false;
+
+  // Se borra siempre que se encuentra la llave, sea válida o no: es un
+  // consumo de "una sola vez", no queremos que quede colgada para siempre
+  // si por algún motivo el TTL la invalida.
+  localStorage.removeItem(confirmationKey(userId));
+
+  const parsed = safeParse(raw);
+  if (!parsed || typeof parsed.timestamp !== 'number') return false;
+
+  return Date.now() - parsed.timestamp < CONFIRMATION_TTL_MS;
 }
 
 let scopeWatcherStarted = false;
@@ -217,6 +265,16 @@ export function useCart() {
     persist();
   }
 
+  // Wrappers que ya resuelven el userId activo, para que Cart.vue no tenga
+  // que conocer el detalle de cómo se arma la llave de confirmación.
+  function saveLastConfirmationForCurrentUser() {
+    saveLastConfirmation(sessionState.user?.id ?? null);
+  }
+
+  function consumeLastConfirmationForCurrentUser() {
+    return consumeLastConfirmation(sessionState.user?.id ?? null);
+  }
+
   return {
     cartItems,
     cartTotal,
@@ -229,5 +287,7 @@ export function useCart() {
     checkout,
     getPurchasedproducts,
     markPurchasedCompleted,
+    saveLastConfirmation: saveLastConfirmationForCurrentUser,
+    consumeLastConfirmation: consumeLastConfirmationForCurrentUser,
   };
 }

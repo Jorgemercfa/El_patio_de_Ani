@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { useCart } from '@/store/cart.js';
@@ -11,8 +11,17 @@ const MAX_QUANTITY_PER_SNACK = 10;
 const WHATSAPP_PHONE = '51975495623';
 const SNACK_CATEGORY = 'Carritos Snacks';
 
-const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, updateReservationDate, checkout } =
-  useCart();
+const {
+  cartItems,
+  cartTotal,
+  cartCount,
+  removeFromCart,
+  updateQuantity,
+  updateReservationDate,
+  checkout,
+  saveLastConfirmation,
+  consumeLastConfirmation,
+} = useCart();
 const { isDateAvailable } = useReservasServicio();
 const { state: sessionState } = useSession();
 const { getLoyaltyData, getDescuento, addReserva } = useLoyaltyManual();
@@ -35,6 +44,19 @@ const snackDateErrors = ref({}); // { [itemId]: mensaje } — fechas sin stock d
 const whatsappBlockedUrl = ref(''); // fallback visible si el navegador bloquea la apertura automática
 
 const todayDate = new Date().toLocaleDateString('en-CA');
+
+// En mobile (sobre todo iOS Safari y WebViews tipo in-app browser), abrir
+// WhatsApp suele hacer que el navegador descargue/recargue esta pestaña en
+// background. Al volver, Vue se remonta desde cero y cualquier ref en
+// memoria (como showConfirmation) se resetea. Por eso la confirmación real
+// se guarda en localStorage (ver cart.js) y acá, al montar, revisamos si
+// hay una pendiente de mostrar — cubre tanto la carga normal como ese
+// remount forzado.
+onMounted(() => {
+  if (consumeLastConfirmation()) {
+    showConfirmation.value = true;
+  }
+});
 
 function getItemPrice(item) {
   return Number(item.discount_price ?? item.price ?? 0);
@@ -198,6 +220,13 @@ function confirmReservation() {
   // ─── 4. Ahora sí limpiar el carrito y registrar loyalty ───
   checkout();
 
+  // ─── 4.1 Persistir la confirmación ANTES de intentar navegar a WhatsApp ───
+  // Esto es lo que soluciona el bug de mobile: si el navegador destruye o
+  // recarga esta pestaña al volver de la app de WhatsApp, Cart.vue va a
+  // poder leer este flag en su próximo onMounted() y mostrar el mensaje de
+  // confirmación en vez de un carrito vacío sin explicación.
+  saveLastConfirmation();
+
   if (sessionState.user?.id) {
     addReserva(sessionState.user.id);
   }
@@ -205,13 +234,20 @@ function confirmReservation() {
   showConfirmation.value = true;
 
   // ─── 5. Redirigir la pestaña ya abierta a la URL de WhatsApp ───
-  if (waWindow) {
-    waWindow.location.href = url;
-  } else {
-    // El navegador bloqueó incluso la apertura síncrona (poco común, pero
-    // puede pasar con bloqueadores de pop-ups agresivos). Mostramos un
-    // link visible como respaldo para que el usuario no se quede sin poder
-    // enviar su reserva.
+  try {
+    if (waWindow) {
+      waWindow.location.href = url;
+    } else {
+      // El navegador bloqueó incluso la apertura síncrona (poco común, pero
+      // puede pasar con bloqueadores de pop-ups agresivos). Mostramos un
+      // link visible como respaldo para que el usuario no se quede sin poder
+      // enviar su reserva.
+      whatsappBlockedUrl.value = url;
+    }
+  } catch (e) {
+    // Algunos WebViews embebidos (ej. navegador in-app de Instagram/Facebook)
+    // lanzan una excepción al intentar asignar location.href en una pestaña
+    // que ellos mismos restringen. Mismo fallback que el caso de arriba.
     whatsappBlockedUrl.value = url;
   }
 
@@ -347,6 +383,11 @@ function confirmReservation() {
         <div v-else class="empty-state">
           <p class="empty-icon">🛒</p>
           <p class="empty-msg">Tu carrito está vacío</p>
+
+          <p v-if="showConfirmation" class="confirmation-message">
+            Tu reserva fue registrada. Pronto Ani te atenderá.
+          </p>
+
           <router-link to="/product-item">
             <button class="browse-btn">Ver productos</button>
           </router-link>
