@@ -3,17 +3,6 @@ import { computed, ref } from 'vue';
 import AdminLayout from '@/components/AdminLayout.vue';
 import { useCart } from '@/store/cart';
 
-// TODO (cart.js): además de lo que ya expone useCart(), este panel
-// necesita que cart.js agregue:
-//   - confirmPurchasedReservation(orderId): marca order.confirmedAt y
-//     llama internamente a useReservasServicio().confirmReservation(orderId)
-//     para que la fecha quede bloqueada de forma definitiva.
-//   - releasePurchasedReservation(orderId): libera la reserva (por si el
-//     cliente nunca confirmó o se cancela el pedido) y llama a
-//     useReservasServicio().releaseReservation(orderId).
-//   - Que cada order tenga guardado su reservationDate y un campo
-//     confirmedAt (null hasta que se confirme), igual que ya existe
-//     completedAt.
 const {
   getPurchasedproducts,
   markPurchasedCompleted,
@@ -26,7 +15,13 @@ const selectedOrder = ref(null);
 
 function formatDate(iso) {
   if (!iso) return '-';
-  return new Date(iso).toLocaleString('es-PE');
+  return new Date(iso).toLocaleString('es-PE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 function formatReservationDate(date) {
@@ -42,10 +37,6 @@ function orderPrice(item) {
   return Number(item.discount_price ?? item.price ?? 0) * Number(item.quantity ?? 1);
 }
 
-// Un pedido con fecha de evento (inflables, shows, trampolines, etc.)
-// necesita validación manual antes de bloquear la fecha en el
-// calendario. Un pedido sin fecha (ej. snacks sin reserva) no la
-// necesita.
 function needsConfirmation(order) {
   return Boolean(order.reservationDate);
 }
@@ -53,7 +44,7 @@ function needsConfirmation(order) {
 function reservationStatusLabel(order) {
   if (order.completedAt) return 'Completado';
   if (!needsConfirmation(order)) return 'Sin fecha';
-  return order.confirmedAt ? 'Confirmado' : 'Pendiente de confirmar';
+  return order.confirmedAt ? 'Confirmado' : 'Pendiente';
 }
 
 function reservationStatusClass(order) {
@@ -103,60 +94,74 @@ function releaseOrder(order) {
             <tr>
               <th>Cliente</th>
               <th>Producto</th>
-              <th>Fecha</th>
+              <th>Fecha Registro</th>
               <th>Fecha Reserva</th>
               <th>Total</th>
               <th>Estado reserva</th>
               <th>Estado pedido</th>
-              <th>Acciones</th>
+              <th class="text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="order in orders" :key="order.orderId || `${order.id}-${order.purchasedAt}`">
-              <td>{{ order.userId ?? 'Cliente invitado' }}</td>
-              <td>{{ order.name }}</td>
-              <td>{{ formatDate(order.purchasedAt) }}</td>
-              <td>{{ formatReservationDate(order.reservationDate) }}</td>
-              <td>S/ {{ orderPrice(order).toFixed(2) }}</td>
-              <td>
+              <td class="col-client">{{ order.userId ?? 'Cliente invitado' }}</td>
+              <td class="col-product">
+                <span class="product-name">{{ order.name }}</span>
+              </td>
+              <td class="col-date">{{ formatDate(order.purchasedAt) }}</td>
+              <td class="col-date">
+                <strong>{{ formatReservationDate(order.reservationDate) }}</strong>
+              </td>
+              <td class="col-price">S/ {{ orderPrice(order).toFixed(2) }}</td>
+              <td class="col-status">
                 <span :class="reservationStatusClass(order)">
                   {{ reservationStatusLabel(order) }}
                 </span>
               </td>
-              <td>
+              <td class="col-status">
                 <span :class="order.completedAt ? 'tag done' : 'tag pending'">
                   {{ order.completedAt ? 'Completado' : 'Pendiente' }}
                 </span>
               </td>
-              <td class="actions">
-                <button
-                  v-if="needsConfirmation(order)"
-                  type="button"
-                  class="confirm-btn"
-                  :disabled="!!order.confirmedAt"
-                  @click="confirmOrder(order)"
-                >
-                  ✅ Confirmar reserva
-                </button>
-                <button
-                  v-if="needsConfirmation(order) && !order.confirmedAt"
-                  type="button"
-                  class="release-btn"
-                  @click="releaseOrder(order)"
-                >
-                  ✕ Liberar fecha
-                </button>
-                <button
-                  type="button"
-                  class="complete-btn"
-                  :disabled="!!order.completedAt"
-                  @click="completeOrder(order)"
-                >
-                  Marcar completado
-                </button>
-                <button type="button" class="detail-btn" @click="showDetail(order)">
-                  Ver detalle
-                </button>
+              <td class="actions-cell">
+                <div class="actions-grid">
+                  <button
+                    v-if="needsConfirmation(order)"
+                    type="button"
+                    class="btn btn-confirm"
+                    :disabled="!!order.confirmedAt"
+                    title="Confirmar reserva"
+                    @click="confirmOrder(order)"
+                  >
+                    ✓ Confirmar
+                  </button>
+                  <button
+                    v-if="needsConfirmation(order) && !order.confirmedAt"
+                    type="button"
+                    class="btn btn-release"
+                    title="Liberar fecha"
+                    @click="releaseOrder(order)"
+                  >
+                    ✕ Liberar
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-complete"
+                    :disabled="!!order.completedAt"
+                    title="Marcar como completado"
+                    @click="completeOrder(order)"
+                  >
+                    Completar
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-detail" 
+                    title="Ver detalle del pedido"
+                    @click="showDetail(order)"
+                  >
+                    Detalle
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -164,13 +169,18 @@ function releaseOrder(order) {
       </div>
 
       <article v-if="selectedOrder" class="detail-panel">
-        <h3>Detalle del pedido</h3>
-        <p><strong>Cliente:</strong> {{ selectedOrder.userId ?? 'Cliente invitado' }}</p>
-        <p><strong>Producto:</strong> {{ selectedOrder.name }}</p>
-        <p><strong>Fecha:</strong> {{ formatDate(selectedOrder.purchasedAt) }}</p>
-        <p><strong>Fecha Reserva:</strong> {{ formatReservationDate(selectedOrder.reservationDate) }}</p>
-        <p><strong>Estado de la reserva:</strong> {{ reservationStatusLabel(selectedOrder) }}</p>
-        <p><strong>Total:</strong> S/ {{ orderPrice(selectedOrder).toFixed(2) }}</p>
+        <div class="detail-header">
+          <h3>Detalle del pedido</h3>
+          <button type="button" class="close-btn" @click="selectedOrder = null">✕</button>
+        </div>
+        <div class="detail-grid">
+          <p><strong>Cliente:</strong> {{ selectedOrder.userId ?? 'Cliente invitado' }}</p>
+          <p><strong>Producto:</strong> {{ selectedOrder.name }}</p>
+          <p><strong>Fecha Registro:</strong> {{ formatDate(selectedOrder.purchasedAt) }}</p>
+          <p><strong>Fecha Reserva:</strong> {{ formatReservationDate(selectedOrder.reservationDate) }}</p>
+          <p><strong>Estado Reserva:</strong> {{ reservationStatusLabel(selectedOrder) }}</p>
+          <p><strong>Total:</strong> S/ {{ orderPrice(selectedOrder).toFixed(2) }}</p>
+        </div>
       </article>
     </section>
   </AdminLayout>
@@ -178,65 +188,137 @@ function releaseOrder(order) {
 
 <style scoped>
 .orders-panel {
-  background: white;
-  border: 2px solid #E91E81;
-  border-radius: 14px;
-  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #f2c5df;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .panel-title {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   color: #2D3E94;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
 .panel-subtitle {
-  margin: 0 0 14px;
+  margin: 0 0 18px;
   color: #7a5f00;
   background: #fffbea;
   border: 1px solid #FFD200;
   border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 0.88rem;
-  line-height: 1.5;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
 .empty-state {
   background: #FDF6EC;
   border-radius: 10px;
-  padding: 16px;
+  padding: 20px;
+  text-align: center;
+  color: #666;
 }
 
 .orders-table-wrap {
+  width: 100%;
   overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #f1dceb;
 }
 
 .orders-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 0.88rem;
 }
 
-.orders-table th,
-.orders-table td {
-  border-bottom: 1px solid #f1dceb;
-  padding: 10px 8px;
+.orders-table th {
+  background-color: #fdf1f8;
+  color: #2D3E94;
+  font-weight: 700;
+  padding: 12px 10px;
+  border-bottom: 2px solid #f1dceb;
   text-align: left;
   white-space: nowrap;
 }
 
-.orders-table th {
+.orders-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #f1dceb;
+  vertical-align: middle;
+  color: #333333;
+}
+
+.orders-table tr:last-child td {
+  border-bottom: none;
+}
+
+.orders-table tr:hover {
+  background-color: #fff9fc;
+}
+
+/* Ajustes específicos de columnas para evitar deformación */
+.col-client {
+  min-width: 110px;
+  max-width: 140px;
+  word-break: break-word;
+}
+
+.col-product {
+  min-width: 180px;
+  max-width: 260px;
+}
+
+.product-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.col-date {
+  white-space: nowrap;
+  font-size: 0.83rem;
+  color: #555;
+}
+
+.col-price {
+  white-space: nowrap;
+  font-weight: 700;
   color: #2D3E94;
 }
 
+.col-status {
+  white-space: nowrap;
+}
+
+.actions-cell {
+  min-width: 200px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Tags de estado */
 .tag {
+  display: inline-block;
   border-radius: 999px;
   padding: 4px 10px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
+  text-align: center;
 }
 
 .tag.pending {
   background: #ffe79b;
-  color: #2D3E94;
+  color: #6b5200;
 }
 
 .tag.confirmed {
@@ -251,67 +333,112 @@ function releaseOrder(order) {
 
 .tag.neutral {
   background: #eef0f6;
-  color: #667;
+  color: #667085;
 }
 
-.actions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+/* Cuadrícula compacta para botones de acción (2x2) */
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
 }
 
-.detail-panel {
-  margin-top: 14px;
-  background: #fdf1f8;
-  border: 1px solid #f4c5df;
-  border-radius: 10px;
-  padding: 12px;
-}
-
-.detail-panel h3 {
-  margin: 0 0 8px;
-  color: #2D3E94;
-}
-
-.detail-panel p {
-  margin: 4px 0;
-}
-
-.complete-btn,
-.detail-btn,
-.confirm-btn,
-.release-btn {
+.btn {
   border: none;
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
 }
 
-.complete-btn {
-  background: #FFD200;
-  color: #2D3E94;
-}
-
-.complete-btn:disabled,
-.confirm-btn:disabled {
-  opacity: 0.5;
+.btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-.confirm-btn {
+.btn-confirm {
   background: #1b6b32;
   color: white;
 }
 
-.release-btn {
+.btn-confirm:hover:not(:disabled) {
+  background: #145226;
+}
+
+.btn-release {
   background: #fff0f0;
   color: #b00020;
   border: 1px solid #f2b8b8;
 }
 
-.detail-btn {
+.btn-release:hover:not(:disabled) {
+  background: #fde8e8;
+}
+
+.btn-complete {
+  background: #FFD200;
+  color: #2D3E94;
+}
+
+.btn-complete:hover:not(:disabled) {
+  background: #ebd800;
+}
+
+.btn-detail {
   background: #E91E81;
   color: white;
+}
+
+.btn-detail:hover:not(:disabled) {
+  background: #d61874;
+}
+
+/* Panel de detalle mejorado */
+.detail-panel {
+  margin-top: 18px;
+  background: #fdf1f8;
+  border: 1px solid #f4c5df;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.detail-header h3 {
+  margin: 0;
+  color: #2D3E94;
+  font-size: 1.1rem;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.detail-grid p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #444;
 }
 </style>
