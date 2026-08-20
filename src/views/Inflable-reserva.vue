@@ -23,21 +23,26 @@ const CALENDAR_WEEK_DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
 const productsList = ref([]);
 
-const loadProducts = () => {
-  productsList.value = getCompanyproducts() || [];
+const loadProducts = async () => {
+  const products = await fetchCompanyproducts();
+  productsList.value = products || getCompanyproducts() || [];
 };
 
 watch(
   () => route.query.id,
-  () => {
-    loadProducts();
+  async () => {
+    await loadProducts();
   }
 );
 
 const selectedProduct = computed(() => {
-  const targetId = Number(route.query.id);
+  const targetId = route.query.id;
   if (!targetId) return null;
-  return productsList.value.find((product) => product.id === targetId) || null;
+  return (
+    productsList.value.find(
+      (product) => Number(product.id) === Number(targetId) || product._docId === String(targetId)
+    ) || null
+  );
 });
 
 const parsePrice = (value) => {
@@ -206,13 +211,23 @@ const isWaterInflable = computed(() => {
   return WATER_INFLABLE_NAMES.some((keyword) => productName.includes(keyword));
 });
 
+watch(
+  () => form.value.waterMode,
+  (newMode) => {
+    if (newMode !== 'agua') {
+      form.value.waterConnection = '';
+      form.value.waterDrainType = '';
+      form.value.waterResponsible = false;
+      if (formErrors.value.waterConnection) delete formErrors.value.waterConnection;
+      if (formErrors.value.waterDrainType) delete formErrors.value.waterDrainType;
+      if (formErrors.value.waterResponsible) delete formErrors.value.waterResponsible;
+    }
+  }
+);
+
 const formErrors = ref({});
 const showConfirmationModal = ref(false);
 
-// ─── RESUMEN DE ERRORES DE VALIDACIÓN ──────────────────────────────────
-// Estado usado para mostrar un aviso visible arriba del formulario cuando
-// hay campos sin llenar o mal llenados, además del mensaje individual bajo
-// cada campo y el resaltado en rojo del campo/grupo correspondiente.
 const showValidationSummary = ref(false);
 const formErrorCount = computed(() => Object.keys(formErrors.value).length);
 const hasFormErrors = computed(() => formErrorCount.value > 0);
@@ -381,18 +396,6 @@ const whatsappUrl = computed(() => {
   return `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`;
 });
 
-// ─── SCROLL/FOCO AL PRIMER CAMPO CON ERROR ─────────────────────────────
-// BUG CORREGIDO: este mapa solo cubría 12 de los 20 campos que
-// validateForm() puede marcar como erróneos. A los campos de tipo radio
-// (eventType, electricLogistics, measureVisitChoice, waterMode,
-// waterConnection, waterDrainType) y a los checkboxes (accessConfirmed,
-// waterResponsible) les faltaba su entrada aquí -y varios ni siquiera
-// tenían un id en el DOM-. Resultado: si el único error era, por ejemplo,
-// no haber marcado "Ruta de acceso" o "Logística eléctrica", al tocar
-// "Confirmar Reserva" no pasaba nada visible (el mensaje de error se
-// pintaba fuera de la pantalla) y parecía que el botón estaba roto.
-// Ahora el mapa cubre TODOS los campos validados, cada uno con su id en
-// el template, así que siempre se hace scroll + foco al primer error.
 function scrollToFirstError(errors) {
   if (!errors || Object.keys(errors).length === 0) return;
   const map = {
@@ -520,12 +523,6 @@ function validateForm() {
   return ok;
 }
 
-// ─── LIMPIEZA EN VIVO DE ERRORES ───────────────────────────────────────
-// Antes, el mensaje de error de un campo solo desaparecía al volver a
-// tocar "Confirmar Reserva". Si el usuario corregía el dato pero no
-// reenviaba el formulario, el aviso en rojo se quedaba ahí, lo cual
-// resultaba confuso. Ahora, en cuanto el usuario modifica un campo que
-// tenía error, ese error puntual se limpia de inmediato.
 const WATCHED_ERROR_FIELDS = [
   'responsibleName', 'eventAddress', 'district', 'eventType', 'eventDate',
   'startTime', 'endTime', 'electricLogistics', 'spaceLength', 'spaceWidth',
@@ -546,14 +543,6 @@ WATCHED_ERROR_FIELDS.forEach((field) => {
   );
 });
 
-// ─── ENVÍO DEL FORMULARIO CON RETROALIMENTACIÓN VISIBLE ───────────────
-// Antes, si selectedProduct.value era null (p.ej. en una red móvil lenta,
-// cuando fetchCompanyproducts()/loadProducts() aún no habían terminado de
-// poblar productsList al momento de tocar "Confirmar"), submitReservation()
-// salía en silencio: no pasaba nada, sin ningún mensaje ni estado de carga.
-// Ahora se muestra un error visible, se agrega un estado "Enviando..." y
-// cualquier excepción (p.ej. dentro de addToCart) se captura y se informa
-// en vez de dejar el botón "muerto".
 const isSubmitting = ref(false);
 const submitError = ref('');
 
@@ -564,7 +553,7 @@ async function submitReservation() {
 
   if (!selectedProduct.value) {
     submitError.value =
-      'No pudimos identificar el inflable seleccionado (puede deberse a una conexión lenta). Regresa a la vista anterior e inténtalo de nuevo.';
+      'No pudimos identificar el inflable seleccionado. Regresa a la vista anterior e inténtalo de nuevo.';
     nextTick(() => {
       const el = document.getElementById('submit-error-banner');
       if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -590,16 +579,6 @@ function goToCart() {
   router.push('/Cart');
 }
 
-// ─── SCROLL AL TOPE (con cancelación ante interacción del usuario) ─────
-// forceScrollTop() reintenta scrollTo(0,0) varias veces tras el montaje
-// (para ganarle al scroll anchoring mientras el calendario y las secciones
-// condicionales terminan de montarse). El bug reportado ("la pantalla
-// empieza a parpadear y se congela al hacer scroll hacia arriba") ocurre
-// cuando esos reintentos siguen activos justo cuando el usuario intenta
-// scrollear manualmente: el navegador queda "peleando" entre el scroll del
-// usuario y nuestro scrollTo(0) forzado. La solución es cancelar TODOS los
-// reintentos pendientes en cuanto detectamos cualquier gesto del usuario
-// (touch, wheel, tecla, puntero), para nunca competir con su scroll.
 const scrollForceTimeouts = ref([]);
 
 function clearScrollForceTimeouts() {
@@ -623,19 +602,20 @@ function scrollAllToTop() {
 
 const CANCEL_SCROLL_EVENTS = ['wheel', 'touchstart', 'pointerdown', 'keydown'];
 
-function stopForcedScrollOnUserInput() {
+function handleUserScrollCancel() {
   clearScrollForceTimeouts();
+  detachScrollCancelListeners();
 }
 
 function attachScrollCancelListeners() {
   CANCEL_SCROLL_EVENTS.forEach((evt) =>
-    window.addEventListener(evt, stopForcedScrollOnUserInput, { passive: true, once: true }),
+    window.addEventListener(evt, handleUserScrollCancel, { passive: true }),
   );
 }
 
 function detachScrollCancelListeners() {
   CANCEL_SCROLL_EVENTS.forEach((evt) =>
-    window.removeEventListener(evt, stopForcedScrollOnUserInput),
+    window.removeEventListener(evt, handleUserScrollCancel),
   );
 }
 
@@ -650,15 +630,12 @@ async function forceScrollTop() {
     scrollForceTimeouts.value.push(setTimeout(scrollAllToTop, delay));
   });
 
-  // Si el usuario toca/scrollea/usa el teclado antes de que terminen los
-  // 500ms, cancelamos el resto de reintentos de inmediato.
   attachScrollCancelListeners();
 }
 
 onMounted(async () => {
   forceScrollTop();
-  await fetchCompanyproducts();
-  loadProducts();
+  await loadProducts();
   forceScrollTop();
   loadReservedDates();
 });
@@ -1205,7 +1182,6 @@ select:focus {
   font-weight: 600;
 }
 
-/* ─── Resaltado de campos/grupos con error ─── */
 .input-error {
   border-color: #c0144e !important;
   background: #fff5f8;

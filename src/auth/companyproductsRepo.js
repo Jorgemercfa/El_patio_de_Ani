@@ -17,6 +17,7 @@ const PRODUCTS_COLLECTION = 'products';
 const productsState = ref([]);
 const hasLoadedState = ref(false);
 const loadingState = ref(false);
+let currentFetchPromise = null;
 
 function sortProducts(products) {
   return [...products].sort((a, b) => {
@@ -97,31 +98,36 @@ export async function fetchCompanyproducts(force = false) {
     return ensureLocalFallbackLoaded();
   }
 
-  if (loadingState.value) {
-    return productsState.value;
-  }
-
   if (hasLoadedState.value && !force) {
     return productsState.value;
   }
 
+  if (loadingState.value && currentFetchPromise) {
+    return currentFetchPromise;
+  }
+
   loadingState.value = true;
 
-  try {
-    const snapshot = await getDocs(collection(db, PRODUCTS_COLLECTION));
-    const normalized = snapshot.docs.map((item) => normalizeProduct(item.data(), item.id));
-    productsState.value = sortProducts(normalized);
-    hasLoadedState.value = true;
-    return productsState.value;
-  } catch (error) {
-    console.warn('[Products] Error cargando desde Firestore:', error);
-    if (!hasLoadedState.value) {
-      ensureLocalFallbackLoaded();
+  currentFetchPromise = (async () => {
+    try {
+      const snapshot = await getDocs(collection(db, PRODUCTS_COLLECTION));
+      const normalized = snapshot.docs.map((item) => normalizeProduct(item.data(), item.id));
+      productsState.value = sortProducts(normalized);
+      hasLoadedState.value = true;
+      return productsState.value;
+    } catch (error) {
+      console.warn('[Products] Error cargando desde Firestore:', error);
+      if (!hasLoadedState.value) {
+        ensureLocalFallbackLoaded();
+      }
+      return productsState.value;
+    } finally {
+      loadingState.value = false;
+      currentFetchPromise = null;
     }
-    return productsState.value;
-  } finally {
-    loadingState.value = false;
-  }
+  })();
+
+  return currentFetchPromise;
 }
 
 function triggerBackgroundFetch() {
