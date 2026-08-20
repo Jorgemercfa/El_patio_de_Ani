@@ -189,23 +189,6 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(process.env.NODE_ENV === 'production' ? '/El_patio_de_Ani/' : '/'),
   routes,
-  // ⚠️ Excepción puntual, no una desactivación global.
-  //
-  // El regreso del detalle de un producto (Component-service-item.vue)
-  // hacia el catálogo (Product-item.vue) tiene su propio sistema de
-  // restauración de scroll (scrollMemory.js + onBeforeRouteLeave en
-  // Product-item.vue). Si en ESE tramo puntual también actúa el
-  // `savedPosition` nativo de Vue Router, se genera una carrera entre dos
-  // sistemas: el nativo se aplica antes de que termine el fetch async a
-  // Firestore del catálogo (fetchCompanyproducts), así que podría pisar
-  // la restauración de scrollMemory (o ser pisado por ella) de forma no
-  // determinística según el orden exacto de los await en cada versión
-  // futura del código.
-  //
-  // Por eso, SOLO quedan sin scroll nativo cuando se vuelve del detalle
-  // al catálogo — el resto del sitio, incluyendo entrar al detalle y
-  // cualquier otra navegación con atrás/adelante del navegador, conserva
-  // el comportamiento nativo de savedPosition sin cambios.
   scrollBehavior(to, from, savedPosition) {
     const isReturningFromDetailToCatalog =
       to.name === 'product' && from.name === 'productsDetails';

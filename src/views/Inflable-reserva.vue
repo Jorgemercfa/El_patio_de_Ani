@@ -125,6 +125,7 @@ const currentCalendarDate = ref(
   new Date(initialCalendarDate.getFullYear(), initialCalendarDate.getMonth(), 1),
 );
 
+// 1. DECLARACIÓN DEL FORMULARIO PRIMERO (Resuelve ReferenceError)
 const form = ref({
   responsibleName: state.user?.name || '',
   eventAddress: '',
@@ -147,6 +148,56 @@ const form = ref({
   waterDrainType: '',
   waterResponsible: false,
 });
+
+// 2. OPCIONES DE HORARIOS
+const TIME_OPTIONS = [
+  { value: '08:00', label: '08:00 AM' },
+  { value: '08:30', label: '08:30 AM' },
+  { value: '09:00', label: '09:00 AM' },
+  { value: '09:30', label: '09:30 AM' },
+  { value: '10:00', label: '10:00 AM' },
+  { value: '10:30', label: '10:30 AM' },
+  { value: '11:00', label: '11:00 AM' },
+  { value: '11:30', label: '11:30 AM' },
+  { value: '12:00', label: '12:00 PM' },
+  { value: '12:30', label: '12:30 PM' },
+  { value: '13:00', label: '01:00 PM' },
+  { value: '13:30', label: '01:30 PM' },
+  { value: '14:00', label: '02:00 PM' },
+  { value: '14:30', label: '02:30 PM' },
+  { value: '15:00', label: '03:00 PM' },
+  { value: '15:30', label: '03:30 PM' },
+  { value: '16:00', label: '04:00 PM' },
+  { value: '16:30', label: '04:30 PM' },
+  { value: '17:00', label: '05:00 PM' },
+  { value: '17:30', label: '05:30 PM' },
+  { value: '18:00', label: '06:00 PM' },
+  { value: '18:30', label: '06:30 PM' },
+  { value: '19:00', label: '07:00 PM' },
+  { value: '19:30', label: '07:30 PM' },
+  { value: '20:00', label: '08:00 PM' },
+  { value: '20:30', label: '08:30 PM' },
+  { value: '21:00', label: '09:00 PM' },
+  { value: '21:30', label: '09:30 PM' },
+  { value: '22:00', label: '10:00 PM' },
+];
+
+// 3. WATCHER PARA CÁLCULO AUTOMÁTICO DE +5 HORAS
+watch(
+  () => form.value.startTime,
+  (newStart) => {
+    if (!newStart) return;
+    
+    const [hours, minutes] = newStart.split(':').map(Number);
+    const startInMinutes = hours * 60 + minutes;
+    
+    const endInMinutes = startInMinutes + 300; // 5 horas
+    const endHours = Math.floor(endInMinutes / 60) % 24;
+    const endMins = endInMinutes % 60;
+    
+    form.value.endTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
+  }
+);
 
 const WATER_MODE_LABELS = {
   pelotas: '🎈 Modalidad seca (con pelotitas)',
@@ -457,9 +508,23 @@ function validateForm() {
   if (!form.value.endTime) {
     errors.endTime = 'Selecciona la hora de fin';
   }
-  if (form.value.startTime && form.value.endTime && form.value.endTime <= form.value.startTime) {
-    errors.endTime = 'La hora de fin debe ser mayor a la hora de inicio';
+
+  // Validación de horas ajustada para permitir eventos que cruzan la medianoche
+  if (form.value.startTime && form.value.endTime) {
+    const [startH, startM] = form.value.startTime.split(':').map(Number);
+    const [endH, endM] = form.value.endTime.split(':').map(Number);
+    const startMins = startH * 60 + startM;
+    let endMins = endH * 60 + endM;
+
+    if (endMins <= startMins) {
+      endMins += 24 * 60; // Si la hora de fin es menor o igual, asumimos día siguiente
+    }
+
+    if (endMins - startMins < 60) {
+      errors.endTime = 'La reserva debe durar al menos 1 hora';
+    }
   }
+
   if (!form.value.electricLogistics) {
     errors.electricLogistics = 'Selecciona una opción de logística eléctrica';
   }
@@ -757,16 +822,42 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div class="field">
-                  <label for="startTime">Horario de inicio</label>
-                  <input id="startTime" v-model="form.startTime" type="time" :class="{ 'input-error': formErrors.startTime }" />
-                  <p v-if="formErrors.startTime" class="error-text">{{ formErrors.startTime }}</p>
-                </div>
+  <label for="startTime">Horario de inicio</label>
+  <select
+    id="startTime"
+    v-model="form.startTime"
+    :class="{ 'input-error': formErrors.startTime }"
+  >
+    <option value="">Selecciona hora de inicio</option>
+    <option
+      v-for="time in TIME_OPTIONS"
+      :key="time.value"
+      :value="time.value"
+    >
+      {{ time.label }}
+    </option>
+  </select>
+  <p v-if="formErrors.startTime" class="error-text">{{ formErrors.startTime }}</p>
+</div>
 
-                <div class="field">
-                  <label for="endTime">Horario de fin</label>
-                  <input id="endTime" v-model="form.endTime" type="time" :class="{ 'input-error': formErrors.endTime }" />
-                  <p v-if="formErrors.endTime" class="error-text">{{ formErrors.endTime }}</p>
-                </div>
+<div class="field">
+  <label for="endTime">Horario de fin (5 horas de servicio)</label>
+  <select
+    id="endTime"
+    v-model="form.endTime"
+    :class="{ 'input-error': formErrors.endTime }"
+  >
+    <option value="">Selecciona hora de fin</option>
+    <option
+      v-for="time in TIME_OPTIONS"
+      :key="time.value"
+      :value="time.value"
+    >
+      {{ time.label }}
+    </option>
+  </select>
+  <p v-if="formErrors.endTime" class="error-text">{{ formErrors.endTime }}</p>
+</div>
               </div>
             </section>
 
