@@ -208,6 +208,15 @@ const isWaterInflable = computed(() => {
 
 const formErrors = ref({});
 const showConfirmationModal = ref(false);
+
+// ─── RESUMEN DE ERRORES DE VALIDACIÓN ──────────────────────────────────
+// Estado usado para mostrar un aviso visible arriba del formulario cuando
+// hay campos sin llenar o mal llenados, además del mensaje individual bajo
+// cada campo y el resaltado en rojo del campo/grupo correspondiente.
+const showValidationSummary = ref(false);
+const formErrorCount = computed(() => Object.keys(formErrors.value).length);
+const hasFormErrors = computed(() => formErrorCount.value > 0);
+
 const premiumPriceLabel = `${CURRENCY_PREFIX} ${PREMIUM_INFLABLE_PRICE}+`;
 const calendarMonthLabel = computed(() => {
   const label = currentCalendarDate.value.toLocaleDateString('es-PE', {
@@ -372,21 +381,41 @@ const whatsappUrl = computed(() => {
   return `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`;
 });
 
+// ─── SCROLL/FOCO AL PRIMER CAMPO CON ERROR ─────────────────────────────
+// BUG CORREGIDO: este mapa solo cubría 12 de los 20 campos que
+// validateForm() puede marcar como erróneos. A los campos de tipo radio
+// (eventType, electricLogistics, measureVisitChoice, waterMode,
+// waterConnection, waterDrainType) y a los checkboxes (accessConfirmed,
+// waterResponsible) les faltaba su entrada aquí -y varios ni siquiera
+// tenían un id en el DOM-. Resultado: si el único error era, por ejemplo,
+// no haber marcado "Ruta de acceso" o "Logística eléctrica", al tocar
+// "Confirmar Reserva" no pasaba nada visible (el mensaje de error se
+// pintaba fuera de la pantalla) y parecía que el botón estaba roto.
+// Ahora el mapa cubre TODOS los campos validados, cada uno con su id en
+// el template, así que siempre se hace scroll + foco al primer error.
 function scrollToFirstError(errors) {
   if (!errors || Object.keys(errors).length === 0) return;
   const map = {
     responsibleName: 'responsibleName',
     eventAddress: 'eventAddress',
     district: 'district',
+    eventType: 'eventType',
     eventDate: 'eventDate',
     startTime: 'startTime',
     endTime: 'endTime',
+    electricLogistics: 'electricLogistics',
     spaceLength: 'spaceLength',
     spaceWidth: 'spaceWidth',
     floorType: 'floorType',
     guestCount: 'guestCount',
     ageRange: 'ageRange',
+    accessConfirmed: 'accessConfirmed',
+    measureVisitChoice: 'measureVisitChoice',
     measureVisitPhone: 'measureVisitPhone',
+    waterMode: 'waterMode',
+    waterConnection: 'waterConnection',
+    waterDrainType: 'waterDrainType',
+    waterResponsible: 'waterResponsible',
   };
 
   const firstKey = Object.keys(errors).find((k) => !!map[k]);
@@ -486,9 +515,36 @@ function validateForm() {
 
   formErrors.value = errors;
   const ok = Object.keys(errors).length === 0;
+  showValidationSummary.value = !ok;
   if (!ok) scrollToFirstError(errors);
   return ok;
 }
+
+// ─── LIMPIEZA EN VIVO DE ERRORES ───────────────────────────────────────
+// Antes, el mensaje de error de un campo solo desaparecía al volver a
+// tocar "Confirmar Reserva". Si el usuario corregía el dato pero no
+// reenviaba el formulario, el aviso en rojo se quedaba ahí, lo cual
+// resultaba confuso. Ahora, en cuanto el usuario modifica un campo que
+// tenía error, ese error puntual se limpia de inmediato.
+const WATCHED_ERROR_FIELDS = [
+  'responsibleName', 'eventAddress', 'district', 'eventType', 'eventDate',
+  'startTime', 'endTime', 'electricLogistics', 'spaceLength', 'spaceWidth',
+  'floorType', 'guestCount', 'ageRange', 'accessConfirmed', 'measureVisitChoice',
+  'measureVisitPhone', 'waterMode', 'waterConnection', 'waterDrainType', 'waterResponsible',
+];
+
+WATCHED_ERROR_FIELDS.forEach((field) => {
+  watch(
+    () => form.value[field],
+    () => {
+      if (formErrors.value[field]) {
+        const updated = { ...formErrors.value };
+        delete updated[field];
+        formErrors.value = updated;
+      }
+    },
+  );
+});
 
 // ─── ENVÍO DEL FORMULARIO CON RETROALIMENTACIÓN VISIBLE ───────────────
 // Antes, si selectedProduct.value era null (p.ej. en una red móvil lenta,
@@ -628,6 +684,10 @@ onBeforeUnmount(() => {
             Inflable seleccionado: <strong>{{ selectedProduct.name }}</strong>
           </p>
 
+          <div v-if="showValidationSummary && hasFormErrors" class="alert error-alert" role="alert" aria-live="assertive">
+            ⚠️ Hay {{ formErrorCount }} campo{{ formErrorCount === 1 ? '' : 's' }} que necesita{{ formErrorCount === 1 ? '' : 'n' }} tu atención. Revisa los campos marcados en rojo.
+          </div>
+
           <div v-if="submitError" id="submit-error-banner" class="alert error-alert" role="alert" aria-live="assertive">
             {{ submitError }}
           </div>
@@ -682,25 +742,25 @@ onBeforeUnmount(() => {
               <div class="section-grid">
                 <div class="field full-width">
                   <label for="responsibleName">Nombre completo del responsable</label>
-                  <input id="responsibleName" v-model="form.responsibleName" type="text" placeholder="Ej: Ana Torres" />
+                  <input id="responsibleName" v-model="form.responsibleName" type="text" placeholder="Ej: Ana Torres" :class="{ 'input-error': formErrors.responsibleName }" />
                   <p v-if="formErrors.responsibleName" class="error-text">{{ formErrors.responsibleName }}</p>
                 </div>
 
                 <div class="field full-width">
                   <label for="eventAddress">Dirección completa del evento</label>
-                  <input id="eventAddress" v-model="form.eventAddress" type="text" placeholder="Av./Jr. + referencia" />
+                  <input id="eventAddress" v-model="form.eventAddress" type="text" placeholder="Av./Jr. + referencia" :class="{ 'input-error': formErrors.eventAddress }" />
                   <p v-if="formErrors.eventAddress" class="error-text">{{ formErrors.eventAddress }}</p>
                 </div>
 
                 <div class="field">
                   <label for="district">Distrito</label>
-                  <input id="district" v-model="form.district" type="text" placeholder="Ej: San Borja" />
+                  <input id="district" v-model="form.district" type="text" placeholder="Ej: San Borja" :class="{ 'input-error': formErrors.district }" />
                   <p v-if="formErrors.district" class="error-text">{{ formErrors.district }}</p>
                 </div>
 
                 <div class="field">
                   <label for="eventType">Tipo de evento</label>
-                  <select id="eventType" v-model="form.eventType">
+                  <select id="eventType" v-model="form.eventType" :class="{ 'input-error': formErrors.eventType }">
                     <option value="">Selecciona el tipo de evento</option>
                     <option value="🎂 Cumpleaños">🎂 Cumpleaños</option>
                     <option value="👶 Baby Shower">👶 Baby Shower</option>
@@ -715,19 +775,19 @@ onBeforeUnmount(() => {
 
                 <div class="field">
                   <label for="eventDate">Fecha del evento</label>
-                  <input id="eventDate" v-model="form.eventDate" :min="today" type="date" />
+                  <input id="eventDate" v-model="form.eventDate" :min="today" type="date" :class="{ 'input-error': formErrors.eventDate }" />
                   <p v-if="formErrors.eventDate" class="error-text">{{ formErrors.eventDate }}</p>
                 </div>
 
                 <div class="field">
                   <label for="startTime">Horario de inicio</label>
-                  <input id="startTime" v-model="form.startTime" type="time" />
+                  <input id="startTime" v-model="form.startTime" type="time" :class="{ 'input-error': formErrors.startTime }" />
                   <p v-if="formErrors.startTime" class="error-text">{{ formErrors.startTime }}</p>
                 </div>
 
                 <div class="field">
                   <label for="endTime">Horario de fin</label>
-                  <input id="endTime" v-model="form.endTime" type="time" />
+                  <input id="endTime" v-model="form.endTime" type="time" :class="{ 'input-error': formErrors.endTime }" />
                   <p v-if="formErrors.endTime" class="error-text">{{ formErrors.endTime }}</p>
                 </div>
               </div>
@@ -735,7 +795,7 @@ onBeforeUnmount(() => {
 
             <section class="form-section">
               <h2>2️⃣ ⚡ Logística eléctrica</h2>
-              <div class="radios">
+              <div class="radios" id="electricLogistics" tabindex="-1" :class="{ 'group-error': formErrors.electricLogistics }">
                 <label><input v-model="form.electricLogistics" type="radio" value="Sí, cuento con toma de corriente estable ✅" /> Sí, cuento con toma de corriente estable ✅</label>
                 <label><input v-model="form.electricLogistics" type="radio" value="Sí, cuento con grupo electrógeno ✅" /> Sí, cuento con grupo electrógeno ✅</label>
                 <label><input v-model="form.electricLogistics" type="radio" value="no-electricity" /> No cuento con suministro eléctrico ❌</label>
@@ -752,13 +812,13 @@ onBeforeUnmount(() => {
               <div class="section-grid">
                 <div class="field">
                   <label for="spaceLength">Largo disponible (m)</label>
-                  <input id="spaceLength" v-model="form.spaceLength" min="1" type="number" placeholder="Ej: 5" />
+                  <input id="spaceLength" v-model="form.spaceLength" min="1" type="number" placeholder="Ej: 5" :class="{ 'input-error': formErrors.spaceLength }" />
                   <p v-if="formErrors.spaceLength" class="error-text">{{ formErrors.spaceLength }}</p>
                 </div>
 
                 <div class="field">
                   <label for="spaceWidth">Ancho disponible (m)</label>
-                  <input id="spaceWidth" v-model="form.spaceWidth" min="1" type="number" placeholder="Ej: 4" />
+                  <input id="spaceWidth" v-model="form.spaceWidth" min="1" type="number" placeholder="Ej: 4" :class="{ 'input-error': formErrors.spaceWidth }" />
                   <p v-if="formErrors.spaceWidth" class="error-text">{{ formErrors.spaceWidth }}</p>
                 </div>
               </div>
@@ -772,7 +832,7 @@ onBeforeUnmount(() => {
               <h2>4️⃣ 🌱 Tipo de suelo</h2>
               <div class="field full-width">
                 <label for="floorType">Tipo de suelo</label>
-                <select id="floorType" v-model="form.floorType">
+                <select id="floorType" v-model="form.floorType" :class="{ 'input-error': formErrors.floorType }">
                   <option value="">Selecciona una opción</option>
                   <option value="Césped (Estacas)">Césped (se instala con estacas)</option>
                   <option value="Cemento / Asfalto (Bolsas de arena)">Cemento / Asfalto (se instala con bolsas de arena)</option>
@@ -789,7 +849,7 @@ onBeforeUnmount(() => {
               <p class="water-mode-intro">
                 Este inflable puede funcionar en modalidad seca (con pelotitas) o en modalidad con agua. Selecciona la que prefieras para tu evento:
               </p>
-              <div class="radios">
+              <div class="radios" id="waterMode" tabindex="-1" :class="{ 'group-error': formErrors.waterMode }">
                 <label>
                   <input v-model="form.waterMode" type="radio" value="pelotas" />
                   🎈 Modalidad seca (con pelotitas) — no requiere conexión de agua
@@ -811,7 +871,7 @@ onBeforeUnmount(() => {
 
               <div class="field full-width">
                 <label>¿Con qué conexión de agua cuentas?</label>
-                <div class="radios">
+                <div class="radios" id="waterConnection" tabindex="-1" :class="{ 'group-error': formErrors.waterConnection }">
                   <label>
                     <input v-model="form.waterConnection" type="radio" value="si-toma" />
                     🚿 Sí, tengo toma de agua fija (grifo o tubería)
@@ -834,7 +894,7 @@ onBeforeUnmount(() => {
 
               <div class="field full-width">
                 <label>¿Cómo se gestionará el agua utilizada?</label>
-                <div class="radios">
+                <div class="radios" id="waterDrainType" tabindex="-1" :class="{ 'group-error': formErrors.waterDrainType }">
                   <label>
                     <input v-model="form.waterDrainType" type="radio" value="tierra" />
                     🌱 Se absorbe en el jardín / tierra
@@ -855,8 +915,8 @@ onBeforeUnmount(() => {
                 </div>
               </div>
 
-              <label class="checkbox-row">
-                <input v-model="form.waterResponsible" type="checkbox" />
+              <label class="checkbox-row" :class="{ 'group-error': formErrors.waterResponsible }">
+                <input id="waterResponsible" v-model="form.waterResponsible" type="checkbox" />
                 Entiendo que soy responsable de proporcionar el acceso al agua y de la gestión del agua utilizada durante el evento.
               </label>
               <p v-if="formErrors.waterResponsible" class="error-text">{{ formErrors.waterResponsible }}</p>
@@ -867,13 +927,13 @@ onBeforeUnmount(() => {
               <div class="section-grid">
                 <div class="field">
                   <label for="guestCount">Cantidad estimada de niños</label>
-                  <input id="guestCount" v-model="form.guestCount" min="1" :max="MAX_GUEST_COUNT" type="number" placeholder="Ej: 20" />
+                  <input id="guestCount" v-model="form.guestCount" min="1" :max="MAX_GUEST_COUNT" type="number" placeholder="Ej: 20" :class="{ 'input-error': formErrors.guestCount }" />
                   <p v-if="formErrors.guestCount" class="error-text">{{ formErrors.guestCount }}</p>
                 </div>
 
                 <div class="field">
                   <label for="ageRange">Rango de edades</label>
-                  <input id="ageRange" v-model="form.ageRange" type="text" placeholder="ej: 3-8 años" />
+                  <input id="ageRange" v-model="form.ageRange" type="text" placeholder="ej: 3-8 años" :class="{ 'input-error': formErrors.ageRange }" />
                   <p v-if="formErrors.ageRange" class="error-text">{{ formErrors.ageRange }}</p>
                 </div>
               </div>
@@ -882,8 +942,8 @@ onBeforeUnmount(() => {
 
             <section class="form-section">
               <h2>6️⃣ 🚪 Ruta de acceso</h2>
-              <label class="checkbox-row">
-                <input v-model="form.accessConfirmed" type="checkbox" />
+              <label class="checkbox-row" :class="{ 'group-error': formErrors.accessConfirmed }">
+                <input id="accessConfirmed" v-model="form.accessConfirmed" type="checkbox" />
                 Confirmo que el camino hacia el área de instalación está libre de escaleras, puertas estrechas y obstáculos que impidan el paso de equipos grandes
               </label>
               <p v-if="formErrors.accessConfirmed" class="error-text">{{ formErrors.accessConfirmed }}</p>
@@ -894,7 +954,7 @@ onBeforeUnmount(() => {
               <div class="alert warning-alert">
                 📏 Para inflables premium ({{ premiumPriceLabel }}), recomendamos una visita previa de toma de medidas sin costo. ¿Deseas coordinarla?
               </div>
-              <div class="radios">
+              <div class="radios" id="measureVisitChoice" tabindex="-1" :class="{ 'group-error': formErrors.measureVisitChoice }">
                 <label><input v-model="form.measureVisitChoice" type="radio" value="Sí, quiero coordinar visita de medidas" /> Sí, quiero coordinar visita de medidas</label>
                 <label><input v-model="form.measureVisitChoice" type="radio" value="No, confirmo que mi espacio es suficiente" /> No, confirmo que mi espacio es suficiente</label>
               </div>
@@ -902,7 +962,7 @@ onBeforeUnmount(() => {
 
               <div class="field" v-if="form.measureVisitChoice === 'Sí, quiero coordinar visita de medidas'">
                 <label for="measureVisitPhone">Teléfono de contacto</label>
-                <input id="measureVisitPhone" v-model="form.measureVisitPhone" type="tel" placeholder="Ej: 987654321" />
+                <input id="measureVisitPhone" v-model="form.measureVisitPhone" type="tel" placeholder="Ej: 987654321" :class="{ 'input-error': formErrors.measureVisitPhone }" />
                 <p v-if="formErrors.measureVisitPhone" class="error-text">{{ formErrors.measureVisitPhone }}</p>
               </div>
             </section>
@@ -1143,6 +1203,29 @@ select:focus {
   color: #c0144e;
   font-size: 0.83rem;
   font-weight: 600;
+}
+
+/* ─── Resaltado de campos/grupos con error ─── */
+.input-error {
+  border-color: #c0144e !important;
+  background: #fff5f8;
+}
+
+.group-error {
+  border: 2px solid #c0144e;
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff5f8;
+}
+
+.field,
+.radios,
+.checkbox-row {
+  scroll-margin-top: 100px;
+}
+
+[tabindex="-1"]:focus {
+  outline: none;
 }
 
 .calendar-card {
