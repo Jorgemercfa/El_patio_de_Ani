@@ -24,6 +24,15 @@ export const RESERVATION_STATUS = {
   CONFIRMED: 'confirmada',
 };
 
+// Resultados posibles al intentar confirmar una reserva, para que quien
+// llame (cart.js / Orders-company.vue) sepa qué pasó realmente y pueda
+// avisarle al admin en vez de asumir que siempre funciona.
+export const CONFIRM_RESULT = {
+  CONFIRMED: 'confirmed',
+  NOT_FOUND: 'not_found',
+  EXPIRED: 'expired',
+};
+
 const reservasData = ref(null);
 
 const isPlainObject = (value) =>
@@ -195,17 +204,40 @@ export function useReservasServicio() {
   // Marca como CONFIRMADA la reserva asociada a un orderId. Se llama desde
   // el panel de administración (Orders-company) cuando Ani recibe y valida
   // el mensaje de WhatsApp del cliente.
+  //
+  // ⚠️ Antes esto confirmaba el hold sin fijarse si ya había expirado (el
+  // límite de PENDING_HOLD_MS ya pasó). Como los pedidos en cart.js ahora
+  // se quedan visibles indefinidamente en Orders-company (ya no dependen
+  // de la sesión activa — ver el fix de cart.js), es fácil que el admin
+  // confirme un pedido varias horas después. Si para entonces la fecha ya
+  // se liberó y otro cliente la tomó, confirmar el hold viejo generaba una
+  // doble reserva para el mismo día sin ningún aviso.
+  //
+  // Ahora esta función NO confirma un hold ya vencido: devuelve
+  // CONFIRM_RESULT.EXPIRED para que quien la llame pueda avisarle al admin
+  // en vez de dar por hecho que la fecha sigue apartada.
   function confirmReservation(orderId) {
-    if (!orderId) return;
+    if (!orderId) return CONFIRM_RESULT.NOT_FOUND;
 
     const all = { ...ensureData() };
+    let result = CONFIRM_RESULT.NOT_FOUND;
+
     Object.keys(all).forEach((key) => {
-      all[key] = normalizeEntries(all[key]).map((entry) =>
-        entry.orderId === orderId ? { ...entry, status: RESERVATION_STATUS.CONFIRMED } : entry,
-      );
+      all[key] = normalizeEntries(all[key]).map((entry) => {
+        if (entry.orderId !== orderId) return entry;
+
+        if (isExpiredPending(entry)) {
+          result = CONFIRM_RESULT.EXPIRED;
+          return entry;
+        }
+
+        result = CONFIRM_RESULT.CONFIRMED;
+        return { ...entry, status: RESERVATION_STATUS.CONFIRMED };
+      });
     });
 
     saveAll(all);
+    return result;
   }
 
   // Libera manualmente una reserva (ej. el admin detecta que el cliente
@@ -258,5 +290,6 @@ export function useReservasServicio() {
     confirmReservation,
     releaseReservation,
     RESERVATION_STATUS,
+    CONFIRM_RESULT,
   };
 }

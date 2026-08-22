@@ -7,6 +7,7 @@ import Footer from '@/components/Footer-item.vue';
 import { useSession } from '@/auth/session';
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart.js';
+import { useReservasServicio } from '@/store/reservas';
 import {
   PREMIUM_INFLABLE_PRICE,
   MAX_GUEST_COUNT,
@@ -17,8 +18,29 @@ const route = useRoute();
 const router = useRouter();
 const { state } = useSession();
 const { addToCart } = useCart();
+
+// ─── Disponibilidad ───────────────────────────────────────────────────
+// Antes este archivo tenía su PROPIO localStorage aislado ('patio-reservas'),
+// completamente desconectado del sistema real de reservas.js que ya usan
+// Cart.vue y Orders-company.vue. Eso causaba dos problemas graves:
+//
+// 1. saveReservationDate() se llamaba apenas se enviaba el formulario (que
+//    solo agrega el inflable al carrito, no confirma la compra), así que
+//    la fecha quedaba bloqueada PARA SIEMPRE en cuanto alguien llenaba el
+//    formulario, sin importar si compraba o no — sin ningún TTL de
+//    expiración, a diferencia del hold de 2h de reservas.js.
+// 2. Cuando el admin liberaba una reserva desde Orders-company.vue
+//    (releaseReservation), eso solo tocaba reservas.js — 'patio-reservas'
+//    nunca se enteraba, así que la fecha seguía viéndose "reservada" acá
+//    aunque en el sistema real ya estuviera libre.
+//
+// getReservedDates()/isDateAvailable() ya existían en reservas.js
+// justamente para que este calendario los usara (el propio comentario de
+// getReservedDates() en reservas.js lo dice explícitamente) — nunca se
+// terminó de conectar. Ahora sí.
+const { getReservedDates, isDateAvailable } = useReservasServicio();
+
 const CURRENCY_PREFIX = 'S/';
-const RESERVATIONS_STORAGE_KEY = 'patio-reservas';
 const CALENDAR_WEEK_DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
 const productsList = ref([]);
@@ -119,7 +141,15 @@ const getLocalDate = () => {
   return new Date(now.getTime() - timezoneOffset).toISOString().split('T')[0];
 };
 const today = getLocalDate();
-const reservedDates = ref([]);
+
+// Fechas ya reservadas (confirmadas o pendientes vigentes) PARA ESTE
+// PRODUCTO específico, según el sistema real de reservas.js — no un
+// bloqueo global compartido entre todos los inflables.
+const reservedDates = computed(() => {
+  if (!selectedProduct.value) return [];
+  return getReservedDates(selectedProduct.value.id);
+});
+
 const initialCalendarDate = new Date();
 const currentCalendarDate = ref(
   new Date(initialCalendarDate.getFullYear(), initialCalendarDate.getMonth(), 1),
@@ -329,44 +359,6 @@ const formatDateForStorage = (date) => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-};
-
-const loadReservedDates = () => {
-  try {
-    const raw = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
-    if (!raw) {
-      reservedDates.value = [];
-      return;
-    }
-
-    const parsed = JSON.parse(raw);
-    reservedDates.value = Array.isArray(parsed)
-      ? parsed.filter((date) => typeof date === 'string')
-      : [];
-  } catch (err) {
-    console.warn('loadReservedDates failed', err);
-    reservedDates.value = [];
-  }
-};
-
-const saveReservationDate = (date) => {
-  if (!date) return;
-
-  let storageDates = [];
-  try {
-    const raw = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    storageDates = Array.isArray(parsed)
-      ? parsed.filter((item) => typeof item === 'string')
-      : [];
-  } catch (err) {
-    console.warn('saveReservationDate parse failed', err);
-    storageDates = [];
-  }
-
-  const updatedDates = Array.from(new Set([...storageDates, date])).sort();
-  reservedDates.value = updatedDates;
-  localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(updatedDates));
 };
 
 const goToPreviousMonth = () => {
@@ -626,9 +618,27 @@ async function submitReservation() {
     return;
   }
 
+  // Revalidamos disponibilidad justo antes de agregar al carrito: el
+  // calendario pudo quedar desactualizado si otro cliente reservó esta
+  // misma fecha mientras el usuario llenaba el formulario.
+  if (!isDateAvailable(selectedProduct.value.id, form.value.eventDate)) {
+    formErrors.value = {
+      ...formErrors.value,
+      eventDate: 'Esta fecha ya no está disponible. Elige otra fecha en el calendario.',
+    };
+    showValidationSummary.value = true;
+    scrollToFirstError({ eventDate: true });
+    return;
+  }
+
   isSubmitting.value = true;
   try {
-    saveReservationDate(form.value.eventDate);
+    // La fecha NO se aparta acá. Esto solo agrega el inflable al carrito;
+    // el apartado real (estado PENDIENTE en reservas.js, con expiración
+    // automática a las 2h si nadie confirma) ocurre recién en checkout()
+    // dentro de cart.js — tal como está documentado ahí. Así el calendario
+    // no se llena de fechas bloqueadas por gente que solo llenó el
+    // formulario y nunca terminó de comprar.
     addToCart(selectedProduct.value.id, form.value.eventDate, reservationSummary.value);
     showConfirmationModal.value = true;
   } catch (err) {
@@ -702,7 +712,6 @@ onMounted(async () => {
   forceScrollTop();
   await loadProducts();
   forceScrollTop();
-  loadReservedDates();
 });
 
 onBeforeUnmount(() => {

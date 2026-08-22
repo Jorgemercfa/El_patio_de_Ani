@@ -234,6 +234,15 @@ function confirmReservation() {
   showConfirmation.value = true;
 
   // ─── 5. Redirigir la pestaña ya abierta a la URL de WhatsApp ───
+  //
+  // ⚠️ checkout() (arriba) YA vació el carrito antes de que lleguemos acá.
+  // Si window.open() falló o esta asignación lanza excepción, whatsappBlockedUrl
+  // se llena — pero el template, si el link de respaldo viviera adentro del
+  // bloque `v-if="cartCount > 0"`, ya habría cambiado al bloque de "carrito
+  // vacío" y ese link jamás se mostraría. El cliente vería "tu reserva fue
+  // registrada" sin ninguna forma de enviar el WhatsApp real, y Ani nunca
+  // se enteraría del pedido. Por eso el fallback ahora vive FUERA de ambos
+  // bloques condicionales en el template (ver más abajo).
   try {
     if (waWindow) {
       waWindow.location.href = url;
@@ -372,11 +381,6 @@ function confirmReservation() {
             <p v-if="showConfirmation" class="confirmation-message">
               Tu reserva fue registrada. Pronto Ani te atenderá.
             </p>
-
-            <p v-if="whatsappBlockedUrl" class="whatsapp-fallback">
-              Si WhatsApp no se abrió automáticamente,
-              <a :href="whatsappBlockedUrl" target="_blank" rel="noopener noreferrer">haz click aquí</a>.
-            </p>
           </div>
         </div>
 
@@ -392,6 +396,22 @@ function confirmReservation() {
             <button class="browse-btn">Ver productos</button>
           </router-link>
         </div>
+
+        <!--
+          ⚠️ Este bloque vive FUERA de los dos `v-if`/`v-else` de arriba a
+          propósito. checkout() vacía el carrito ANTES de que sepamos si
+          window.open()/location.href falló, así que para cuando
+          whatsappBlockedUrl se llena, el template ya está mostrando el
+          bloque "carrito vacío" (v-else). Si este párrafo viviera dentro
+          de .cart-summary (como estaba antes), nunca se habría llegado a
+          renderizar y el cliente se quedaba sin forma de enviar su
+          reserva por WhatsApp cuando el navegador bloqueaba la apertura
+          automática.
+        -->
+        <p v-if="whatsappBlockedUrl" class="whatsapp-fallback">
+          Si WhatsApp no se abrió automáticamente,
+          <a :href="whatsappBlockedUrl" target="_blank" rel="noopener noreferrer">haz click aquí</a>.
+        </p>
       </div>
     </section>
 
@@ -654,7 +674,7 @@ function confirmReservation() {
 }
 
 .whatsapp-fallback {
-  margin: 10px 0 0;
+  margin: 20px 0 0;
   padding: 10px 12px;
   background: rgba(37, 211, 102, 0.08);
   border: 1px solid rgba(37, 211, 102, 0.35);

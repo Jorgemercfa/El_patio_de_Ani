@@ -41,15 +41,21 @@ function needsConfirmation(order) {
   return Boolean(order.reservationDate);
 }
 
+// releasedAt es un estado nuevo (antes no existía en absoluto): antes de
+// este fix, una reserva liberada se seguía mostrando como "Pendiente" con
+// el botón "Liberar" todavía disponible, porque no había ningún campo que
+// distinguiera "nunca confirmada" de "liberada intencionalmente".
 function reservationStatusLabel(order) {
   if (order.completedAt) return 'Completado';
   if (!needsConfirmation(order)) return 'Sin fecha';
+  if (order.releasedAt) return 'Liberado';
   return order.confirmedAt ? 'Confirmado' : 'Pendiente';
 }
 
 function reservationStatusClass(order) {
   if (order.completedAt) return 'tag done';
   if (!needsConfirmation(order)) return 'tag neutral';
+  if (order.releasedAt) return 'tag released';
   return order.confirmedAt ? 'tag confirmed' : 'tag pending';
 }
 
@@ -63,12 +69,12 @@ function completeOrder(order) {
 }
 
 function confirmOrder(order) {
-  if (!order.orderId || order.confirmedAt || !needsConfirmation(order)) return;
+  if (!order.orderId || order.confirmedAt || order.releasedAt || !needsConfirmation(order)) return;
   confirmPurchasedReservation?.(order.orderId);
 }
 
 function releaseOrder(order) {
-  if (!order.orderId || order.confirmedAt) return;
+  if (!order.orderId || order.confirmedAt || order.releasedAt) return;
   if (!window.confirm('¿Liberar esta fecha? El cliente no llegó a confirmar la reserva.')) return;
   releasePurchasedReservation?.(order.orderId);
 }
@@ -129,14 +135,14 @@ function releaseOrder(order) {
                     v-if="needsConfirmation(order)"
                     type="button"
                     class="btn btn-confirm"
-                    :disabled="!!order.confirmedAt"
+                    :disabled="!!order.confirmedAt || !!order.releasedAt"
                     title="Confirmar reserva"
                     @click="confirmOrder(order)"
                   >
                     ✓ Confirmar
                   </button>
                   <button
-                    v-if="needsConfirmation(order) && !order.confirmedAt"
+                    v-if="needsConfirmation(order) && !order.confirmedAt && !order.releasedAt"
                     type="button"
                     class="btn btn-release"
                     title="Liberar fecha"
@@ -334,6 +340,11 @@ function releaseOrder(order) {
 .tag.neutral {
   background: #eef0f6;
   color: #667085;
+}
+
+.tag.released {
+  background: #f1dceb;
+  color: #8a5b00;
 }
 
 /* Cuadrícula compacta para botones de acción (2x2) */

@@ -1,6 +1,7 @@
 import { reactive, computed, watch, effectScope } from 'vue';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
+import { useReservasServicio } from '@/store/reservas';
 
 const STORAGE_PREFIX = 'al-toque-cart';
 const GUEST_SCOPE = 'guest';
@@ -24,8 +25,13 @@ function safeParse(json) {
   }
 }
 
-// Cada usuario (y el invitado) tiene su propia llave de localStorage, para
-// que el carrito de uno no se filtre al de otro dentro del mismo navegador.
+// Cada usuario (y el invitado) tiene su propia llave de localStorage PARA
+// EL CARRITO, para que el carrito de uno no se filtre al de otro dentro
+// del mismo navegador.
+//
+// ⚠️ IMPORTANTE: esta llave scoped por usuario es SOLO para `items`
+// (carrito en progreso). Los pedidos (`purchasedproducts`) YA NO viven acá
+// — ver ordersKey() más abajo y la nota junto a ella sobre por qué.
 function scopeKey(userId) {
   return `${STORAGE_PREFIX}:${userId || GUEST_SCOPE}`;
 }
@@ -38,34 +44,109 @@ function confirmationKey(userId) {
   return `${STORAGE_PREFIX}:last-confirmation:${userId || GUEST_SCOPE}`;
 }
 
+// ─── Llave GLOBAL para pedidos ───────────────────────────────────────
+//
+// Antes, purchasedproducts vivía adentro de la misma llave scoped por
+// usuario que el carrito (ver scopeKey). Eso rompía Orders-company.vue:
+// cada vez que activeUserId cambiaba (login/logout, o simplemente que el
+// listener de Firebase Auth tardara un instante en resolver la sesión al
+// recargar la página al día siguiente), el watch de ensureScopeWatcher
+// recargaba items Y purchasedproducts juntos desde la llave del NUEVO
+// activeUserId. Si esa llave no tenía pedidos guardados (porque nunca se
+// compró nada estando logueado exactamente con ese id), los pedidos
+// "desaparecían" de la vista del admin — no se borraban de verdad, solo
+// se dejaba de leerlos.
+//
+// Los pedidos no deberían depender de quién está logueado en el momento:
+// son datos globales que el admin necesita ver siempre. Por eso viven en
+// su propia llave, sin importar activeUserId.
+function ordersKey() {
+  return `${STORAGE_PREFIX}:orders`;
+}
+
+function loadOrders() {
+  return safeParse(localStorage.getItem(ordersKey())) || [];
+}
+
+function persistOrders() {
+  localStorage.setItem(ordersKey(), JSON.stringify(state.purchasedproducts));
+}
+
 function loadScope(userId) {
-  const stored = safeParse(localStorage.getItem(scopeKey(userId))) || {
-    items: [],
-    purchasedproducts: [],
-  };
+  const stored = safeParse(localStorage.getItem(scopeKey(userId))) || { items: [] };
   return {
     items: stored.items || [],
-    purchasedproducts: stored.purchasedproducts || [],
   };
+}
+
+// ─── Migración de datos legados ──────────────────────────────────────
+//
+// Con el formato viejo, los pedidos podían estar guardados adentro de
+// cualquier llave scoped (una por cada usuario que haya comprado algo).
+// Esta función corre UNA vez al cargar el módulo: recorre todas las
+// llaves de localStorage que empiecen con STORAGE_PREFIX, rescata los
+// purchasedproducts que encuentre ahí, los junta (sin duplicar, por
+// orderId) en la llave global de pedidos, y deja esas llaves scoped
+// limpias (solo con items). Así no se pierde ningún pedido que ya
+// estuviera guardado antes de este fix.
+function migrateLegacyOrders() {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return [];
+  }
+
+  const merged = loadOrders();
+  const seenIds = new Set(merged.map((o) => o.orderId));
+  let changed = false;
+
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith(`${STORAGE_PREFIX}:`)) continue;
+    if (key === ordersKey() || key.includes(':last-confirmation:')) continue;
+
+    const stored = safeParse(localStorage.getItem(key));
+    if (!stored || !Array.isArray(stored.purchasedproducts) || stored.purchasedproducts.length === 0) {
+      continue;
+    }
+
+    stored.purchasedproducts.forEach((order) => {
+      const id = order.orderId ?? `${order.id}-${order.purchasedAt}`;
+      if (!seenIds.has(id)) {
+        seenIds.add(id);
+        merged.push(order);
+        changed = true;
+      }
+    });
+
+    // Deja esa llave scoped solo con items: los pedidos ya viven en su
+    // propia llave global.
+    localStorage.setItem(key, JSON.stringify({ items: stored.items || [] }));
+  }
+
+  if (changed) {
+    localStorage.setItem(ordersKey(), JSON.stringify(merged));
+  }
+
+  return merged;
 }
 
 // Arrancamos siempre como invitado; si ya hay sesión activa (ej. al
 // refrescar la página logueado), el watch de abajo la sincroniza apenas
 // se llama a useCart() por primera vez.
 let activeUserId = null;
-const initial = loadScope(activeUserId);
+const initialOrders = migrateLegacyOrders();
+const initialItems = loadScope(activeUserId).items;
 
 const state = reactive({
-  items: initial.items,
-  purchasedproducts: initial.purchasedproducts,
+  items: initialItems,
+  purchasedproducts: initialOrders,
 });
 
+// Persiste SOLO el carrito (items). Los pedidos usan persistOrders().
 function persist() {
   localStorage.setItem(
     scopeKey(activeUserId),
     JSON.stringify({
       items: state.items,
-      purchasedproducts: state.purchasedproducts,
     }),
   );
 }
@@ -109,6 +190,10 @@ let scopeWatcherStarted = false;
 // Cambia el "cajón" activo de localStorage cuando cambia el usuario logueado
 // (login o logout). El scope anterior ya quedó persistido (persist() se
 // llama en cada mutación), así que acá solo hay que cargar el del nuevo.
+//
+// Nota: esto SOLO recarga `items` (el carrito). `purchasedproducts` ya no
+// se toca acá — vive en su propia llave global (ver ordersKey arriba) y
+// no depende de qué usuario esté activo.
 function ensureScopeWatcher(sessionState) {
   if (scopeWatcherStarted) return;
   scopeWatcherStarted = true;
@@ -142,7 +227,6 @@ function ensureScopeWatcher(sessionState) {
         activeUserId = newUserId;
         const scoped = loadScope(activeUserId);
         state.items.splice(0, state.items.length, ...scoped.items);
-        state.purchasedproducts.splice(0, state.purchasedproducts.length, ...scoped.purchasedproducts);
       },
       { immediate: true },
     );
@@ -152,6 +236,19 @@ function ensureScopeWatcher(sessionState) {
 export function useCart() {
   const { state: sessionState } = useSession();
   ensureScopeWatcher(sessionState);
+
+  // ─── Integración con reservas.js ───────────────────────────────────
+  // Antes, checkout() nunca llamaba a holdReservation(), así que ninguna
+  // reserva de fecha quedaba registrada en el sistema de reservas.js: el
+  // calendario de disponibilidad nunca se enteraba de los pedidos hechos,
+  // y las funciones confirmPurchasedReservation/releasePurchasedReservation
+  // que Orders-company.vue necesitaba directamente NO EXISTÍAN en este
+  // archivo (por eso los botones "Confirmar"/"Liberar" no hacían nada).
+  const {
+    holdReservation,
+    confirmReservation,
+    releaseReservation,
+  } = useReservasServicio();
 
   const products = computed(() => getCompanyproducts());
 
@@ -247,9 +344,21 @@ export function useCart() {
         };
       })
       .filter(Boolean);
+
+    // Aparta en reservas.js (estado PENDIENTE) la fecha de cada item que
+    // tenga reservationDate, justo en el momento del checkout real — tal
+    // como pide el comentario de holdReservation() en reservas.js. Esto es
+    // lo que faltaba para que el calendario de disponibilidad y el flujo
+    // de confirmar/liberar del admin tuvieran algún efecto real.
+    purchased.forEach((order) => {
+      if (order.reservationDate) {
+        holdReservation(order.id, order.reservationDate, order.orderId);
+      }
+    });
+
     state.purchasedproducts.push(...purchased);
-    clearCart();
-    persist();
+    clearCart(); // ya persiste `items`
+    persistOrders();
   }
 
   function getPurchasedproducts(userId) {
@@ -262,7 +371,35 @@ export function useCart() {
     const item = state.purchasedproducts.find((order) => order.orderId === orderId);
     if (!item) return;
     item.completedAt = new Date().toISOString();
-    persist();
+    persistOrders();
+  }
+
+  // Marca la reserva como confirmada (el admin validó que el cliente sí
+  // envió el WhatsApp) y, crucialmente, avisa a reservas.js para que la
+  // entrada correspondiente pase de PENDIENTE a CONFIRMADA — de lo
+  // contrario, aunque el admin la confirme aquí, esa fecha se liberaría
+  // sola a las 2 horas por el mecanismo de auto-expiración de reservas.js.
+  function confirmPurchasedReservation(orderId) {
+    if (!orderId) return;
+    const item = state.purchasedproducts.find((order) => order.orderId === orderId);
+    if (!item || item.confirmedAt || item.releasedAt) return;
+
+    confirmReservation(orderId);
+    item.confirmedAt = new Date().toISOString();
+    persistOrders();
+  }
+
+  // Libera manualmente la reserva (el cliente nunca confirmó por
+  // WhatsApp). Borra el registro correspondiente en reservas.js para que
+  // la fecha quede disponible de inmediato para otro cliente.
+  function releasePurchasedReservation(orderId) {
+    if (!orderId) return;
+    const item = state.purchasedproducts.find((order) => order.orderId === orderId);
+    if (!item || item.confirmedAt || item.releasedAt) return;
+
+    releaseReservation(orderId);
+    item.releasedAt = new Date().toISOString();
+    persistOrders();
   }
 
   // Wrappers que ya resuelven el userId activo, para que Cart.vue no tenga
@@ -287,6 +424,8 @@ export function useCart() {
     checkout,
     getPurchasedproducts,
     markPurchasedCompleted,
+    confirmPurchasedReservation,
+    releasePurchasedReservation,
     saveLastConfirmation: saveLastConfirmationForCurrentUser,
     consumeLastConfirmation: consumeLastConfirmationForCurrentUser,
   };
