@@ -97,6 +97,55 @@ watch(
   },
 );
 
+// --- Parseo robusto de precio, portado de Product-item-details.vue ---
+// Tolera precios legados guardados como string con comas, símbolos, etc.
+const parsePrice = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string') return null;
+
+  const cleaned = value.trim().replace(/[^\d.,-]/g, '');
+  if (!cleaned) return null;
+
+  const lastComma = cleaned.lastIndexOf(',');
+  const lastDot = cleaned.lastIndexOf('.');
+  const decimalIndex = Math.max(lastComma, lastDot);
+
+  const normalizedValue =
+    decimalIndex >= 0
+      ? `${cleaned.slice(0, decimalIndex).replace(/[.,]/g, '')}.${cleaned
+          .slice(decimalIndex + 1)
+          .replace(/[.,]/g, '')}`
+      : cleaned.replace(/[.,]/g, '');
+
+  const parsed = Number(normalizedValue);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+// --- Retorno al catálogo: reconstruye la misma URL de la que venimos ---
+// (fromCat/fromSub viajan solo como transporte hacia Edit-service; al
+// volver se renombran a category/subcategory, que es lo que
+// Services-admin.vue lee en su onMounted para restaurar filtro y scroll).
+function buildReturnQuery() {
+  const query = {};
+  if (route.query.fromCat) query.category = route.query.fromCat;
+  if (route.query.fromSub) query.subcategory = route.query.fromSub;
+  return query;
+}
+
+function goBackToAdmin() {
+  const prev = router.options.history.state?.back;
+  // Solo confiamos en router.back() si el historial apunta realmente al
+  // catálogo de admin — si Edit-service se abrió por URL directa o tras
+  // recargar la página, "back" podría llevar a una página ajena y sacar
+  // al admin del panel en vez de volver al catálogo.
+  if (prev && prev.startsWith('/Services-admin')) {
+    router.back();
+  } else {
+    router.push({ path: '/Services-admin', query: buildReturnQuery() });
+  }
+}
+
 onMounted(async () => {
   await fetchCompanyproducts();
   const service = getCompanyproducts().find((item) => item.id === serviceId);
@@ -110,7 +159,7 @@ onMounted(async () => {
     name: service.name || '',
     shortDescription: service.shortDescription || '',
     longDescription: service.longDescription || '',
-    price: service.price ?? '',
+    price: parsePrice(service.price) ?? '',
     category: service.category || 'Shows Infantiles',
     subcategory: service.subcategory || '',
     subcategory2: service.subcategory2 || '',
@@ -150,7 +199,7 @@ onBeforeUnmount(() => {
 });
 
 function onCancel() {
-  router.push('/Services-admin');
+  goBackToAdmin();
 }
 
 async function onSave() {
@@ -166,8 +215,8 @@ async function onSave() {
     return;
   }
 
-  const price = Number(form.value.price);
-  if (!Number.isFinite(price) || price < 0) {
+  const price = parsePrice(form.value.price);
+  if (price === null || price < 0) {
     error.value = 'Ingresa un precio válido.';
     return;
   }
@@ -228,7 +277,7 @@ async function onSave() {
       _modified: true,
     });
 
-    router.push('/Services-admin');
+    goBackToAdmin();
   } catch (e) {
     error.value = e?.message || 'No se pudo guardar el servicio.';
   }
