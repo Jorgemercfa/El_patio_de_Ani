@@ -45,18 +45,30 @@ function needsConfirmation(order) {
 // este fix, una reserva liberada se seguía mostrando como "Pendiente" con
 // el botón "Liberar" todavía disponible, porque no había ningún campo que
 // distinguiera "nunca confirmada" de "liberada intencionalmente".
+//
+// confirmationExpired es otro estado nuevo: se marca cuando el admin
+// intenta confirmar una reserva cuyo hold en reservas.js ya venció (pasaron
+// más de 2h sin confirmar). Antes esto se confirmaba igual sin ningún
+// aviso, arriesgando una doble reserva si otro cliente ya había tomado esa
+// fecha. Ahora se distingue visualmente de un "Pendiente" común para que
+// el admin sepa que necesita verificar la fecha con el cliente antes de
+// seguir.
 function reservationStatusLabel(order) {
   if (order.completedAt) return 'Completado';
   if (!needsConfirmation(order)) return 'Sin fecha';
   if (order.releasedAt) return 'Liberado';
-  return order.confirmedAt ? 'Confirmado' : 'Pendiente';
+  if (order.confirmedAt) return 'Confirmado';
+  if (order.confirmationExpired) return 'Vencida (revisar)';
+  return 'Pendiente';
 }
 
 function reservationStatusClass(order) {
   if (order.completedAt) return 'tag done';
   if (!needsConfirmation(order)) return 'tag neutral';
   if (order.releasedAt) return 'tag released';
-  return order.confirmedAt ? 'tag confirmed' : 'tag pending';
+  if (order.confirmedAt) return 'tag confirmed';
+  if (order.confirmationExpired) return 'tag expired';
+  return 'tag pending';
 }
 
 function showDetail(order) {
@@ -68,9 +80,21 @@ function completeOrder(order) {
   markPurchasedCompleted(order.orderId);
 }
 
+// confirmPurchasedReservation() ahora devuelve false cuando el hold ya
+// venció (más de 2h sin confirmar) en vez de confirmarlo silenciosamente.
+// En ese caso avisamos al admin en vez de asumir que la fecha sigue
+// apartada — pudo haberla tomado otro cliente mientras tanto. Reintentar
+// el botón seguirá devolviendo false (el hold sigue vencido); la salida
+// real acá es usar "Liberar" y coordinar una nueva fecha con el cliente
+// por WhatsApp si corresponde.
 function confirmOrder(order) {
   if (!order.orderId || order.confirmedAt || order.releasedAt || !needsConfirmation(order)) return;
-  confirmPurchasedReservation?.(order.orderId);
+  const confirmed = confirmPurchasedReservation?.(order.orderId);
+  if (confirmed === false) {
+    window.alert(
+      'Esta reserva ya venció (pasaron más de 2 horas sin confirmar) y la fecha pudo haber sido tomada por otro cliente. Verifica disponibilidad antes de continuar — si ya no aplica, usa "Liberar" y coordina una nueva fecha con el cliente.',
+    );
+  }
 }
 
 function releaseOrder(order) {
@@ -345,6 +369,11 @@ function releaseOrder(order) {
 .tag.released {
   background: #f1dceb;
   color: #8a5b00;
+}
+
+.tag.expired {
+  background: #ffd9d9;
+  color: #b00020;
 }
 
 /* Cuadrícula compacta para botones de acción (2x2) */

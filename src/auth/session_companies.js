@@ -95,8 +95,26 @@ function initAuthListener() {
           setCompany(null);
         }
       } catch (error) {
+        // ⚠️ Mismo problema que tenía session.js: CUALQUIER error leyendo
+        // Firestore acá (corte de red, timeout, etc.) ejecutaba
+        // setCompany(null) — deslogueando el panel de admin aunque
+        // firebaseUser (ya confirmado arriba por Firebase Auth) siguiera
+        // siendo una sesión válida. Para el panel de admin esto es
+        // particularmente delicado: un hiccup de red al abrir
+        // Orders-company.vue podía sacar a Ani del panel sin que ella
+        // hubiera cerrado sesión.
+        //
+        // Ahora: si ya había una company cargada (del caché de
+        // localStorage o de una sincronización previa exitosa) y
+        // corresponde a este mismo firebaseUser (comparando por `uid`,
+        // que es siempre el string de Firebase Auth — `id` se guarda
+        // coaccionado a número y no es comparable directamente), la
+        // conservamos en vez de descartarla por un fallo transitorio.
         console.warn('[Session Company] Error sincronizando sesión de empresa:', error);
-        setCompany(null);
+        const cachedMatchesCurrentCompany = state.company && state.company.uid === firebaseUser.uid;
+        if (!cachedMatchesCurrentCompany) {
+          setCompany(null);
+        }
       } finally {
         state.ready = true;
         if (!hasResolved) {
