@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://elpatiodeani.com/sitemap.xml
