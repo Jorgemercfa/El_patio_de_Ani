@@ -41,7 +41,36 @@ function initFirebaseAdmin() {
     return null;
   }
 
-  const serviceAccount = JSON.parse(raw);
+  // Diagnostico seguro: no expone el contenido sensible, solo su forma
+  const trimmed = raw.trim();
+  console.log(
+    `FIREBASE_SERVICE_ACCOUNT_KEY recibido: ${trimmed.length} caracteres, ` +
+    `empieza con "${trimmed.slice(0, 1)}", termina con "${trimmed.slice(-1)}"`
+  );
+
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(trimmed);
+  } catch (err) {
+    console.error(
+      'FIREBASE_SERVICE_ACCOUNT_KEY no contiene un JSON valido. ' +
+      'Verifica que el secret tenga PEGADO EL ARCHIVO .json COMPLETO, ' +
+      'sin comillas extra alrededor y sin contenido duplicado. ' +
+      `Detalle: ${err.message}`
+    );
+    console.warn('Se generara el sitemap solo con rutas estaticas.');
+    return null;
+  }
+
+  if (!serviceAccount.project_id || !serviceAccount.private_key) {
+    console.error(
+      'El JSON de FIREBASE_SERVICE_ACCOUNT_KEY no tiene la forma esperada ' +
+      '(faltan project_id o private_key). Revisa que sea el archivo correcto.'
+    );
+    console.warn('Se generara el sitemap solo con rutas estaticas.');
+    return null;
+  }
+
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
