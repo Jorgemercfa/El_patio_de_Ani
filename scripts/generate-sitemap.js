@@ -12,7 +12,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const admin = require('firebase-admin');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
 
 const BASE_URL = 'https://elpatiodeani.com';
 
@@ -71,10 +72,10 @@ function initFirebaseAdmin() {
     return null;
   }
 
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+  initializeApp({
+    credential: cert(serviceAccount),
   });
-  return admin.firestore();
+  return getFirestore();
 }
 
 async function getProductUrls(db) {
