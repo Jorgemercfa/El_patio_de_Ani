@@ -14,7 +14,7 @@ const year = new Date().getFullYear();
       <div class="contact-footer">
         <h4 class="titile-footer">Contacto</h4>
         <div class="footer-text">
-          <div>elpatiodeani@gmail.com</div>
+          <div>reservas@elpatiodeani.com</div>
           <div>+51 975 495 623</div>
         </div>
       </div>

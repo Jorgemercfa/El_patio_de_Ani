@@ -35,9 +35,14 @@ const { addToCart } = useCart();
 //    aunque en el sistema real ya estuviera libre.
 //
 // getReservedDates()/isDateAvailable() ya existían en reservas.js
-// justamente para que este calendario los usara (el propio comentario de
-// getReservedDates() en reservas.js lo dice explícitamente) — nunca se
-// terminó de conectar. Ahora sí.
+// justamente para que este calendario los usara — ya se conectaron acá.
+//
+// ACTUALIZACIÓN: reservas.js ahora consulta Firestore (colección
+// 'reservations'), ya no localStorage — así que este calendario refleja
+// el estado REAL del negocio, no solo lo que vio este navegador en
+// particular. Como consecuencia, getReservedDates()/isDateAvailable() ya
+// no son síncronas: hay que esperar la respuesta de Firestore, así que
+// reservedDates pasa de computed a ref + watch (ver más abajo).
 const { getReservedDates, isDateAvailable } = useReservasServicio();
 
 const CURRENCY_PREFIX = 'S/';
@@ -145,10 +150,46 @@ const today = getLocalDate();
 // Fechas ya reservadas (confirmadas o pendientes vigentes) PARA ESTE
 // PRODUCTO específico, según el sistema real de reservas.js — no un
 // bloqueo global compartido entre todos los inflables.
-const reservedDates = computed(() => {
-  if (!selectedProduct.value) return [];
-  return getReservedDates(selectedProduct.value.id);
-});
+//
+// Ya no es un computed: getReservedDates() ahora consulta Firestore de
+// forma asíncrona, así que se resuelve con un watch que dispara la
+// consulta cada vez que cambia el producto seleccionado, guardando el
+// resultado en este ref. loadingReservedDates permite mostrarle al
+// usuario que el calendario todavía se está cargando/actualizando, en
+// vez de mostrar temporalmente "todo disponible" mientras llega la
+// respuesta real.
+const reservedDates = ref([]);
+const loadingReservedDates = ref(false);
+const reservedDatesError = ref('');
+
+async function refreshReservedDates() {
+  if (!selectedProduct.value) {
+    reservedDates.value = [];
+    reservedDatesError.value = '';
+    return;
+  }
+
+  loadingReservedDates.value = true;
+  reservedDatesError.value = '';
+
+  try {
+    reservedDates.value = await getReservedDates(selectedProduct.value.id);
+  } catch (err) {
+    console.error('[Inflable-reserva] Error cargando fechas reservadas:', err);
+    reservedDatesError.value = 'No se pudo cargar la disponibilidad. Intenta recargar la página.';
+    reservedDates.value = [];
+  } finally {
+    loadingReservedDates.value = false;
+  }
+}
+
+watch(
+  () => selectedProduct.value?.id,
+  () => {
+    refreshReservedDates();
+  },
+  { immediate: true },
+);
 
 const initialCalendarDate = new Date();
 const currentCalendarDate = ref(
@@ -378,7 +419,7 @@ const goToNextMonth = () => {
 };
 
 const selectCalendarDate = (day) => {
-  if (!day?.isAvailable) return;
+  if (!day?.isAvailable || loadingReservedDates.value) return;
   form.value.eventDate = day.dateString;
   formErrors.value.eventDate = '';
 };
@@ -618,21 +659,28 @@ async function submitReservation() {
     return;
   }
 
-  // Revalidamos disponibilidad justo antes de agregar al carrito: el
-  // calendario pudo quedar desactualizado si otro cliente reservó esta
-  // misma fecha mientras el usuario llenaba el formulario.
-  if (!isDateAvailable(selectedProduct.value.id, form.value.eventDate)) {
-    formErrors.value = {
-      ...formErrors.value,
-      eventDate: 'Esta fecha ya no está disponible. Elige otra fecha en el calendario.',
-    };
-    showValidationSummary.value = true;
-    scrollToFirstError({ eventDate: true });
-    return;
-  }
-
   isSubmitting.value = true;
+
   try {
+    // Revalidamos disponibilidad justo antes de agregar al carrito: el
+    // calendario pudo quedar desactualizado si otro cliente reservó esta
+    // misma fecha mientras el usuario llenaba el formulario. Ahora es
+    // await porque isDateAvailable consulta Firestore.
+    const stillAvailable = await isDateAvailable(selectedProduct.value.id, form.value.eventDate);
+    if (!stillAvailable) {
+      formErrors.value = {
+        ...formErrors.value,
+        eventDate: 'Esta fecha ya no está disponible. Elige otra fecha en el calendario.',
+      };
+      showValidationSummary.value = true;
+      scrollToFirstError({ eventDate: true });
+      // Refresca el calendario para que la fecha recién ocupada se pinte
+      // como reservada de inmediato, en vez de quedar "disponible" hasta
+      // el próximo refresh manual.
+      refreshReservedDates();
+      return;
+    }
+
     // La fecha NO se aparta acá. Esto solo agrega el inflable al carrito;
     // el apartado real (estado PENDIENTE en reservas.js, con expiración
     // automática a las 2h si nadie confirma) ocurre recién en checkout()
@@ -754,11 +802,16 @@ onBeforeUnmount(() => {
                   <button type="button" class="calendar-nav-btn" @click="goToNextMonth">▶</button>
                 </div>
 
+                <p v-if="loadingReservedDates" class="calendar-loading" aria-live="polite">
+                  ⏳ Actualizando disponibilidad...
+                </p>
+                <p v-if="reservedDatesError" class="error-text">{{ reservedDatesError }}</p>
+
                 <div class="calendar-weekdays">
                   <span v-for="weekDay in CALENDAR_WEEK_DAYS" :key="weekDay">{{ weekDay }}</span>
                 </div>
 
-                <div class="calendar-grid">
+                <div class="calendar-grid" :class="{ 'is-loading': loadingReservedDates }">
                   <template v-for="(day, index) in calendarDays" :key="day?.dateString || `empty-${index}`">
                     <button
                       v-if="day"
@@ -769,7 +822,7 @@ onBeforeUnmount(() => {
                         'is-reserved': day.isReserved,
                         'is-selected': day.isSelected,
                       }"
-                      :disabled="!day.isAvailable"
+                      :disabled="!day.isAvailable || loadingReservedDates"
                       @click="selectCalendarDate(day)"
                     >
                       <span>{{ day.dayNumber }}</span>
@@ -1336,11 +1389,22 @@ select:focus {
   font-weight: 800;
 }
 
+.calendar-loading {
+  margin: 0 0 8px;
+  color: #2D3E94;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 .calendar-weekdays,
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
+}
+
+.calendar-grid.is-loading {
+  opacity: 0.6;
 }
 
 .calendar-weekdays {

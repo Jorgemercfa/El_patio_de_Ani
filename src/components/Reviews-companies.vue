@@ -72,14 +72,22 @@ async function handleSubmit() {
       </div>
 
       <!-- Nombre -->
-      <div class="form-group">
-        <label for="qr-name">Tu nombre <span class="optional">(opcional)</span></label>
+      <div v-if="!isAuthenticated" class="form-group">
+        <label for="review-name">Tu nombre</label>
         <input
-          id="qr-name"
+          id="review-name"
           v-model="form.name"
           type="text"
-          placeholder="Ej: María G."
-          autocomplete="given-name"
+          placeholder="Ej: María"
+        />
+      </div>
+      <div v-if="!isAuthenticated" class="form-group">
+        <label for="review-last-name">Tu apellido</label>
+        <input
+          id="review-last-name"
+          v-model="form.lastName"
+          type="text"
+          placeholder="Ej: García"
         />
       </div>
 

@@ -205,14 +205,52 @@ const addedFeedback = ref(false);
 const reservationDate = ref('');
 const reservationError = ref('');
 const todayDate = computed(() => new Date().toLocaleDateString('en-CA'));
-const isSelectedDateAvailable = computed(() => {
-  if (!reservationDate.value || !product.value || isInflable.value) return null;
-  return isDateAvailable(product.value.id, reservationDate.value);
+
+// ─── Disponibilidad (Firestore, vía reservas.js) ───────────────────────
+//
+// Antes esto era un computed síncrono contra localStorage. isDateAvailable
+// ahora consulta Firestore y es asíncrono, así que ya no puede ser un
+// computed puro — se resuelve con un watch que dispara la consulta cada
+// vez que cambia la fecha elegida (o el producto), y guarda el resultado
+// en un ref junto con su propio estado de loading/error.
+const isSelectedDateAvailable = ref(null); // null = todavía no verificado
+const checkingAvailability = ref(false);
+const availabilityCheckError = ref('');
+
+async function refreshAvailability() {
+  if (!reservationDate.value || !product.value || isInflable.value) {
+    isSelectedDateAvailable.value = null;
+    availabilityCheckError.value = '';
+    return;
+  }
+
+  checkingAvailability.value = true;
+  availabilityCheckError.value = '';
+
+  try {
+    isSelectedDateAvailable.value = await isDateAvailable(product.value.id, reservationDate.value);
+  } catch (err) {
+    console.error('[Component-service-item] Error verificando disponibilidad:', err);
+    availabilityCheckError.value = 'No se pudo verificar la disponibilidad. Intenta de nuevo.';
+    isSelectedDateAvailable.value = null;
+  } finally {
+    checkingAvailability.value = false;
+  }
+}
+
+watch([reservationDate, () => product.value?.id], () => {
+  refreshAvailability();
 });
+
 const availabilityLabel = computed(() => {
   if (!reservationDate.value) return 'Selecciona una fecha para verificar disponibilidad';
+  if (checkingAvailability.value) return '⏳ Verificando disponibilidad...';
+  if (availabilityCheckError.value) return availabilityCheckError.value;
+  if (isSelectedDateAvailable.value === null) return 'Selecciona una fecha para verificar disponibilidad';
   return isSelectedDateAvailable.value ? '✅ Fecha disponible' : '🔴 Fecha reservada';
 });
+
+const addingToCart = ref(false);
 
 function handleAddToCartSnack() {
   reservationError.value = '';
@@ -221,19 +259,37 @@ function handleAddToCartSnack() {
   setTimeout(() => { addedFeedback.value = false; }, 1500);
 }
 
-function handleAddToCartService() {
+// NOTA: se vuelve a consultar isDateAvailable justo antes de agregar al
+// carrito (no se confía solo en isSelectedDateAvailable ya calculado),
+// por si la fecha se ocupó justo en el momento entre que se pintó el
+// indicador y que el usuario hizo click — mismo criterio de revalidación
+// que ya se usa en Inflable-reserva.vue antes del submit.
+async function handleAddToCartService() {
   if (!reservationDate.value) {
     reservationError.value = 'Selecciona la fecha del evento para continuar.';
     return;
   }
-  if (!isDateAvailable(product.value.id, reservationDate.value)) {
-    reservationError.value = 'La fecha seleccionada no está disponible para este servicio.';
-    return;
-  }
+
   reservationError.value = '';
-  addToCart(product.value.id, reservationDate.value);
-  addedFeedback.value = true;
-  setTimeout(() => { addedFeedback.value = false; }, 1500);
+  addingToCart.value = true;
+
+  try {
+    const available = await isDateAvailable(product.value.id, reservationDate.value);
+    if (!available) {
+      reservationError.value = 'La fecha seleccionada no está disponible para este servicio.';
+      isSelectedDateAvailable.value = false;
+      return;
+    }
+
+    addToCart(product.value.id, reservationDate.value);
+    addedFeedback.value = true;
+    setTimeout(() => { addedFeedback.value = false; }, 1500);
+  } catch (err) {
+    console.error('[Component-service-item] Error validando disponibilidad al agregar al carrito:', err);
+    reservationError.value = 'No se pudo verificar la disponibilidad. Intenta de nuevo.';
+  } finally {
+    addingToCart.value = false;
+  }
 }
 
 function reserveInflable() {
@@ -241,13 +297,6 @@ function reserveInflable() {
 }
 
 // ─── SCROLL AL TOPE (con limpieza de timers pendientes) ────
-// Guardamos los IDs de los setTimeout diferidos para poder cancelarlos.
-// Es fundamental: si el usuario navega fuera de esta vista (ej. clic en
-// "Regresar") antes de que se cumplan esos 50ms/250ms, los timers
-// quedaban vivos y disparaban scrollTo(0) sobre la SIGUIENTE página
-// —el catálogo, justo cuando está restaurando su posición de scroll
-// guardada— arruinando esa restauración. Por eso se cancelan tanto al
-// reintentar forceScrollTop() como al desmontar el componente.
 const scrollForceTimeouts = ref([]);
 
 function clearScrollForceTimeouts() {
@@ -301,9 +350,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   stopCarouselAutoplay();
-  // Cancela cualquier scrollTo(0) diferido que aún esté pendiente, para
-  // que no se dispare sobre la página a la que se está navegando ahora
-  // (típicamente el catálogo, restaurando su scroll guardado).
   clearScrollForceTimeouts();
 });
 
@@ -313,6 +359,8 @@ watch(
     forceScrollTop();
     reservationDate.value = '';
     reservationError.value = '';
+    isSelectedDateAvailable.value = null;
+    availabilityCheckError.value = '';
     if (newId) {
       await fetchReviews(newId);
     }
@@ -487,6 +535,7 @@ function goBack() {
             <p
               class="availability-indicator"
               :class="{ available: isSelectedDateAvailable === true, unavailable: isSelectedDateAvailable === false }"
+              aria-live="polite"
             >
               {{ availabilityLabel }}
             </p>
@@ -497,12 +546,12 @@ function goBack() {
 
           <button
             class="buy-button"
-            :disabled="!reservationDate || isSelectedDateAvailable !== true"
+            :disabled="!reservationDate || isSelectedDateAvailable !== true || checkingAvailability || addingToCart"
             :title="!reservationDate || isSelectedDateAvailable !== true ? 'Selecciona una fecha disponible para agregar al carrito' : 'Agregar al carrito'"
             aria-label="Agregar al carrito"
             @click="handleAddToCartService"
           >
-            {{ addedFeedback ? '✓ Agregado' : 'Agregar al carrito' }}
+            {{ addingToCart ? 'Verificando...' : (addedFeedback ? '✓ Agregado' : 'Agregar al carrito') }}
           </button>
         </template>
       </div>
