@@ -15,7 +15,7 @@ const path = require('path');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 
-const BASE_URL = 'https://elpatiodeani.com';
+const BASE_URL = 'https://elpatiodeani.com/El_patio_de_Ani';
 
 // Rutas publicas estaticas, tomadas de tu router.js (solo las que aportan SEO)
 const STATIC_ROUTES = [
@@ -82,14 +82,26 @@ async function getProductUrls(db) {
   if (!db) return [];
 
   const snapshot = await db.collection(PRODUCTS_COLLECTION).get();
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
-    const entry = { loc: `${BASE_URL}/product/${doc.id}` };
-    if (data.updatedAt && typeof data.updatedAt.toDate === 'function') {
-      entry.lastmod = data.updatedAt.toDate().toISOString().split('T')[0];
-    }
-    return entry;
-  });
+  return snapshot.docs
+    .map((doc) => {
+      const data = doc.data();
+
+      // IMPORTANTE: la app busca el producto por el campo numerico `id`
+      // guardado dentro del documento (ver Component-service-item.vue:
+      // products.find(s => s.id === Number(route.params.id))), NO por el
+      // ID autogenerado del documento de Firestore. Si usamos doc.id aqui,
+      // la URL del sitemap nunca coincide con ningun producto real.
+      if (data.id === undefined || data.id === null || data.id === '') {
+        return null;
+      }
+
+      const entry = { loc: `${BASE_URL}/product/${data.id}` };
+      if (data.updatedAt && typeof data.updatedAt.toDate === 'function') {
+        entry.lastmod = data.updatedAt.toDate().toISOString().split('T')[0];
+      }
+      return entry;
+    })
+    .filter(Boolean);
 }
 
 async function main() {

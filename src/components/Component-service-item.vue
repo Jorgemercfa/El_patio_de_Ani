@@ -220,7 +220,7 @@ const seoDescription = computed(() =>
 const seoImage = computed(() => productImages.value[0] || '');
 
 const seoUrl = computed(() =>
-  `https://elpatiodeani.com/product/${route.params.id}`
+  `https://elpatiodeani.com/El_patio_de_Ani/product/${route.params.id}`
 );
 
 const productJsonLd = computed(() => {
