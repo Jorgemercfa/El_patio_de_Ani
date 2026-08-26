@@ -31,7 +31,7 @@ const STATIC_ROUTES = [
 ];
 
 // AJUSTA ESTO: nombre real de tu coleccion de Firestore con los productos/servicios
-const PRODUCTS_COLLECTION = 'productos'; // <-- cambia si tu coleccion se llama distinto
+const PRODUCTS_COLLECTION = 'products'; // <-- cambia si tu coleccion se llama distinto
 
 function initFirebaseAdmin() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
