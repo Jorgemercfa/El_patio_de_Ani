@@ -9,6 +9,7 @@
     "generate-sitemap": "node scripts/generate-sitemap.js"
   },
   "dependencies": {
+    "@vueuse/head": "^2.0.0",
     "core-js": "^3.8.3",
     "firebase": "^12.14.0",
     "primeicons": "^7.0.0",

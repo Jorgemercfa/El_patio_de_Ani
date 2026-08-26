@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useHead } from '@vueuse/head';
 
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
@@ -199,6 +200,78 @@ watch(
     startCarouselAutoplay();
   },
 );
+// ───────────────────────────────────────────────────────────
+
+// ─── SEO dinámico: meta tags + JSON-LD (Product/Offer) ─────────────
+//
+// Reactivo vía función: cada vez que `product` (o sus datos derivados)
+// cambian -por ejemplo al navegar de un producto a otro sin recargar la
+// página- el title, las meta tags y el JSON-LD se regeneran solos.
+const seoTitle = computed(() =>
+  product.value ? `${product.value.name} | El Patio de Ani` : 'El Patio de Ani'
+);
+
+const seoDescription = computed(() =>
+  product.value?.shortDescription ||
+  product.value?.longDescription?.slice(0, 155) ||
+  'Descubre nuestros servicios para eventos infantiles: shows, inflables, juegos y más.'
+);
+
+const seoImage = computed(() => productImages.value[0] || '');
+
+const seoUrl = computed(() =>
+  `https://elpatiodeani.com/product/${route.params.id}`
+);
+
+const productJsonLd = computed(() => {
+  if (!product.value) return null;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.value.name,
+    description: product.value.longDescription || product.value.shortDescription || '',
+    image: productImages.value,
+    category: product.value.category || undefined,
+    sku: product.value.product_code || undefined,
+    offers: {
+      '@type': 'Offer',
+      url: seoUrl.value,
+      priceCurrency: 'PEN',
+      price: displayPrice.value !== null ? displayPrice.value.toFixed(2) : undefined,
+      availability: 'https://schema.org/InStock',
+    },
+    ...(reviews.value.length > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: avgRating.value,
+            reviewCount: reviews.value.length,
+          },
+        }
+      : {}),
+  };
+});
+
+useHead(() => ({
+  title: seoTitle.value,
+  meta: [
+    { name: 'description', content: seoDescription.value },
+    { property: 'og:type', content: 'product' },
+    { property: 'og:title', content: seoTitle.value },
+    { property: 'og:description', content: seoDescription.value },
+    { property: 'og:image', content: seoImage.value },
+    { property: 'og:url', content: seoUrl.value },
+  ],
+  script: productJsonLd.value
+    ? [
+        {
+          type: 'application/ld+json',
+          children: JSON.stringify(productJsonLd.value),
+        },
+      ]
+    : [],
+}));
 // ───────────────────────────────────────────────────────────
 
 const addedFeedback = ref(false);
