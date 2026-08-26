@@ -176,7 +176,12 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(process.env.NODE_ENV === 'production' ? '/El_patio_de_Ani/' : '/'),
+  // Antes tenia un prefijo "/El_patio_de_Ani/" pensado para GitHub Pages
+  // sirviendo desde usuario.github.io/El_patio_de_Ani/. Como el sitio usa
+  // un dominio propio (elpatiodeani.com, via CNAME) que sirve desde la
+  // raiz, ese prefijo ya no corresponde: dejaba URLs innecesariamente
+  // largas y desalineadas con vue.config.js (publicPath: '/').
+  history: createWebHistory('/'),
   routes,
   scrollBehavior(to, from, savedPosition) {
     const isReturningFromDetailToCatalog =

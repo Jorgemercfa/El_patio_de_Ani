@@ -15,7 +15,7 @@ const path = require('path');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 
-const BASE_URL = 'https://elpatiodeani.com/El_patio_de_Ani';
+const BASE_URL = 'https://elpatiodeani.com';
 
 // Rutas publicas estaticas, tomadas de tu router.js (solo las que aportan SEO)
 const STATIC_ROUTES = [
