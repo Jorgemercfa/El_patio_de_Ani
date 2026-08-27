@@ -1,18 +1,39 @@
 <script setup>
-import { computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import AdminLayout from '@/components/AdminLayout.vue';
 import { fetchCompanyproducts, getCompanyproducts, isSeedOnlyMode } from '@/auth/companyproductsRepo';
 import { useCart } from '@/store/cart';
 
-const { getPurchasedproducts } = useCart();
+const { subscribeToOrdersFromServer } = useCart();
+
+// ─── Pedidos: mismo fix que Orders-companies.vue ───────────────────────
+//
+// Antes esta vista usaba `getPurchasedproducts()`, que solo lee el cache
+// LOCAL (localStorage) de este navegador — por eso "Pedidos recibidos" y
+// "Pedidos activos" mostraban 0 aunque Orders-companies.vue (ya migrado a
+// subscribeToOrdersFromServer) sí mostrara pedidos reales: ambas vistas
+// estaban mirando fuentes de datos distintas. Ahora las dos leen de la
+// misma fuente de verdad (Firestore, colección 'orders'), en tiempo real.
+const orders = ref([]);
+let unsubscribeOrders = null;
+
+onMounted(() => {
+  unsubscribeOrders = subscribeToOrdersFromServer((serverOrders) => {
+    orders.value = serverOrders;
+  });
+});
+
+onBeforeUnmount(() => {
+  if (unsubscribeOrders) unsubscribeOrders();
+});
 
 const totalProducts = computed(() => getCompanyproducts().length);
 const modifiedServices = computed(
   () => getCompanyproducts().filter((product) => product._modified).length,
 );
-const totalOrders = computed(() => getPurchasedproducts().length);
+const totalOrders = computed(() => orders.value.length);
 const activeOrders = computed(() =>
-  getPurchasedproducts().filter((item) => !item.completedAt).length,
+  orders.value.filter((item) => !item.completedAt).length,
 );
 
 const catalogServices = computed(() => getCompanyproducts().slice(0, 6));
