@@ -1,16 +1,43 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import AdminLayout from '@/components/AdminLayout.vue';
 import { useCart } from '@/store/cart';
 
 const {
-  getPurchasedproducts,
+  subscribeToOrdersFromServer,
   markPurchasedCompleted,
   confirmPurchasedReservation,
   releasePurchasedReservation,
 } = useCart();
 
-const orders = computed(() => getPurchasedproducts());
+// ─── Lectura en tiempo real desde Firestore ────────────────────────────
+//
+// Antes esta vista usaba `computed(() => getPurchasedproducts())`, que
+// solo lee el cache LOCAL (localStorage) de este navegador en particular.
+// Eso significaba que el admin nunca veía pedidos hechos desde el celular
+// de un cliente, o desde cualquier otro dispositivo — el panel se veía
+// "vacío" aunque sí hubiera pedidos reales guardados en Firestore.
+//
+// subscribeToOrdersFromServer() escucha la colección 'orders' de
+// Firestore en tiempo real (onSnapshot): cualquier pedido nuevo aparece
+// acá apenas se crea, sin necesidad de recargar la página, sin importar
+// desde qué dispositivo se hizo la compra.
+const orders = ref([]);
+const isLoading = ref(true);
+const actionError = ref('');
+let unsubscribe = null;
+
+onMounted(() => {
+  unsubscribe = subscribeToOrdersFromServer((serverOrders) => {
+    orders.value = serverOrders;
+    isLoading.value = false;
+  });
+});
+
+onBeforeUnmount(() => {
+  if (unsubscribe) unsubscribe();
+});
+
 const selectedOrder = ref(null);
 
 function formatDate(iso) {
@@ -41,18 +68,12 @@ function needsConfirmation(order) {
   return Boolean(order.reservationDate);
 }
 
-// releasedAt es un estado nuevo (antes no existía en absoluto): antes de
-// este fix, una reserva liberada se seguía mostrando como "Pendiente" con
-// el botón "Liberar" todavía disponible, porque no había ningún campo que
-// distinguiera "nunca confirmada" de "liberada intencionalmente".
+// releasedAt: distingue "nunca confirmada" de "liberada intencionalmente".
 //
-// confirmationExpired es otro estado nuevo: se marca cuando el admin
-// intenta confirmar una reserva cuyo hold en reservas.js ya venció (pasaron
-// más de 2h sin confirmar). Antes esto se confirmaba igual sin ningún
-// aviso, arriesgando una doble reserva si otro cliente ya había tomado esa
-// fecha. Ahora se distingue visualmente de un "Pendiente" común para que
-// el admin sepa que necesita verificar la fecha con el cliente antes de
-// seguir.
+// confirmationExpired: se marca cuando el admin intenta confirmar una
+// reserva cuyo hold en reservas.js ya venció (pasaron más de 2h). Se
+// distingue visualmente de un "Pendiente" común para que el admin sepa
+// que necesita verificar la fecha con el cliente antes de seguir.
 function reservationStatusLabel(order) {
   if (order.completedAt) return 'Completado';
   if (!needsConfirmation(order)) return 'Sin fecha';
@@ -75,21 +96,34 @@ function showDetail(order) {
   selectedOrder.value = order;
 }
 
-function completeOrder(order) {
+// ─── Acciones del admin ─────────────────────────────────────────────
+//
+// markPurchasedCompleted / confirmPurchasedReservation /
+// releasePurchasedReservation ahora reciben el OBJETO del pedido
+// completo (no solo el orderId) y son asíncronas de verdad — antes se
+// llamaban sin `await`, así que el resultado (por ejemplo, "el hold ya
+// venció") nunca se leía correctamente:
+//
+//   const confirmed = confirmPurchasedReservation?.(order.orderId);
+//   if (confirmed === false) { ... }
+//
+// Como confirmPurchasedReservation ya devolvía una Promise (siempre
+// "truthy"), esa comparación `=== false` nunca se cumplía — el aviso de
+// "reserva vencida" no podía dispararse nunca. Ahora se espera el
+// resultado real con await.
+async function completeOrder(order) {
   if (order.completedAt || !order.orderId) return;
-  markPurchasedCompleted(order.orderId);
+  actionError.value = '';
+  const ok = await markPurchasedCompleted(order);
+  if (!ok) {
+    actionError.value = 'No se pudo marcar el pedido como completado. Intenta de nuevo.';
+  }
 }
 
-// confirmPurchasedReservation() ahora devuelve false cuando el hold ya
-// venció (más de 2h sin confirmar) en vez de confirmarlo silenciosamente.
-// En ese caso avisamos al admin en vez de asumir que la fecha sigue
-// apartada — pudo haberla tomado otro cliente mientras tanto. Reintentar
-// el botón seguirá devolviendo false (el hold sigue vencido); la salida
-// real acá es usar "Liberar" y coordinar una nueva fecha con el cliente
-// por WhatsApp si corresponde.
-function confirmOrder(order) {
+async function confirmOrder(order) {
   if (!order.orderId || order.confirmedAt || order.releasedAt || !needsConfirmation(order)) return;
-  const confirmed = confirmPurchasedReservation?.(order.orderId);
+  actionError.value = '';
+  const confirmed = await confirmPurchasedReservation(order);
   if (confirmed === false) {
     window.alert(
       'Esta reserva ya venció (pasaron más de 2 horas sin confirmar) y la fecha pudo haber sido tomada por otro cliente. Verifica disponibilidad antes de continuar — si ya no aplica, usa "Liberar" y coordina una nueva fecha con el cliente.',
@@ -97,10 +131,14 @@ function confirmOrder(order) {
   }
 }
 
-function releaseOrder(order) {
+async function releaseOrder(order) {
   if (!order.orderId || order.confirmedAt || order.releasedAt) return;
   if (!window.confirm('¿Liberar esta fecha? El cliente no llegó a confirmar la reserva.')) return;
-  releasePurchasedReservation?.(order.orderId);
+  actionError.value = '';
+  const ok = await releasePurchasedReservation(order);
+  if (!ok) {
+    actionError.value = 'No se pudo liberar la reserva. Intenta de nuevo.';
+  }
 }
 </script>
 
@@ -114,7 +152,15 @@ function releaseOrder(order) {
         fecha se libera sola automáticamente para que otro cliente pueda tomarla.
       </p>
 
-      <div v-if="orders.length === 0" class="empty-state">
+      <div v-if="actionError" class="action-error" role="alert">
+        ⚠️ {{ actionError }}
+      </div>
+
+      <div v-if="isLoading" class="empty-state">
+        Cargando pedidos...
+      </div>
+
+      <div v-else-if="orders.length === 0" class="empty-state">
         No hay pedidos registrados por el momento.
       </div>
 
@@ -245,6 +291,17 @@ function releaseOrder(order) {
   line-height: 1.4;
 }
 
+.action-error {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  background: rgba(233, 30, 129, 0.08);
+  border: 1px solid rgba(233, 30, 129, 0.35);
+  border-radius: 10px;
+  color: #b00020;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
 .empty-state {
   background: #FDF6EC;
   border-radius: 10px;
@@ -291,7 +348,6 @@ function releaseOrder(order) {
   background-color: #fff9fc;
 }
 
-/* Ajustes específicos de columnas para evitar deformación */
 .col-client {
   min-width: 110px;
   max-width: 140px;
@@ -336,7 +392,6 @@ function releaseOrder(order) {
   text-align: center;
 }
 
-/* Tags de estado */
 .tag {
   display: inline-block;
   border-radius: 999px;
@@ -376,7 +431,6 @@ function releaseOrder(order) {
   color: #b00020;
 }
 
-/* Cuadrícula compacta para botones de acción (2x2) */
 .actions-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -440,7 +494,6 @@ function releaseOrder(order) {
   background: #d61874;
 }
 
-/* Panel de detalle mejorado */
 .detail-panel {
   margin-top: 18px;
   background: #fdf1f8;

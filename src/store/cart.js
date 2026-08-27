@@ -1,5 +1,5 @@
 import { reactive, computed, watch, effectScope } from 'vue';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, onSnapshot, collection, query, orderBy } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '@/firebase';
 import { getCompanyproducts } from '@/auth/companyproductsRepo';
 import { useSession } from '@/auth/session';
@@ -42,13 +42,6 @@ export class CartCheckoutError extends Error {
 }
 
 // ─── Carrito en progreso (localStorage) ────────────────────────────────
-//
-// Se mantiene igual que antes: el carrito en progreso (`items`, todavía
-// no confirmado) sigue viviendo en localStorage, scoped por usuario. Esto
-// es intencional y NO se migra a Firestore — es estado transitorio, útil
-// para que el usuario no pierda su selección si cierra la pestaña o
-// pierde conexión antes de completar el checkout (UX/offline). Recién al
-// hacer checkout ese estado se vuelve un pedido real y persistente.
 function scopeKey(userId) {
   return `${STORAGE_PREFIX}:${userId || GUEST_SCOPE}`;
 }
@@ -57,23 +50,14 @@ function confirmationKey(userId) {
   return `${STORAGE_PREFIX}:last-confirmation:${userId || GUEST_SCOPE}`;
 }
 
-// Llave para pedidos que se generaron pero cuya escritura a Firestore
-// falló (sin internet, timeout, etc.) — la reserva de fecha YA quedó
-// confirmada en ese momento (ver checkoutToServer), así que este pedido
-// no puede simplemente perderse: se guarda acá para reintentar el envío
-// a Firestore más adelante, sin volver a tocar la reserva.
 function pendingOrdersKey(userId) {
   return `${STORAGE_PREFIX}:pending-orders:${userId || GUEST_SCOPE}`;
 }
 
-// Cache local de pedidos ya confirmados, para que getPurchasedproducts()
-// (usado hoy por Orders-company.vue) siga funcionando sin cambios. OJO:
-// Firestore (colección 'orders') es ahora la fuente de verdad real de
-// los pedidos — este cache local queda, por ahora, como espejo de lo que
-// este navegador en particular ha creado. Sincronizar Orders-company.vue
-// para LEER desde Firestore (en vez de leer solo este cache local) es el
-// siguiente paso pendiente para que el admin vea pedidos hechos desde
-// cualquier dispositivo, no solo el suyo.
+// Cache local de pedidos, usado como fallback/espejo. La FUENTE DE VERDAD
+// real es ahora Firestore (colección 'orders') — ver
+// subscribeToOrdersFromServer() más abajo, que es lo que debe usar
+// Orders-company.vue en vez de getPurchasedproducts().
 function ordersKey() {
   return `${STORAGE_PREFIX}:orders`;
 }
@@ -102,9 +86,6 @@ function loadScope(userId) {
 }
 
 // ─── Migración de datos legados ──────────────────────────────────────
-// (sin cambios respecto a la versión anterior — sigue siendo necesaria
-// para navegadores que ya tenían pedidos guardados con el formato viejo,
-// scoped por usuario, antes de que existiera la llave global de pedidos)
 function migrateLegacyOrders() {
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
     return [];
@@ -285,62 +266,40 @@ export function useCart() {
 
   // ─── checkoutToServer ───────────────────────────────────────────────
   //
-  // Nota sobre Checkout-item.vue: esa vista está en desuso (el flujo real
-  // de compra es vía WhatsApp), así que esta función se diseñó pensando
-  // en ser llamada desde Cart.vue en el momento del envío del pedido, no
-  // desde un checkout de pago tradicional.
-  //
   // Dos fases claramente separadas, a propósito:
   //
   //  FASE 1 — Asegurar TODAS las fechas del pedido (Firestore, vía
-  //  reservas.js). Si CUALQUIER fecha falla (ya ocupada / sin stock), se
-  //  liberan las que sí se lograron reservar en este mismo checkout
-  //  (compensación) y se aborta con CartCheckoutError código
-  //  'RESERVATION_CONFLICT' — el pedido nunca llega a escribirse a medias.
-  //  Quien llame debe informar al usuario cuáles fechas fallaron
-  //  (err.failures) y pedirle elegir otra.
+  //  reservas.js). Si CUALQUIER fecha falla, se liberan las que sí se
+  //  lograron reservar en este mismo checkout y se aborta con
+  //  CartCheckoutError código 'RESERVATION_CONFLICT'.
   //
   //  FASE 2 — Con las fechas ya confirmadas, se escribe cada pedido en la
   //  colección 'orders' de Firestore. Un fallo acá es de RED, no de
-  //  disponibilidad (la fecha ya quedó legítimamente confirmada), así que
-  //  el pedido se guarda localmente para reintentar después, en vez de
-  //  perderse o mostrarle al usuario un error de "fecha ocupada" que no
-  //  corresponde.
+  //  disponibilidad, así que el pedido se guarda localmente para
+  //  reintentar después.
   async function checkoutToServer(userId, cartItemsToCheckout) {
     // ─── Guard de sesión ────────────────────────────────────────────
     //
-    // Antes de tocar reservas.js (createPendingReservation) o escribir
-    // cualquier pedido, hay que asegurarse de que la sesión ya terminó
-    // de resolverse (state.ready) y que hay un usuario real logueado.
-    // Sin esto, un checkout disparado justo mientras la app todavía está
-    // sincronizando la sesión (ej. recién recargada la página) podría
-    // colarse como "invitado" (userId=null) por una condición de carrera,
-    // no porque el usuario haya elegido comprar sin cuenta.
-    //
-    // Decisión de negocio tomada acá: el checkout SIEMPRE exige sesión
-    // iniciada — no se crean holds anónimos. Si el negocio prefiriera
-    // permitir apartar la fecha sin cuenta y solo exigir login al enviar
-    // el pedido final, habría que separar createPendingReservation() en
-    // un paso previo propio (llamado desde la vista, antes del checkout),
-    // en vez de dejarlo encapsulado acá dentro de checkoutToServer.
+    // Solo se espera a que la sesión termine de resolverse
+    // (ensureReady()), para no leer sessionState.user a medio-cargar y
+    // confundir un usuario real con un invitado por una condición de
+    // carrera. NO se exige login: el negocio permite comprar como
+    // invitado — la única funcionalidad que depende de tener sesión es
+    // el programa de fidelización (loyalty), que se maneja aparte y no
+    // bloquea el checkout en sí.
     await ensureReady();
 
     const resolvedUserId = sessionState.user?.id ?? sessionState.user?.uid ?? null;
 
-    if (!resolvedUserId) {
-      throw new CartCheckoutError('Debes iniciar sesión para completar tu pedido.', {
-        code: 'AUTH_REQUIRED',
-      });
-    }
-
-    if (resolvedUserId !== userId) {
+    if (resolvedUserId !== (userId ?? null)) {
       // El userId pasado como argumento no coincide con la sesión actual
-      // (ej. el caller lo capturó antes de que terminara de resolverse).
-      // Se usa siempre el de la sesión real, nunca el argumento, para no
-      // crear un pedido a nombre de un usuario que ya no es el activo.
+      // (ej. se capturó antes de que terminara de resolverse). Se usa
+      // siempre el de la sesión real (incluyendo null si es invitado),
+      // nunca el argumento, para no crear un pedido a nombre de un
+      // usuario que ya no es el activo.
       console.warn('[Cart] userId pasado a checkoutToServer no coincide con la sesión activa; se usa el de la sesión.');
     }
-    userId = resolvedUserId;
+    userId = resolvedUserId; // puede ser null (invitado) — es válido
 
     const productsList = products.value;
 
@@ -367,11 +326,6 @@ export function useCart() {
       if (!order.reservationDate) continue;
 
       try {
-        // Preferimos siempre pasar por createPendingReservation (aunque
-        // se confirme de inmediato acá abajo) porque es la única función
-        // que hace la verificación atómica de colisión vía transacción —
-        // así seguimos protegidos aunque este checkout coincida en el
-        // tiempo con el de otro cliente reservando la misma fecha.
         const reservationId = await createPendingReservation(
           order.id,
           order.reservationDate,
@@ -434,12 +388,6 @@ export function useCart() {
     return { orders: [...synced, ...stillPending] };
   }
 
-  // Reintenta escribir a Firestore los pedidos que quedaron pendientes de
-  // sincronizar por fallos de red. Las reservas de esos pedidos YA están
-  // confirmadas (eso pasó en checkoutToServer antes de que fallara la
-  // escritura), así que acá solo se reintenta el guardado del documento,
-  // sin tocar reservas.js de nuevo. Conviene llamar esto al reconectar o
-  // al iniciar la app.
   async function retrySyncPendingOrders() {
     const userId = sessionState.user?.id ?? null;
     if (!isFirebaseConfigured || !db) return;
@@ -450,11 +398,6 @@ export function useCart() {
     const stillPending = [];
     for (const order of pending) {
       try {
-        // Se arma una copia sin `syncStatus` (es un flag solo para uso
-        // local, no debe guardarse en el documento de Firestore). Se usa
-        // `delete` en vez de destructuring-omit para no dejar una
-        // variable declarada sin usar (evita el warning de ESLint
-        // no-unused-vars sin necesidad de un eslint-disable).
         const orderData = { ...order };
         delete orderData.syncStatus;
         await setDoc(doc(db, ORDERS_COLLECTION, order.orderId), orderData);
@@ -466,9 +409,12 @@ export function useCart() {
     persistPendingOrders(userId, stillPending);
   }
 
-  // checkout(): wrapper que usa Cart.vue en el flujo real (WhatsApp). Ya
-  // no es sincrónico — quien lo llame debe hacer `await` y capturar
-  // CartCheckoutError para mostrarle al usuario el motivo si falla.
+  // checkout(): wrapper que usa Cart.vue en el flujo real (WhatsApp).
+  // Async — quien lo llame DEBE hacer `await` y capturar
+  // CartCheckoutError, o el pedido puede fallar en silencio (esto fue
+  // justo el bug que dejaba Orders-company.vue sin datos: Cart.vue
+  // llamaba checkout() sin await, así que un rechazo de la promesa nunca
+  // se manejaba y la app seguía como si el pedido se hubiera guardado).
   async function checkout() {
     const userId = sessionState.user?.id ?? null;
     const { orders } = await checkoutToServer(userId, state.items);
@@ -480,59 +426,140 @@ export function useCart() {
     return orders;
   }
 
+  // ─── Lectura de pedidos para el panel de admin ─────────────────────
+  //
+  // getPurchasedproducts() se mantiene (lee el cache LOCAL) por si algo
+  // más en la app todavía depende de ella, pero Orders-company.vue debe
+  // usar subscribeToOrdersFromServer() en su lugar: esto escucha en
+  // tiempo real la colección 'orders' de Firestore, así el admin ve
+  // pedidos hechos desde CUALQUIER dispositivo/navegador, no solo el
+  // suyo — que era justo el problema original (el panel se veía vacío
+  // porque solo miraba su propio localStorage).
+  //
+  // Devuelve una función de "unsubscribe": hay que llamarla en
+  // onBeforeUnmount() del componente para no dejar el listener activo.
+  function subscribeToOrdersFromServer(callback) {
+    if (!isFirebaseConfigured || !db) {
+      // Sin Firestore configurado, se entrega el cache local una sola
+      // vez como fallback (mejor que dejar el panel vacío sin explicar
+      // por qué).
+      callback(state.purchasedproducts);
+      return () => {};
+    }
+
+    const ordersQuery = query(collection(db, ORDERS_COLLECTION), orderBy('purchasedAt', 'desc'));
+
+    return onSnapshot(
+      ordersQuery,
+      (snapshot) => {
+        const orders = snapshot.docs.map((docSnap) => ({ ...docSnap.data(), orderId: docSnap.id }));
+        callback(orders);
+      },
+      (err) => {
+        console.error('[Cart] Error escuchando pedidos de Firestore:', err);
+      },
+    );
+  }
+
   function getPurchasedproducts(userId) {
     if (userId === undefined || userId === null) return state.purchasedproducts;
     return state.purchasedproducts.filter((c) => c.userId === userId);
   }
 
-  function markPurchasedCompleted(orderId) {
-    if (!orderId) return;
-    const item = state.purchasedproducts.find((order) => order.orderId === orderId);
-    if (!item) return;
-    item.completedAt = new Date().toISOString();
-    persistOrders();
-  }
+  // ─── Acciones del admin (Orders-company.vue) ───────────────────────
+  //
+  // Estas tres funciones ahora reciben el OBJETO del pedido completo
+  // (tal como llega de subscribeToOrdersFromServer), no solo su orderId
+  // — porque ahora necesitan datos que solo existen en el documento de
+  // Firestore (como reservationId), y ese pedido puede no existir en el
+  // cache local si se creó desde otro dispositivo.
+  //
+  // Cada una escribe el cambio en el documento de Firestore (fuente de
+  // verdad) y, si existe una copia local, también la actualiza por
+  // consistencia — pero ya no depende de que exista localmente.
+  async function markPurchasedCompleted(order) {
+    if (!order?.orderId || order.completedAt) return true;
+    const completedAt = new Date().toISOString();
 
-  // Con el nuevo flujo, la reserva ya queda CONFIRMADA en el momento del
-  // checkout (ver checkoutToServer) — ya no queda "pendiente" a la espera
-  // de que el admin la confirme manualmente después del WhatsApp. Esta
-  // función ahora sirve para que el admin marque que YA VALIDÓ el
-  // mensaje de WhatsApp del cliente (un registro de verificación local),
-  // no para recién confirmar la fecha. Igual se re-llama a
-  // confirmReservation() por seguridad/idempotencia: si por algún motivo
-  // ese ítem hubiera quedado en un estado raro (ej. un pedido migrado del
-  // formato viejo con localStorage), esto lo deja consistente.
-  async function confirmPurchasedReservation(orderId) {
-    if (!orderId) return;
-    const item = state.purchasedproducts.find((order) => order.orderId === orderId);
-    if (!item || item.confirmedAt || item.releasedAt) return;
-    if (!item.reservationId) {
-      // Pedido sin fecha asociada, o de un formato viejo sin reservationId:
-      // no hay nada que confirmar en reservas.js, solo se marca localmente.
-      item.confirmedAt = new Date().toISOString();
-      persistOrders();
-      return;
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, ORDERS_COLLECTION, order.orderId), { completedAt });
+      } catch (err) {
+        console.error('[Cart] No se pudo marcar el pedido como completado en Firestore:', err);
+        return false;
+      }
     }
 
-    await confirmReservation(item.reservationId, orderId);
-    item.confirmedAt = new Date().toISOString();
-    persistOrders();
+    const localItem = state.purchasedproducts.find((o) => o.orderId === order.orderId);
+    if (localItem) {
+      localItem.completedAt = completedAt;
+      persistOrders();
+    }
+
+    return true;
+  }
+
+  // Con el flujo actual, la reserva ya queda CONFIRMADA en el momento del
+  // checkout (ver checkoutToServer) — esta función sirve para que el
+  // admin marque que YA VALIDÓ el mensaje de WhatsApp del cliente. Se
+  // re-llama a confirmReservation() por idempotencia/seguridad. Devuelve
+  // false si el hold ya venció (CONFIRM_RESULT.EXPIRED) para que
+  // Orders-company.vue pueda avisarle al admin.
+  async function confirmPurchasedReservation(order) {
+    if (!order?.orderId || order.confirmedAt || order.releasedAt) return true;
+
+    if (order.reservationId) {
+      const result = await confirmReservation(order.reservationId, order.orderId);
+      if (result === CONFIRM_RESULT.EXPIRED) return false;
+    }
+
+    const confirmedAt = new Date().toISOString();
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, ORDERS_COLLECTION, order.orderId), { confirmedAt });
+      } catch (err) {
+        console.error('[Cart] No se pudo confirmar el pedido en Firestore:', err);
+        return false;
+      }
+    }
+
+    const localItem = state.purchasedproducts.find((o) => o.orderId === order.orderId);
+    if (localItem) {
+      localItem.confirmedAt = confirmedAt;
+      persistOrders();
+    }
+
+    return true;
   }
 
   // Libera manualmente la reserva (el cliente nunca confirmó por
-  // WhatsApp, o se cancela el pedido). Ahora usa item.reservationId —ya
-  // NO orderId— porque reservas.js identifica cada reserva por su propio
-  // id de documento en Firestore, no por el orderId del pedido.
-  async function releasePurchasedReservation(orderId) {
-    if (!orderId) return;
-    const item = state.purchasedproducts.find((order) => order.orderId === orderId);
-    if (!item || item.confirmedAt || item.releasedAt) return;
+  // WhatsApp, o se cancela el pedido).
+  async function releasePurchasedReservation(order) {
+    if (!order?.orderId || order.confirmedAt || order.releasedAt) return true;
 
-    if (item.reservationId) {
-      await releaseReservation(item.reservationId);
+    if (order.reservationId) {
+      await releaseReservation(order.reservationId);
     }
-    item.releasedAt = new Date().toISOString();
-    persistOrders();
+
+    const releasedAt = new Date().toISOString();
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, ORDERS_COLLECTION, order.orderId), { releasedAt });
+      } catch (err) {
+        console.error('[Cart] No se pudo liberar el pedido en Firestore:', err);
+        return false;
+      }
+    }
+
+    const localItem = state.purchasedproducts.find((o) => o.orderId === order.orderId);
+    if (localItem) {
+      localItem.releasedAt = releasedAt;
+      persistOrders();
+    }
+
+    return true;
   }
 
   function saveLastConfirmationForCurrentUser() {
@@ -555,6 +582,7 @@ export function useCart() {
     checkout,
     checkoutToServer,
     retrySyncPendingOrders,
+    subscribeToOrdersFromServer,
     getPurchasedproducts,
     markPurchasedCompleted,
     confirmPurchasedReservation,
