@@ -21,6 +21,7 @@ const {
   checkout,
   saveLastConfirmation,
   consumeLastConfirmation,
+  retrySyncPendingOrders,
 } = useCart();
 const { isDateAvailable } = useReservasServicio();
 const { state: sessionState } = useSession();
@@ -41,8 +42,12 @@ const showConfirmation = ref(false);
 const submitting = ref(false);
 const missingDateError = ref('');
 const snackDateErrors = ref({}); // { [itemId]: mensaje } — fechas sin stock disponible
-const whatsappBlockedUrl = ref(''); // fallback visible si el navegador bloquea la apertura automática
-const checkoutError = ref(''); // NUEVO: error del checkout real (Firestore/reservas), distinto de missingDateError
+const checkoutError = ref(''); // error del checkout real (Firestore/reservas), distinto de missingDateError
+
+// URL de WhatsApp lista para enviar tras un checkout exitoso. Ya no se
+// intenta abrir automáticamente — se muestra como un botón real que el
+// usuario debe pulsar (ver el fix explicado junto a confirmReservation).
+const whatsappUrl = ref('');
 
 const todayDate = new Date().toLocaleDateString('en-CA');
 
@@ -57,6 +62,15 @@ onMounted(() => {
   if (consumeLastConfirmation()) {
     showConfirmation.value = true;
   }
+
+  // Si un checkout anterior aseguró la reserva pero falló al escribir el
+  // pedido en Firestore (corte de red justo en ese instante), queda
+  // guardado en una cola local esperando reintento. Sin este llamado,
+  // nada disparaba ese reintento nunca — el pedido podía quedar atrapado
+  // localmente para siempre si el cliente no volvía a abrir la app desde
+  // este mismo navegador. Se llama en silencio: si no hay nada pendiente,
+  // no hace nada.
+  retrySyncPendingOrders();
 });
 
 function getItemPrice(item) {
@@ -88,9 +102,8 @@ function decreaseQuantity(item) {
 }
 
 // NOTA: isDateAvailable ahora consulta Firestore y es asíncrona (antes
-// era síncrona contra localStorage). onDateChange ya era una función
-// normal (no async) porque se usa como handler de @change; se convierte
-// a async acá y Vue maneja el handler async sin problema.
+// era síncrona contra localStorage). onDateChange se convierte a async;
+// Vue maneja el handler async de @change sin problema.
 async function onDateChange(item, event) {
   const newDate = event.target.value;
 
@@ -190,27 +203,31 @@ function buildWhatsAppMessage(items, total, totalWithDiscount, discount, discoun
   return parts.join('\n');
 }
 
-// ─── FIX CRÍTICO ────────────────────────────────────────────────────────
+// ─── FIX: pantalla en blanco al reservar por WhatsApp ──────────────────
 //
-// Antes, checkout() se llamaba SIN await y sin try/catch:
+// Antes se pre-abría una pestaña en blanco de forma síncrona
+// (window.open('', '_blank')) y RECIÉN DESPUÉS de `await checkout()` se
+// le asignaba la URL real de WhatsApp (waWindow.location.href = url).
 //
-//   checkout();
-//   saveLastConfirmation();
-//   ...
-//   showConfirmation.value = true;
+// Eso funcionaba bien cuando checkout() era prácticamente instantáneo
+// (solo tocaba localStorage). Ahora checkout() hace varias operaciones
+// reales contra Firestore (crear la reserva, confirmarla, guardar el
+// pedido), así que puede tardar uno o varios segundos. Muchos
+// navegadores (sobre todo Chrome y Safari en mobile) solo permiten
+// redirigir una pestaña pre-abierta si ocurre MUY poco después del clic
+// original del usuario; pasado ese margen, bloquean la navegación EN
+// SILENCIO, sin lanzar ningún error — por eso el catch nunca se
+// enteraba y la pestaña se quedaba en blanco para siempre, sin ningún
+// aviso ni fallback visible.
 //
-// checkout() es asíncrono (crea la reserva y el pedido en Firestore vía
-// checkoutToServer). Al no esperarlo, si la promesa se rechazaba (por
-// ejemplo, porque la fecha ya se había ocupado, o por cualquier otro
-// error), el rechazo quedaba SIN MANEJAR: el código seguía de largo,
-// mostraba "reserva registrada" y abría WhatsApp igual, aunque el pedido
-// nunca se hubiera guardado ni en Firestore ni en el cache local. Por eso
-// el cliente veía todo "normal" pero Orders-company.vue jamás mostraba
-// nada — el pedido simplemente nunca llegó a crearse.
-//
-// Ahora se espera el resultado real de checkout() ANTES de mostrar
-// cualquier confirmación o abrir WhatsApp. Si falla, se avisa al usuario
-// con un mensaje claro y NO se abre WhatsApp ni se marca como confirmado.
+// Solución definitiva: ya no se abre ninguna pestaña por adelantado. Se
+// hace todo el checkout primero (con su spinner "Enviando..."); recién
+// cuando termina con éxito se muestra un botón real de "Enviar por
+// WhatsApp" (ver template, sección de confirmación). Un clic genuino del
+// usuario sobre ESE botón nunca es bloqueado por ningún navegador, sin
+// importar cuánto haya tardado el checkout — es 100% confiable, y
+// además dejar de depender del timing de un `window.open` diferido es
+// justo lo que elimina esta clase de bug de raíz, no solo un síntoma.
 async function confirmReservation() {
   if (cartCount.value === 0 || submitting.value) return;
 
@@ -220,17 +237,10 @@ async function confirmReservation() {
     return;
   }
   missingDateError.value = '';
-  whatsappBlockedUrl.value = '';
   checkoutError.value = '';
+  whatsappUrl.value = '';
 
   submitting.value = true;
-
-  // ─── 0. Abrir la pestaña YA, de forma síncrona, dentro del gesto de click ───
-  // Se mantiene igual: en navegadores móviles, window.open() solo se
-  // permite si ocurre síncronamente dentro del handler del evento del
-  // usuario. La URL real se asigna más abajo, solo si el checkout tuvo
-  // éxito; si falla, la pestaña en blanco se cierra sin redirigir.
-  const waWindow = window.open('', '_blank');
 
   // ─── 1. Tomar SNAPSHOT de todos los valores ANTES de tocar el carrito ───
   const itemsSnapshot = cartItems.value.map((item) => ({ ...item }));
@@ -257,7 +267,7 @@ async function confirmReservation() {
 
   const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encoded}`;
 
-  // ─── 3. Checkout REAL — ahora esperado, con manejo de errores ───
+  // ─── 3. Checkout REAL — esperado, con manejo de errores ───
   // El checkout funciona igual para invitados y usuarios registrados: no
   // se exige login para comprar. El sistema de loyalty (descuento,
   // addReserva) es la ÚNICA parte que depende de tener sesión, y ya
@@ -266,10 +276,6 @@ async function confirmReservation() {
     await checkout();
   } catch (err) {
     console.error('[Cart] Error al confirmar la reserva:', err);
-
-    if (waWindow) {
-      try { waWindow.close(); } catch { /* algunos navegadores bloquean close() en ciertas pestañas */ }
-    }
 
     if (err?.code === 'RESERVATION_CONFLICT') {
       const failedDates = (err.failures || [])
@@ -284,7 +290,7 @@ async function confirmReservation() {
     }
 
     submitting.value = false;
-    return; // no se abre WhatsApp ni se muestra confirmación
+    return; // no se muestra confirmación ni el botón de WhatsApp
   }
 
   // ─── 4. Solo si el checkout tuvo éxito: persistir confirmación y loyalty ───
@@ -295,17 +301,9 @@ async function confirmReservation() {
   }
 
   showConfirmation.value = true;
-
-  // ─── 5. Redirigir la pestaña ya abierta a la URL de WhatsApp ───
-  try {
-    if (waWindow) {
-      waWindow.location.href = url;
-    } else {
-      whatsappBlockedUrl.value = url;
-    }
-  } catch (e) {
-    whatsappBlockedUrl.value = url;
-  }
+  // Se deja la URL lista para que el usuario haga clic en el botón real
+  // (ver template) — ya no se intenta abrir/redirigir nada por script.
+  whatsappUrl.value = url;
 
   submitting.value = false;
 }
@@ -448,10 +446,23 @@ async function confirmReservation() {
           </router-link>
         </div>
 
-        <p v-if="whatsappBlockedUrl" class="whatsapp-fallback">
-          Si WhatsApp no se abrió automáticamente,
-          <a :href="whatsappBlockedUrl" target="_blank" rel="noopener noreferrer">haz click aquí</a>.
-        </p>
+        <!--
+          Este botón vive FUERA de los dos `v-if`/`v-else` de arriba a
+          propósito: checkout() vacía el carrito ANTES de que se muestre
+          este botón, así que para cuando whatsappUrl se llena, el
+          template ya cambió al bloque "carrito vacío" (v-else). Si este
+          botón viviera dentro de .cart-summary, nunca llegaría a
+          renderizarse.
+        -->
+        <a
+          v-if="whatsappUrl"
+          :href="whatsappUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="whatsapp-cta-link"
+        >
+          📲 Enviar confirmación por WhatsApp
+        </a>
       </div>
     </section>
 
@@ -724,22 +735,27 @@ async function confirmReservation() {
   font-size: 0.85rem;
 }
 
-.whatsapp-fallback {
-  margin: 20px 0 0;
-  padding: 10px 12px;
-  background: rgba(37, 211, 102, 0.08);
-  border: 1px solid rgba(37, 211, 102, 0.35);
-  border-radius: 12px;
-  color: #128C7E;
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-align: center;
+.whatsapp-cta-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px auto 0;
+  max-width: 360px;
+  padding: 14px 18px;
+  background: #25D366;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+  text-decoration: none;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.whatsapp-fallback a {
-  color: #128C7E;
-  font-weight: 800;
-  text-decoration: underline;
+.whatsapp-cta-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(37, 211, 102, 0.55);
 }
 
 .cart-summary {
