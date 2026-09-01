@@ -1,6 +1,16 @@
 <script setup>
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
+import { useStaticPageSeo } from '@/composables/useSeoHead';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SEO - Meta tags para página About
+// ═══════════════════════════════════════════════════════════════════════════
+useStaticPageSeo(
+  'Sobre Nosotros',
+  'Conoce la historia de El Patio de Ani. Empresa de entretenimiento infantil en Lima con más de 500 eventos realizados. Visión, misión y valores.',
+  'About-item'
+);
 </script>
 <template>
   <div class="page-wrapper">
@@ -88,6 +98,4 @@ import Footer from '@/components/Footer-item.vue';
 
 }
 
-
-</style>    
-
+</style>
