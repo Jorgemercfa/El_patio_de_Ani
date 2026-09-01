@@ -5,14 +5,42 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2D3E94" />
+  
+  <!-- SEO Base (será actualizado dinámicamente por componentes) -->
+  <title>El Patio de Ani - Entretenimiento Infantil en Lima</title>
+  <meta name="description" content="Productora de eventos infantiles en Lima. Shows, inflables, juegos, carritos snacks y estética infantil. Más de 500 eventos realizados." />
+  <meta name="keywords" content="eventos infantiles, entretenimiento, shows, inflables, Lima" />
+  
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_PE" />
+  <meta property="og:url" content="https://elpatiodeani.com" />
+  <meta property="og:title" content="El Patio de Ani - Entretenimiento Infantil en Lima" />
+  <meta property="og:description" content="Productora de eventos infantiles en Lima. Shows, inflables, juegos, carritos snacks y estética infantil." />
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="El Patio de Ani" />
+  <meta name="twitter:description" content="Entretenimiento infantil en Lima" />
+  
+  <!-- Canonical Link -->
+  <link rel="canonical" href="https://elpatiodeani.com" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-
-  <!-- Fuente moderna 2026 -->
+  <link rel="apple-touch-icon" href="<%= BASE_URL %>apple-touch-icon.png">
+  
+  <!-- Fuentes Externas -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <title>
-    <%= htmlWebpackPlugin.options.title %>
-  </title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- DNS Prefetch para mejor rendimiento -->
+  <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 
   <style>
     * {
@@ -27,8 +55,8 @@
       height: 100%;
       overflow-x: hidden;
 
-      /* AQUÍ se aplica la fuente */
-      font-family: 'Inter', sans-serif;
+      /* Fuente por defecto */
+      font-family: 'Inter', 'Nunito', sans-serif;
 
       /* Mejora renderizado */
       -webkit-font-smoothing: antialiased;
@@ -61,19 +89,24 @@
       font-weight: 400;
       line-height: 1.8;
     }
+
+    /* Asegurar que los images cargan rápido */
+    img {
+      max-width: 100%;
+      height: auto;
+    }
   </style>
 </head>
 
 <body>
   <noscript>
     <strong>
-      We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please
-        enable it to continue.
+      Lo sentimos, El Patio de Ani requiere JavaScript habilitado. Por favor, actívalo para continuar.
     </strong>
   </noscript>
 
   <div id="app"></div>
-  <!-- built files will be auto injected -->
+  <!-- Los archivos compilados se inyectarán automáticamente -->
 </body>
 
 </html>
