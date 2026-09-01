@@ -2,6 +2,16 @@
 import { ref } from 'vue';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
+import { useStaticPageSeo } from '@/composables/useSeoHead';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SEO - Meta tags para página Contacto
+// ═══════════════════════════════════════════════════════════════════════════
+useStaticPageSeo(
+  'Contáctanos',
+  'Contáctanos y cotiza tu evento con El Patio de Ani: shows infantiles, inflables, snacks y más. Completa el formulario y te respondemos por WhatsApp en menos de 2 horas.',
+  'Contact-item'
+);
 
 const form = ref({
   nombre: '',
