@@ -3,6 +3,16 @@ import { onMounted, ref } from 'vue';
 import Navbar from '@/components/Navbar-item.vue';
 import Footer from '@/components/Footer-item.vue';
 import { getActivePromotions } from '@/auth/promsRepo';
+import { useStaticPageSeo } from '@/composables/useSeoHead';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SEO - Meta tags para página Promociones
+// ═══════════════════════════════════════════════════════════════════════════
+useStaticPageSeo(
+  'Promociones',
+  'Aprovecha las promociones y ofertas por tiempo limitado de El Patio de Ani en shows infantiles, inflables, snacks y más. Reserva ahora y ahorra en tu próximo evento.',
+  'Promotions-item'
+);
 
 const promotions = ref([]);
 const loading = ref(true);
