@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
+import { useHead } from '@vueuse/head'
 import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo'
@@ -171,6 +172,35 @@ const formatPrice = (product) => {
   if (price === null) return 'Precio no disponible'
   return `S/ ${price.toFixed(2)}`
 }
+
+// ─── SEO dinámico del catálogo ──────────────────────────────
+// Se regenera solo cada vez que cambia el filtro de categoría (activeFilter),
+// para que /Product-item?category=Inflables tenga un title/description
+// distinto a /Product-item?category=Juegos, en vez de un único título
+// genérico para todas las combinaciones de filtro.
+const seoTitle = computed(() =>
+  activeFilter.value !== 'Todos'
+    ? `${activeFilter.value} en Lima para eventos infantiles | El Patio de Ani`
+    : 'Servicios para eventos infantiles en Lima: shows, inflables, juegos | El Patio de Ani'
+)
+
+const seoDescription = computed(() =>
+  activeFilter.value !== 'Todos'
+    ? `Alquiler de ${activeFilter.value.toLowerCase()} para cumpleaños y eventos infantiles en Lima. Cotiza ahora con El Patio de Ani.`
+    : 'Shows infantiles, inflables, juegos, carritos de snacks y estética infantil para cumpleaños y eventos en Lima. Cotiza ahora con El Patio de Ani.'
+)
+
+useHead(() => ({
+  title: seoTitle.value,
+  meta: [
+    { name: 'description', content: seoDescription.value },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:title', content: seoTitle.value },
+    { property: 'og:description', content: seoDescription.value },
+    { property: 'og:url', content: `https://elpatiodeani.com/Product-item${activeFilter.value !== 'Todos' ? `?category=${encodeURIComponent(activeFilter.value)}` : ''}` },
+  ],
+}))
+// ───────────────────────────────────────────────────────────
 </script>
 
 <template>
