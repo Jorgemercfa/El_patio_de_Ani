@@ -6,41 +6,56 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#2D3E94" />
-  
+
   <!-- SEO Base (será actualizado dinámicamente por componentes) -->
   <title>El Patio de Ani - Entretenimiento Infantil en Lima</title>
   <meta name="description" content="Productora de eventos infantiles en Lima. Shows, inflables, juegos, carritos snacks y estética infantil. Más de 500 eventos realizados." />
   <meta name="keywords" content="eventos infantiles, entretenimiento, shows, inflables, Lima" />
-  
+
   <!-- Open Graph Meta Tags -->
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="es_PE" />
   <meta property="og:url" content="https://elpatiodeani.com" />
   <meta property="og:title" content="El Patio de Ani - Entretenimiento Infantil en Lima" />
   <meta property="og:description" content="Productora de eventos infantiles en Lima. Shows, inflables, juegos, carritos snacks y estética infantil." />
-  
+
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="El Patio de Ani" />
   <meta name="twitter:description" content="Entretenimiento infantil en Lima" />
-  
+
   <!-- Canonical Link -->
   <link rel="canonical" href="https://elpatiodeani.com" />
-  
+
   <!-- PWA Manifest -->
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="<%= BASE_URL %>favicon.ico">
   <link rel="apple-touch-icon" href="<%= BASE_URL %>apple-touch-icon.png">
-  
+
   <!-- Fuentes Externas -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  
+
   <!-- DNS Prefetch para mejor rendimiento -->
   <link rel="dns-prefetch" href="https://www.google-analytics.com" />
   <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+
+  <!-- Facebook Pixel Code -->
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window,document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1116499830889006');
+    fbq('track', 'PageView');
+  </script>
+  <!-- End Facebook Pixel Code -->
 
   <style>
     * {
@@ -54,14 +69,9 @@
       width: 100%;
       height: 100%;
       overflow-x: hidden;
-
-      /* Fuente por defecto */
       font-family: 'Inter', 'Nunito', sans-serif;
-
-      /* Mejora renderizado */
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-
       font-size: 16px;
       line-height: 1.6;
       color: #111111;
@@ -75,12 +85,7 @@
       flex-direction: column;
     }
 
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
+    h1, h2, h3, h4, h5, h6 {
       font-weight: 700;
       letter-spacing: -0.5px;
     }
@@ -90,7 +95,6 @@
       line-height: 1.8;
     }
 
-    /* Asegurar que los images cargan rápido */
     img {
       max-width: 100%;
       height: auto;
@@ -99,6 +103,12 @@
 </head>
 
 <body>
+  <!-- Facebook Pixel noscript fallback -->
+  <noscript>
+    <img height="1" width="1"
+      src="https://www.facebook.com/tr?id=1116499830889006&ev=PageView&noscript=1" />
+  </noscript>
+
   <noscript>
     <strong>
       Lo sentimos, El Patio de Ani requiere JavaScript habilitado. Por favor, actívalo para continuar.
