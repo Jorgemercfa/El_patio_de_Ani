@@ -29,6 +29,7 @@ const revokeImagePreviewIfBlob = () => {
 const extraImageFiles       = ref([null, null]);
 const extraImagePreviews    = ref(['', '']);
 const currentExtraImageUrls = ref(['', '']);
+const extraImageInputRefs   = ref([null, null]); // refs a los <input type="file"> de fotos 2 y 3
 
 const onExtraImageChange = (event, index) => {
   const file = event.target.files[0];
@@ -47,6 +48,13 @@ const removeExtraImage = (index) => {
   extraImageFiles.value[index] = null;
   extraImagePreviews.value[index] = '';
   currentExtraImageUrls.value[index] = '';
+
+  // Limpiar el <input type="file"> nativo: sin esto, si el usuario vuelve
+  // a elegir el mismo archivo que acaba de quitar, el navegador no dispara
+  // "change" (el value del input no cambió desde su punto de vista) y la
+  // foto no se vuelve a cargar, sin ningún feedback de error.
+  const inputEl = extraImageInputRefs.value[index];
+  if (inputEl) inputEl.value = '';
 };
 
 const form = ref({
@@ -431,6 +439,7 @@ async function onSave() {
             type="file"
             accept="image/*"
             class="file-input"
+            :ref="el => (extraImageInputRefs[i] = el)"
             @change="onExtraImageChange($event, i)"
           />
           <div v-if="extraImagePreviews[i]" class="extra-preview-row">
