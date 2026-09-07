@@ -19,6 +19,8 @@ const activeSubcategoryFilter = ref('Todas');
 const isLoading = ref(true);
 const isRestoringFromUrl = ref(true); // evita que el watch pise la URL mientras restauramos
 const services = computed(() => getCompanyproducts());
+const deleteError = ref('');
+const deleteSuccess = ref('');
 
 const ESTETICA_INFANTIL_CATEGORY = 'Estética Infantil';
 const LAST_EDITED_KEY = 'admin_services_last_edited_id';
@@ -47,6 +49,7 @@ const availableSubcategories = computed(() =>
 // --- Persistir filtro en la URL (mismo patrón que Product-item.vue) ---
 watch(activeFilter, (newCat) => {
   activeSubcategoryFilter.value = 'Todas';
+  search.value = ''; // Resetear búsqueda al cambiar categoría
   if (isRestoringFromUrl.value) return;
   router.replace({
     query: {
@@ -101,7 +104,8 @@ const parsePrice = (value) => {
 
 const formatPrice = (service) => {
   const price = parsePrice(service.price);
-  return price === null ? 'Precio no disponible' : `S/ ${price.toFixed(2)}`;
+  if (price === null) return 'Precio no disponible';
+  return `S/ ${price.toFixed(2)}`;
 };
 // --- fin helpers ---
 
@@ -130,13 +134,34 @@ const filteredServices = computed(() => {
 });
 
 async function onReset(serviceId) {
-  await resetCompanyproductToSeed(serviceId);
+  try {
+    await resetCompanyproductToSeed(serviceId);
+  } catch (error) {
+    console.error('Error restaurando servicio:', error);
+    deleteError.value = 'No se pudo restaurar el servicio. Intenta de nuevo.';
+    setTimeout(() => {
+      deleteError.value = '';
+    }, 3000);
+  }
 }
 
 async function onDelete(serviceId) {
   if (!confirm('¿Seguro que deseas eliminar este servicio? Esta acción no se puede deshacer.')) return;
-  await deleteCompanyproduct(serviceId);
-  sessionStorage.removeItem(LAST_EDITED_KEY);
+  
+  try {
+    await deleteCompanyproduct(serviceId);
+    sessionStorage.removeItem(LAST_EDITED_KEY);
+    deleteSuccess.value = 'Servicio eliminado correctamente.';
+    setTimeout(() => {
+      deleteSuccess.value = '';
+    }, 2000);
+  } catch (error) {
+    console.error('Error eliminando servicio:', error);
+    deleteError.value = 'No se pudo eliminar el servicio. Intenta de nuevo.';
+    setTimeout(() => {
+      deleteError.value = '';
+    }, 3000);
+  }
 }
 
 function goToEdit(serviceId) {
@@ -200,6 +225,18 @@ onBeforeRouteLeave((to, from) => {
           <span class="counter modified">Modificados: {{ totalModified }}</span>
         </div>
       </div>
+
+      <!-- Mensajes de éxito/error -->
+      <transition name="fade-message">
+        <div v-if="deleteSuccess" class="message success">
+          ✅ {{ deleteSuccess }}
+        </div>
+      </transition>
+      <transition name="fade-message">
+        <div v-if="deleteError" class="message error">
+          ❌ {{ deleteError }}
+        </div>
+      </transition>
 
       <input
         v-model="search"
@@ -347,6 +384,37 @@ onBeforeRouteLeave((to, from) => {
 
 .counter.modified {
   background: #ffd200;
+}
+
+/* Mensajes de notificación */
+.message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.message.success {
+  background: rgba(37, 211, 102, 0.12);
+  border: 1px solid rgba(37, 211, 102, 0.4);
+  color: #128c7e;
+}
+
+.message.error {
+  background: rgba(211, 47, 47, 0.12);
+  border: 1px solid rgba(211, 47, 47, 0.4);
+  color: #c62828;
+}
+
+.fade-message-enter-active,
+.fade-message-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-message-enter-from,
+.fade-message-leave-to {
+  opacity: 0;
 }
 
 .search-input {
