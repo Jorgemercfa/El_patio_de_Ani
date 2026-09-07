@@ -6,6 +6,7 @@ import Footer from '@/components/Footer-item.vue'
 import Navbar from '@/components/Navbar-item.vue'
 import { fetchCompanyproducts, getCompanyproducts } from '@/auth/companyproductsRepo'
 import { saveScrollPosition, popScrollPosition, getScrollY, setScrollY } from '@/constants/scrollMemory'
+import { useBreadcrumbSeo } from '@/composables/useSeoHead'
 
 const router = useRouter()
 const route = useRoute()
@@ -200,6 +201,10 @@ useHead(() => ({
     { property: 'og:url', content: `https://elpatiodeani.com/Product-item${activeFilter.value !== 'Todos' ? `?category=${encodeURIComponent(activeFilter.value)}` : ''}` },
   ],
 }))
+
+// ─── JSON-LD BreadcrumbList Schema ───────────────────────
+// Ayuda a Google a entender la navegación: Home > Servicios > Categoría
+useBreadcrumbSeo(activeFilter.value, activeSubcategory.value)
 // ───────────────────────────────────────────────────────────
 </script>
 
