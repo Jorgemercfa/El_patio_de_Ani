@@ -6,6 +6,7 @@
  * - Página de inicio (Home)
  * - Páginas estáticas (About, Contact, Promotions, etc.)
  * - Páginas de productos
+ * - Breadcrumb Schema para navegación
  * - Valores por defecto fallback
  */
 
@@ -155,6 +156,62 @@ export function useProductSeo(product, images = []) {
       {
         type: 'application/ld+json',
         children: JSON.stringify(productJsonLd),
+      },
+    ],
+  }));
+}
+
+/**
+ * Aplica BreadcrumbList Schema para Product-item catalog
+ * Útil para que Google entienda la navegación: Home > Servicios > Categoría > Subcategoría
+ */
+export function useBreadcrumbSeo(category = '', subcategory = '') {
+  const breadcrumbItems = [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Inicio',
+      item: BASE_URL,
+    },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Servicios',
+      item: `${BASE_URL}/Product-item`,
+    },
+  ];
+
+  let position = 3;
+  if (category && category !== 'Todos') {
+    breadcrumbItems.push({
+      '@type': 'ListItem',
+      position,
+      name: category,
+      item: `${BASE_URL}/Product-item?category=${encodeURIComponent(category)}`,
+    });
+    position++;
+  }
+
+  if (subcategory) {
+    breadcrumbItems.push({
+      '@type': 'ListItem',
+      position,
+      name: subcategory,
+      item: `${BASE_URL}/Product-item?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subcategory)}`,
+    });
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems,
+  };
+
+  useHead(() => ({
+    script: [
+      {
+        type: 'application/ld+json',
+        children: JSON.stringify(breadcrumbJsonLd),
       },
     ],
   }));
