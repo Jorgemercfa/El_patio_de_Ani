@@ -72,13 +72,13 @@ watch(category, () => { subcategory.value = ''; });
 
 // ─── Términos predefinidos ─────────────────────────────────
 const TERMS_JUEGOS =
-  'Contrato sujeto a disponibilidad. Reserva con el 50% del total. Los juegos se instalan horas antes y se retiran al finalizar el evento. No se instalan en vía pública. Precios por alquiler por evento. Costo de movilidad varía según distrito.';
+  'Contrato sujeto a disponibilidad. Reserva con el 50% del total. Los juegos se instalan horas antes y se retiran al finalizar el evento. No se instalan en vía pública. Precios por alquiler por evento. Incluye pago de personal para instalación.';
 const TERMS_SNACKS =
-  'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito.';
+  'Reserva con el 50% del total. Los carritos se instalan 1 hora antes y se retiran al finalizar el evento. No se instalan en vía pública. Costo de movilidad varía según distrito. Mínimo 2 horas de servicio.';
 const TERMS_SHOWS =
-  'Reserva con 50%. No incluye movilidad. Válido para 10 a 20 niños.';
+  'Reserva con 50%. No incluye movilidad. Válido para 10 a 20 niños. Duración según paquete seleccionado. Personal especializado incluido.';
 const TERMS_ESTETICA =
-  'Contrato sujeto a disponibilidad. Reserva con el 50% del total. El personal se instala 15 minutos antes. No aplica movilidad (costo aparte según distrito). No se instala en vía pública.';
+  'Contrato sujeto a disponibilidad. Reserva con el 50% del total. El personal se instala 15 minutos antes. No aplica movilidad (costo aparte según distrito). No se instala en vía pública. Mínimo 2 horas.';
 
 const defaultTermsMap = {
   'Shows Infantiles': TERMS_SHOWS,
