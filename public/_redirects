@@ -1,0 +1,7 @@
+# Redirige variantes a dominio canónico sin www
+https://www.elpatiodeani.com/* https://elpatiodeani.com/:splat 301!
+http://elpatiodeani.com/* https://elpatiodeani.com/:splat 301!
+http://www.elpatiodeani.com/* https://elpatiodeani.com/:splat 301!
+
+# SPA fallback para Vue Router
+/*    /index.html   200
