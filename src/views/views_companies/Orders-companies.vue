@@ -92,6 +92,23 @@ function reservationStatusClass(order) {
   return 'tag pending';
 }
 
+// Estado del pedido (columna "Estado pedido" y detalle): si la reserva
+// fue liberada, el pedido ya quedó resuelto de una vez — no tiene sentido
+// pedirle al admin que además lo marque como "Completado", porque el
+// servicio nunca se llegó a realizar. Por eso "Liberado" tiene prioridad
+// visual sobre "Pendiente" aquí también.
+function orderStatusLabel(order) {
+  if (order.releasedAt) return 'Liberado';
+  if (order.completedAt) return 'Completado';
+  return 'Pendiente';
+}
+
+function orderStatusClass(order) {
+  if (order.releasedAt) return 'tag released';
+  if (order.completedAt) return 'tag done';
+  return 'tag pending';
+}
+
 function showDetail(order) {
   selectedOrder.value = order;
 }
@@ -112,7 +129,9 @@ function showDetail(order) {
 // "reserva vencida" no podía dispararse nunca. Ahora se espera el
 // resultado real con await.
 async function completeOrder(order) {
-  if (order.completedAt || !order.orderId) return;
+  // Un pedido liberado no se "completa": el servicio nunca se realizó
+  // porque el cliente no llegó a confirmar la reserva.
+  if (order.completedAt || order.releasedAt || !order.orderId) return;
   actionError.value = '';
   const ok = await markPurchasedCompleted(order);
   if (!ok) {
@@ -147,9 +166,7 @@ async function releaseOrder(order) {
     <section class="orders-panel">
       <h2 class="panel-title">Pedidos y reservas</h2>
       <p class="panel-subtitle">
-        Las reservas con fecha quedan en <strong>Pendiente de confirmar</strong> hasta que
-        valides que el cliente sí envió el mensaje de WhatsApp. Si no confirmas a tiempo, la
-        fecha se libera sola automáticamente para que otro cliente pueda tomarla.
+        Las reservas con fecha quedan en <strong>Pendiente de confirmar</strong> hasta que valides que el cliente sí envió el mensaje de WhatsApp y se concretó la reserva. Si no confirmas a tiempo, la fecha se libera sola automáticamente para que otro cliente pueda tomarla. Una vez que el evento ya se realizó, marca el pedido como Completado — eso significa que el servicio ya se llevó a cabo y quedó aplicado.
       </p>
 
       <div v-if="actionError" class="action-error" role="alert">
@@ -169,7 +186,7 @@ async function releaseOrder(order) {
           <thead>
             <tr>
               <th>Cliente</th>
-              <th>Producto</th>
+              <th>Servicio</th>
               <th>Fecha Registro</th>
               <th>Fecha Reserva</th>
               <th>Total</th>
@@ -195,8 +212,8 @@ async function releaseOrder(order) {
                 </span>
               </td>
               <td class="col-status">
-                <span :class="order.completedAt ? 'tag done' : 'tag pending'">
-                  {{ order.completedAt ? 'Completado' : 'Pendiente' }}
+                <span :class="orderStatusClass(order)">
+                  {{ orderStatusLabel(order) }}
                 </span>
               </td>
               <td class="actions-cell">
@@ -223,7 +240,7 @@ async function releaseOrder(order) {
                   <button
                     type="button"
                     class="btn btn-complete"
-                    :disabled="!!order.completedAt"
+                    :disabled="!!order.completedAt || !!order.releasedAt"
                     title="Marcar como completado"
                     @click="completeOrder(order)"
                   >
@@ -244,6 +261,13 @@ async function releaseOrder(order) {
         </table>
       </div>
 
+      <!--
+        Detalle: pensado como la vista "sin scroll horizontal" de una fila
+        para pantallas chicas (la tabla vive en un contenedor con
+        overflow-x: auto). Por eso incluye TODAS las columnas de la tabla,
+        incluyendo Estado pedido — antes faltaba, lo que lo hacía ver como
+        una copia incompleta en vez de un resumen completo de la fila.
+      -->
       <article v-if="selectedOrder" class="detail-panel">
         <div class="detail-header">
           <h3>Detalle del pedido</h3>
@@ -251,11 +275,12 @@ async function releaseOrder(order) {
         </div>
         <div class="detail-grid">
           <p><strong>Cliente:</strong> {{ selectedOrder.userId ?? 'Cliente invitado' }}</p>
-          <p><strong>Producto:</strong> {{ selectedOrder.name }}</p>
+          <p><strong>Servicio:</strong> {{ selectedOrder.name }}</p>
           <p><strong>Fecha Registro:</strong> {{ formatDate(selectedOrder.purchasedAt) }}</p>
           <p><strong>Fecha Reserva:</strong> {{ formatReservationDate(selectedOrder.reservationDate) }}</p>
-          <p><strong>Estado Reserva:</strong> {{ reservationStatusLabel(selectedOrder) }}</p>
           <p><strong>Total:</strong> S/ {{ orderPrice(selectedOrder).toFixed(2) }}</p>
+          <p><strong>Estado Reserva:</strong> {{ reservationStatusLabel(selectedOrder) }}</p>
+          <p><strong>Estado Pedido:</strong> {{ orderStatusLabel(selectedOrder) }}</p>
         </div>
       </article>
     </section>
