@@ -166,7 +166,10 @@ async function releaseOrder(order) {
     <section class="orders-panel">
       <h2 class="panel-title">Pedidos y reservas</h2>
       <p class="panel-subtitle">
-        Las reservas con fecha quedan en <strong>Pendiente de confirmar</strong> hasta que valides que el cliente sí envió el mensaje de WhatsApp y se concretó la reserva. Si no confirmas a tiempo, la fecha se libera sola automáticamente para que otro cliente pueda tomarla. Una vez que el evento ya se realizó, marca el pedido como Completado — eso significa que el servicio ya se llevó a cabo y quedó aplicado.
+        Las reservas con fecha quedan en <strong>Pendiente de confirmar</strong> hasta que
+        valides que el cliente sí envió el mensaje de WhatsApp y se concreto la reserva. Si no confirmas a tiempo, la
+        fecha se libera sola automáticamente para que otro cliente pueda tomarla. Una vez que el evento ya se realizó,
+        marca el pedido como <strong>Completado</strong> — eso significa que el servicio ya se llevó a cabo y quedó aplicado.
       </p>
 
       <div v-if="actionError" class="action-error" role="alert">
@@ -281,6 +284,40 @@ async function releaseOrder(order) {
           <p><strong>Total:</strong> S/ {{ orderPrice(selectedOrder).toFixed(2) }}</p>
           <p><strong>Estado Reserva:</strong> {{ reservationStatusLabel(selectedOrder) }}</p>
           <p><strong>Estado Pedido:</strong> {{ orderStatusLabel(selectedOrder) }}</p>
+        </div>
+
+        <!--
+          Datos del evento: esta es la información que realmente NO está
+          en la tabla — el admin la necesita para coordinar el servicio
+          (dirección, tipo de evento, espacio, cantidad de niños, etc.)
+          y hoy solo viaja por el mensaje de WhatsApp. Solo se muestra
+          cuando el pedido la trae (aplica a inflables/shows, no a
+          snacks sueltos).
+        -->
+        <div v-if="selectedOrder.eventDetails" class="event-detail-block">
+          <h4 class="event-detail-title">Datos del evento</h4>
+          <div class="detail-grid">
+            <p><strong>Responsable:</strong> {{ selectedOrder.eventDetails.responsable }}</p>
+            <p><strong>Dirección:</strong> {{ selectedOrder.eventDetails.direccion }}, {{ selectedOrder.eventDetails.distrito }}</p>
+            <p><strong>Tipo de evento:</strong> {{ selectedOrder.eventDetails.tipoEvento }}</p>
+            <p><strong>Horario:</strong> {{ selectedOrder.eventDetails.horario }}</p>
+            <p><strong>Logística eléctrica:</strong> {{ selectedOrder.eventDetails.electrica }}</p>
+            <p><strong>Espacio:</strong> {{ selectedOrder.eventDetails.espacio }} ({{ selectedOrder.eventDetails.suelo }})</p>
+            <p><strong>Niños:</strong> {{ selectedOrder.eventDetails.invitados }} ({{ selectedOrder.eventDetails.edades }})</p>
+            <p><strong>Acceso:</strong> {{ selectedOrder.eventDetails.acceso }}</p>
+            <p>
+              <strong>Medidas:</strong> {{ selectedOrder.eventDetails.medida }}
+              <template v-if="selectedOrder.eventDetails.telefonoMedida && selectedOrder.eventDetails.telefonoMedida !== 'No indicado'">
+                — Tel: {{ selectedOrder.eventDetails.telefonoMedida }}
+              </template>
+            </p>
+            <p v-if="selectedOrder.eventDetails.modalidadInflable && selectedOrder.eventDetails.modalidadInflable !== 'No aplica'">
+              <strong>Modalidad:</strong> {{ selectedOrder.eventDetails.modalidadInflable }}
+            </p>
+            <p v-if="selectedOrder.eventDetails.aguaConexion && selectedOrder.eventDetails.aguaConexion !== 'No aplica'">
+              <strong>Agua:</strong> {{ selectedOrder.eventDetails.aguaConexion }} / Drenaje: {{ selectedOrder.eventDetails.aguaDrenaje }}
+            </p>
+          </div>
         </div>
       </article>
     </section>
@@ -558,5 +595,18 @@ async function releaseOrder(order) {
   margin: 0;
   font-size: 0.88rem;
   color: #444;
+}
+
+.event-detail-block {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed #f0c5df;
+}
+
+.event-detail-title {
+  margin: 0 0 10px;
+  color: #E91E81;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 </style>
