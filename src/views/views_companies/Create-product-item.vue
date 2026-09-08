@@ -238,13 +238,13 @@ const onCreateProduct = async () => {
       await addCompanyproduct(payload);
     }
   } catch (e) {
-    error.value = e?.message || 'No se pudo guardar el producto.';
+    error.value = e?.message || 'No se pudo guardar el Servicio.';
     return;
   }
 
   success.value = isEditing.value
-    ? 'Producto actualizado correctamente.'
-    : 'Producto creado correctamente.';
+    ? 'Servicio actualizado correctamente.'
+    : 'Servicio creado correctamente.';
 
   resetForm();
   setTimeout(() => router.push({ name: 'ServicesAdmin' }), 500);
@@ -319,7 +319,7 @@ onBeforeUnmount(() => {
   <AdminLayout>
     <section class="panel">
       <h2 class="panel-title">
-        {{ isEditing ? 'Editar producto' : 'Crear producto' }}
+        {{ isEditing ? 'Editar Servicio' : 'Crear Servicio' }}
       </h2>
 
       <form class="form-area" @submit.prevent="onCreateProduct" autocomplete="on">
@@ -328,7 +328,7 @@ onBeforeUnmount(() => {
 
         <!-- Nombre -->
         <div class="form-group">
-          <label>Nombre del producto</label>
+          <label>Nombre del Servicio</label>
           <input v-model="name" type="text" required placeholder="Ej: Show Infantil Paquete 1" />
         </div>
 
@@ -490,7 +490,7 @@ onBeforeUnmount(() => {
           </button>
           <span v-if="productCode" class="code-preview">{{ productCode }}</span>
           <button type="submit" class="submit-btn" :disabled="imageUploading">
-            {{ imageUploading ? 'Subiendo imagen...' : (isEditing ? 'Guardar cambios' : 'Crear producto') }}
+            {{ imageUploading ? 'Subiendo imagen...' : (isEditing ? 'Guardar cambios' : 'Crear pServicio') }}
           </button>
         </div>
       </form>
