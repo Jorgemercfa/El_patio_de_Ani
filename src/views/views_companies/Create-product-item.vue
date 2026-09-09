@@ -490,7 +490,7 @@ onBeforeUnmount(() => {
           </button>
           <span v-if="productCode" class="code-preview">{{ productCode }}</span>
           <button type="submit" class="submit-btn" :disabled="imageUploading">
-            {{ imageUploading ? 'Subiendo imagen...' : (isEditing ? 'Guardar cambios' : 'Crear pServicio') }}
+            {{ imageUploading ? 'Subiendo imagen...' : (isEditing ? 'Guardar cambios' : 'Crear Servicio') }}
           </button>
         </div>
       </form>
