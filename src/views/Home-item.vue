@@ -76,7 +76,12 @@ const isMobileViewport = ref(
 
 const videos = computed(() => (isMobileViewport.value ? videosMobile : videosDesktop));
 
-const VIDEO_AUTO_ADVANCE_INTERVAL = 20000;
+// FIX (cortes de video): este intervalo es solo un RESPALDO por si un video
+// no carga y el evento "ended" nunca llega. Antes eran 20 s, así que
+// cualquier video de más de 20 s se cortaba antes de terminar. Los videos
+// normales avanzan por onVideoEnded; este valor debe ser claramente mayor
+// que el video más largo. Ajústalo si alguno dura más de ~55 s.
+const VIDEO_AUTO_ADVANCE_INTERVAL = 60000;
 const VIDEO_ENDED_DELAY = 1000;
 
 
@@ -87,22 +92,39 @@ const videoRef = ref(null);
 const videoEndedTimeout = ref(null);
 const mainWrapperRef = ref(null);
 
+// Se pone en true al desmontar el componente. Los await de onMounted
+// (productos, reseñas) pueden terminar DESPUÉS de que el usuario ya salió
+// de la página; sin esta marca, se registraban timers y listeners cuando
+// la limpieza ya había corrido y nadie los quitaba.
+let isUnmounted = false;
+
 
 const currentVideoSrc = computed(() => videos.value[currentVideoIndex.value]);
 
 
+// FIX (video saltado): cancela un avance pendiente de onVideoEnded antes
+// de avanzar. Sin esto, el avance del intervalo (o de un clic en un punto)
+// y el avance diferido de "ended" podían ocurrir los dos y saltarse un video.
 const nextVideo = () => {
+  clearTimeout(videoEndedTimeout.value);
   currentVideoIndex.value = (currentVideoIndex.value + 1) % totalVideos.value;
 };
 
 
 const goToVideo = (index) => {
+  clearTimeout(videoEndedTimeout.value);
   currentVideoIndex.value = index;
   restartVideoTimer();
 };
 
 
+// FIX (intervalos duplicados): se detiene el intervalo anterior antes de
+// crear uno nuevo. Antes, si el usuario tocaba un punto o terminaba un
+// video antes de que acabaran los await de onMounted, se creaban dos
+// intervalos y se perdía el ID del primero: el carrusel avanzaba al doble
+// de velocidad y stopVideoTimer ya no podía detenerlo.
 const startVideoTimer = () => {
+  stopVideoTimer();
   videoIntervalId.value = setInterval(nextVideo, VIDEO_AUTO_ADVANCE_INTERVAL);
 };
 
@@ -151,7 +173,16 @@ const onVideoEnded = () => {
    Safari iOS es conocido por no disparar loadedmetadata de forma
    confiable en videos autoplay+muted+playsinline.
 ============================= */
-const ZOOM_CAP = 1.9; // tope maximo de recorte permitido, calibrado para el contenedor de 80vh
+
+// FIX (video recortado en Android): en celular el contenedor es casi
+// cuadrado (45vh en pantallas <= 480px) y el zoom de hasta 1.9 recortaba
+// buena parte de los costados de un video apaisado. En móvil el tope baja
+// a 1.0, que muestra el video COMPLETO y deja que la capa borrosa de fondo
+// rellene las franjas. Si prefieres recortar un poco para llenar más
+// pantalla, sube MOBILE_ZOOM_CAP (por ejemplo a 1.2).
+const DESKTOP_ZOOM_CAP = 1.9; // tope de recorte en escritorio (contenedor de 80vh)
+const MOBILE_ZOOM_CAP = 1.0; // 1.0 = video completo, sin recorte
+const ZOOM_CAP = isMobileViewport.value ? MOBILE_ZOOM_CAP : DESKTOP_ZOOM_CAP;
 const MAX_ZOOM_RETRIES = 12;
 const ZOOM_RETRY_DELAY = 150; // ms
 const zoomRetryTimeoutId = ref(null);
@@ -340,10 +371,29 @@ const formatDate = (date) => {
 /* =============================
    ÚNICO onMounted
 ============================= */
+// FIX: antes, un error en fetchCompanyproducts() o fetchGlobalReviews()
+// cancelaba todo el resto de onMounted (listeners, zoom y popup de
+// bienvenida), y si el usuario salía de la página mientras los await
+// seguían pendientes, los timers/listeners se registraban DESPUÉS de la
+// limpieza y quedaban vivos para siempre. Ahora cada carga tiene su
+// try/catch y se revisa isUnmounted después de cada await.
 onMounted(async () => {
-  await fetchCompanyproducts();
+  try {
+    await fetchCompanyproducts();
+  } catch (e) {
+    console.warn('[Home] Error cargando productos:', e);
+  }
+  if (isUnmounted) return;
+
   startVideoTimer();
-  reviews.value = await fetchGlobalReviews();
+
+  try {
+    reviews.value = await fetchGlobalReviews();
+  } catch (e) {
+    console.warn('[Home] Error cargando reseñas:', e);
+  }
+  if (isUnmounted) return;
+
   window.addEventListener('resize', recalcZoomOnResize);
   window.addEventListener('orientationchange', recalcZoomOnResize); // los móviles rotan pantalla, hay que recalcular el zoom
 
@@ -357,6 +407,8 @@ onMounted(async () => {
   // más en cargar metadata de lo que tarda este onMounted en ejecutarse,
   // que es justamente el escenario típico en redes móviles.
   await nextTick();
+  if (isUnmounted) return;
+
   if (videoRef.value) {
     tryApplyZoomWithRetry(videoRef.value);
   }
@@ -381,6 +433,7 @@ onMounted(async () => {
 
 
 onBeforeUnmount(() => {
+  isUnmounted = true;
   stopVideoTimer();
   clearTimeout(videoEndedTimeout.value);
   clearTimeout(zoomRetryTimeoutId.value);
@@ -420,6 +473,7 @@ const tarifas = [
     <!-- ===== CARRUSEL PRINCIPAL DE VIDEOS LOCALES ===== -->
     <div class="main-video-carousel">
       <div class="main-video-overlay">
+        <!-- ÚNICO <h1> de la página (SEO). Los demás títulos son <h2>. -->
         <h1 class="main-video-title">Productora de eventos infantiles</h1>
       </div>
 
@@ -505,7 +559,7 @@ const tarifas = [
 
     <!-- ===== HERO SECTION ===== -->
     <section class="hero-section">
-      <h1 class="hero-title">Tu aliada perfecta para celebrar 🎉</h1>
+      <h2 class="hero-title">Tu aliada perfecta para celebrar 🎉</h2>
       <p class="hero-subtitle">Animación, juegos, snacks y estética infantil para que cada fiesta sea única e inolvidable en Lima</p>
       <div class="hero-stats">
         <div class="hero-stat">
@@ -561,7 +615,7 @@ const tarifas = [
     </section>
 
     <!-- ===== NUESTROS SERVICIOS ===== -->
-    <h1 class="title-home">Nuestros Servicios</h1>
+    <h2 class="title-home">Nuestros Servicios</h2>
 
     <div class="services-grid">
       <router-link :to="{ path: '/Product-item', query: { category: 'Shows Infantiles' } }" class="service-card service-card-shows">
@@ -591,7 +645,7 @@ const tarifas = [
       </router-link>
     </div>
 
-    <h1 class="title-home">Más populares</h1>
+    <h2 class="title-home">Más populares</h2>
 
     <div class="our-products-wrapper">
       <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollproductsLeft">‹</button>
@@ -614,7 +668,7 @@ const tarifas = [
       <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollproductsRight">›</button>
     </div>
 
-    <h1 class="title-home">Shows</h1>
+    <h2 class="title-home">Shows</h2>
 
     <div class="our-products-wrapper">
       <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollRestaurantsLeft">‹</button>
@@ -637,7 +691,7 @@ const tarifas = [
       <button class="products-nav products-nav-right" type="button" aria-label="Siguiente" @click="scrollRestaurantsRight">›</button>
     </div>
 
-    <h1 class="title-home">Inflables y Juegos</h1>
+    <h2 class="title-home">Inflables y Juegos</h2>
 
     <div class="our-products-wrapper">
       <button class="products-nav products-nav-left" type="button" aria-label="Anterior" @click="scrollRestaurantsLeft2">‹</button>
@@ -1017,6 +1071,13 @@ const tarifas = [
   .pet-area{
     width: 40px;
     height: 30px;
+  }
+
+  /* En móvil el zoom por defecto (antes de que el JS calcule el real) es
+     1, igual que MOBILE_ZOOM_CAP: así el video no arranca ampliado y
+     luego "se encoge" con la transición de 0.3s. */
+  .main-video-player {
+    transform: scale(var(--video-zoom, 1));
   }
 }
 
