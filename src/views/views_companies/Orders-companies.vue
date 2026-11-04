@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, reactive, watch, onMounted, onBeforeUnmount } from 'vue';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import AdminLayout from '@/components/AdminLayout.vue';
 import { useCart } from '@/store/cart';
 
@@ -9,6 +10,8 @@ const {
   confirmPurchasedReservation,
   releasePurchasedReservation,
 } = useCart();
+
+const db = getFirestore();
 
 // ─── Lectura en tiempo real desde Firestore ────────────────────────────
 //
@@ -26,6 +29,57 @@ const orders = ref([]);
 const isLoading = ref(true);
 const actionError = ref('');
 let unsubscribe = null;
+
+// ─── Resolución de nombre de cliente por UID ───────────────────────────
+//
+// order.userId es el ID del documento en la colección 'user' (la clave
+// primaria en Firestore), NUNCA un nombre. Antes se mostraba tal cual
+// (el UID largo tipo "QZtFhzcBoAcqiln..."), por eso se veía el id en
+// vez del nombre.
+//
+// La búsqueda es SIEMPRE por ese UID único — no por texto/nombre — así
+// que aunque existan varios usuarios con el mismo nombre, cada pedido
+// siempre resuelve al documento exacto de su dueño real, sin ambigüedad.
+//
+// userNames actúa como caché: { [uid]: nombreResuelto } para no repetir
+// la lectura a Firestore en cada render o cada vez que llega el mismo
+// pedido por el listener en tiempo real.
+const userNames = reactive({});
+
+async function resolveUserName(userId) {
+  if (!userId || userNames[userId]) return;
+  userNames[userId] = 'Cargando...';
+  try {
+    const snap = await getDoc(doc(db, 'user', userId));
+    userNames[userId] = snap.exists()
+      ? (snap.data().name ?? 'Cliente invitado')
+      : 'Cliente invitado';
+  } catch (e) {
+    userNames[userId] = 'Cliente invitado';
+  }
+}
+
+function displayName(order) {
+  if (!order.userId) return 'Cliente invitado';
+  return userNames[order.userId] ?? order.userId; // fallback mientras carga
+}
+
+// Cada vez que llega/cambia la lista de pedidos (incluyendo la carga
+// inicial en tiempo real), resolvemos los nombres de los UIDs que aún
+// no estén en caché.
+watch(
+  orders,
+  (list) => {
+    const seen = new Set();
+    for (const o of list) {
+      if (o.userId && !seen.has(o.userId)) {
+        seen.add(o.userId);
+        resolveUserName(o.userId);
+      }
+    }
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   unsubscribe = subscribeToOrdersFromServer((serverOrders) => {
@@ -180,7 +234,7 @@ async function releaseOrder(order) {
           </thead>
           <tbody>
             <tr v-for="order in orders" :key="order.orderId || `${order.id}-${order.purchasedAt}`">
-              <td class="col-client">{{ order.userId ?? 'Cliente invitado' }}</td>
+              <td class="col-client">{{ displayName(order) }}</td>
               <td class="col-product">
                 <span class="product-name">{{ order.name }}</span>
               </td>
@@ -250,7 +304,7 @@ async function releaseOrder(order) {
           <button type="button" class="close-btn" @click="selectedOrder = null">✕</button>
         </div>
         <div class="detail-grid">
-          <p><strong>Cliente:</strong> {{ selectedOrder.userId ?? 'Cliente invitado' }}</p>
+          <p><strong>Cliente:</strong> {{ displayName(selectedOrder) }}</p>
           <p><strong>Producto:</strong> {{ selectedOrder.name }}</p>
           <p><strong>Fecha Registro:</strong> {{ formatDate(selectedOrder.purchasedAt) }}</p>
           <p><strong>Fecha Reserva:</strong> {{ formatReservationDate(selectedOrder.reservationDate) }}</p>

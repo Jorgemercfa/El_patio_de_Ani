@@ -1,15 +1,26 @@
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
+  fetchSignInMethodsForEmail,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
-  deleteUser,
 } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, query, setDoc, where, addDoc, deleteDoc } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  setDoc,
+  where,
+} from 'firebase/firestore';
 
 // ─── RUTAS DE IMPORTACIÓN CORREGIDAS ───
-import { auth } from '@/firebase/auth'; 
-import { db } from '@/firebase/firestore'; 
+import { auth } from '@/firebase/auth';
+import { db } from '@/firebase/firestore';
 // ───────────────────────────────────────
 
 const USERS_COLLECTION = 'user';
@@ -23,6 +34,40 @@ function normalizeEmail(email) {
   return String(email || '')
     .trim()
     .toLowerCase();
+}
+
+async function cleanupStaleUserRecordByEmail(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return;
+
+  try {
+    const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+    if (signInMethods.length > 0) return;
+  } catch (error) {
+    if (error?.code === 'auth/invalid-email') return;
+    if (error?.code === 'auth/network-request-failed') {
+      throw error;
+    }
+    return;
+  }
+
+  const userQuery = query(
+    collection(db, USERS_COLLECTION),
+    where('email', '==', normalizedEmail),
+  );
+  const snapshot = await getDocs(userQuery);
+
+  if (snapshot.empty) return;
+
+  await Promise.all(
+    snapshot.docs.map(async (userDoc) => {
+      try {
+        await deleteDoc(doc(db, USERS_COLLECTION, userDoc.id));
+      } catch (cleanupError) {
+        console.warn('[UsersRepo] No se pudo limpiar un perfil obsoleto:', cleanupError);
+      }
+    }),
+  );
 }
 
 function mapUser(uid, data, fallbackEmail = '') {
@@ -70,10 +115,28 @@ export async function getUserByUid(uid) {
   return mapUser(uid, userDoc.data());
 }
 
+export async function emailIsAvailable(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return false;
+
+  try {
+    const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+    if (signInMethods.length > 0) return false;
+  } catch (error) {
+    if (error?.code === 'auth/invalid-email') return false;
+    if (error?.code === 'auth/network-request-failed') {
+      throw error;
+    }
+  }
+
+  const existingUser = await findUserByEmail(normalizedEmail);
+  return !existingUser;
+}
+
 export async function addUser({ name, lastName, lastname, email, password }) {
   const normalizedEmail = normalizeEmail(email);
   const normalizedPassword = String(password || '');
-  
+
   if (!normalizedEmail) {
     throw new Error('Debes ingresar un email válido.');
   }
@@ -82,6 +145,15 @@ export async function addUser({ name, lastName, lastname, email, password }) {
   }
 
   try {
+    await cleanupStaleUserRecordByEmail(normalizedEmail);
+
+    const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+    if (signInMethods.length > 0) {
+      throw Object.assign(new Error('Este correo ya está registrado.'), {
+        code: 'auth/email-already-in-use',
+      });
+    }
+
     const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, normalizedPassword);
     const uid = credential.user.uid;
 
@@ -128,7 +200,7 @@ export async function addUser({ name, lastName, lastname, email, password }) {
 
     return mapUser(uid, payload, normalizedEmail);
   } catch (error) {
-    if (error.code === 'auth/email-already-in-use') {
+    if (error?.code === 'auth/email-already-in-use' || error?.code === 'auth/credential-already-in-use') {
       throw new Error('Este correo ya está registrado.');
     }
     throw error;
@@ -163,9 +235,16 @@ export async function deleteAccount() {
 
   const uid = user.uid;
 
-  // 1. Eliminar el documento de Firestore
-  await deleteDoc(doc(db, USERS_COLLECTION, uid));
-
-  // 2. Eliminar la cuenta de Firebase Auth
-  await deleteUser(user);
+  try {
+    await deleteUser(user);
+    await deleteDoc(doc(db, USERS_COLLECTION, uid)).catch((deleteDocError) => {
+      console.warn('[UsersRepo] No se pudo borrar el perfil de Firestore:', deleteDocError);
+    });
+    return true;
+  } catch (error) {
+    if (error?.code === 'auth/requires-recent-login') {
+      throw error;
+    }
+    throw new Error('No se pudo eliminar la cuenta. Inténtalo nuevamente.');
+  }
 }
