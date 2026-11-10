@@ -310,16 +310,6 @@ const floorInfo = computed(() => {
   return 'Selecciona el tipo de suelo para mostrar recomendaciones de instalación.';
 });
 
-const ageRecommendation = computed(() => {
-  if (inflableType.value === 'bebes') {
-    return 'Este inflable es recomendado para niños de 0-3 años';
-  }
-  if (inflableType.value === 'grande') {
-    return 'Recomendado para niños de 4-12 años';
-  }
-  return 'Recomendado para niños de 2-8 años';
-});
-
 const requiresMeasureVisit = computed(() => selectedPrice.value > PREMIUM_INFLABLE_PRICE);
 
 const WATER_INFLABLE_IDS = [8, 9, 10, 14];
@@ -639,6 +629,122 @@ WATCHED_ERROR_FIELDS.forEach((field) => {
       }
     },
   );
+});
+
+// ─── Límites de edad según el catálogo (ENE 2026) ─────────────────────
+// Valores en AÑOS (los meses se pasan a fracción: 8 meses = 0.67).
+// Se evalúa en orden: las reglas más específicas van primero.
+const normalizeText = (v) =>
+  String(v || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+const has = (...words) => (name) => words.every((w) => name.includes(w));
+
+const AGE_LIMITS = [
+  // Trampolines grandes (opciones)
+  { match: has('trampolin', 'opcion 3'), min: 6, max: Infinity, label: '6 años en adelante' },
+  { match: has('trampolin', 'opcion 2'), min: 3, max: 12, label: '3 a 12 años' },
+  { match: has('trampolin', 'opcion 1'), min: 2, max: 6, label: '2 a 6 años' },
+  { match: has('trampolin'), min: 2, max: 4, label: '2 a 4 años' }, // Trampolín 1
+
+  // Inflables
+  { match: has('splash'), min: 2, max: 10, label: '2 a 10 años' },
+  { match: has('blanco'), min: 2, max: 6, label: '2 a 6 años' },
+  { match: has('curve'), min: 5, max: 10, label: '5 a 10 años' },
+  { match: has('inflable', 'grande'), min: 2, max: 5, label: '2 a 5 años' },
+  { match: has('cubo'), min: 2, max: 5, label: '2 a 5 años' }, // Cubo Little Tikes
+  { match: has('cubito'), min: 0, max: 2, label: '0 a 2 años' },
+
+  // Juegos
+  { match: has('laberinto'), min: 2, max: 6, label: '2 a 6 años' },
+  { match: has('montana', 'escaladora'), min: 2, max: 8, label: '2 a 8 años' },
+  { match: has('trepador'), min: 2, max: 6, label: '2 a 6 años' },
+  { match: has('casita', 'picnic'), min: 1.5, max: 5, label: '1 1/2 a 5 años' },
+  { match: has('montana', 'extrema'), min: 3, max: 6, label: '3 a 6 años' },
+  { match: has('mini', 'montana', 'rusa'), min: 2, max: 4, label: '2 a 4 años' },
+  { match: has('tobogan', 'tropical'), min: 2, max: 6, label: '2 a 6 años' },
+  { match: has('tobogan', 'torre'), min: 2, max: 4, label: '2 a 4 años' },
+  { match: has('oruga'), min: 2, max: Infinity, label: '2 años en adelante' },
+  { match: has('casita', 'rustica'), min: 1.5, max: 3, label: '1 1/2 a 3 años' },
+  { match: has('climber'), min: 3, max: 6, label: '3 a 6 años' },
+  { match: has('columpio'), min: 8 / 12, max: 2, label: '8 meses a 2 años' },
+  { match: has('corralito'), min: 8 / 12, max: 2, label: '8 meses a 2 años' },
+  { match: has('piscina', 'pelotas'), min: 8 / 12, max: 2, label: '8 meses a 2 años' },
+  { match: has('gusanito'), min: 8 / 12, max: 3, label: '8 meses a 3 años' },
+  { match: has('balancin'), min: 1, max: 3, label: '1 a 3 años' },
+  { match: has('animalitos'), min: 0.75, max: 5, label: '9 meses a 5 años' },
+];
+
+// Convierte textos como "3-8 años", "2 a 10", "8 meses a 2 años" → { min, max } en años
+function parseAgeRange(text) {
+  const raw = normalizeText(text).replace(/,/g, '.');
+  if (!raw) return null;
+
+  const re = /(\d+(?:\.\d+)?)\s*(mes(?:es)?|anos?)?/g;
+  const found = [];
+  let m;
+  while ((m = re.exec(raw)) !== null) {
+    found.push({ value: parseFloat(m[1]), unit: m[2] || null });
+  }
+  if (!found.length) return null;
+
+  // La unidad de un número sin unidad se hereda del siguiente que sí la tiene
+  // ("8 meses a 2 años" → 8 meses, 2 años; "3-8 años" → ambos años)
+  let carry = 'anos';
+  const years = [];
+  for (let i = found.length - 1; i >= 0; i -= 1) {
+    if (found[i].unit) carry = found[i].unit.startsWith('mes') ? 'mes' : 'anos';
+    years.push(carry === 'mes' ? found[i].value / 12 : found[i].value);
+  }
+
+  return { min: Math.min(...years), max: Math.max(...years) };
+}
+
+const productAgeLimit = computed(() => {
+  const product = selectedProduct.value;
+  if (!product) return null;
+
+  const name = normalizeText(product.name);
+  const rule = AGE_LIMITS.find((r) => r.match(name));
+  if (rule) return rule;
+
+  // Fallback: si el producto trae age_range desde la base de datos
+  const parsed = parseAgeRange(product.age_range);
+  if (parsed) return { ...parsed, label: `${product.age_range} años` };
+
+  return null; // Tropical, Lava, Camaleón, Arcoíris y Pisos EVA no indican edad en el catálogo
+});
+
+const ageRecommendation = computed(() => {
+  if (productAgeLimit.value) {
+    return `Este juego es recomendado para niños de ${productAgeLimit.value.label}.`;
+  }
+  if (inflableType.value === 'bebes') return 'Este inflable es recomendado para niños de 0-3 años';
+  if (inflableType.value === 'grande') return 'Recomendado para niños de 4-12 años';
+  return 'Recomendado para niños de 2-8 años';
+});
+
+const ageWarning = computed(() => {
+  const limit = productAgeLimit.value;
+  const entered = parseAgeRange(form.value.ageRange);
+  if (!limit || !entered) return '';
+
+  const EPS = 0.01;
+  const tooOld = entered.max > limit.max + EPS;
+  const tooYoung = entered.min < limit.min - EPS;
+  if (!tooOld && !tooYoung) return '';
+
+  const who =
+    tooOld && tooYoung
+      ? 'niños mayores y menores'
+      : tooOld
+        ? 'niños mayores'
+        : 'niños menores';
+
+  return `⚠️ Indicaste "${form.value.ageRange}", pero este juego es solo para niños de ${limit.label}. Habría ${who} que el límite de edad, y por seguridad no deberían usarlo. Considera elegir otro juego o consúltanos por WhatsApp.`;
 });
 
 const isSubmitting = ref(false);
@@ -1068,6 +1174,9 @@ onBeforeUnmount(() => {
                 </div>
               </div>
               <div class="alert info-alert">{{ ageRecommendation }}</div>
+<div v-if="ageWarning" class="alert warning-alert" role="alert" aria-live="polite">
+  {{ ageWarning }}
+</div>
             </section>
 
             <section class="form-section">
