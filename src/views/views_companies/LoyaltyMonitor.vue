@@ -8,15 +8,17 @@ const users = ref([]);
 const loadingUsers = ref(false);
 const searchQuery = ref('');
 const filterStatus = ref('todos');
-const approvingUserId = ref(null);
+const changingUserId = ref(null);
 const editingUserId = ref(null);
 const editingValue = ref(0);
 
-const { getLoyaltyData, approveNivel, setReservas } = useLoyaltyManual();
+// demoteNivel todavía no existe en el store: si es undefined, handleDemote
+// avisa en vez de fallar.
+const { getLoyaltyData, approveNivel, demoteNivel, setReservas } = useLoyaltyManual();
 
-// Se incrementa cada vez que se aprueba un ascenso, para forzar a
-// processedUsers a recalcular (getLoyaltyData lee de localStorage,
-// que Vue no puede observar por sí solo).
+// Se incrementa cada vez que cambia algo, para forzar a processedUsers a
+// recalcular (getLoyaltyData lee de localStorage, que Vue no puede
+// observar por sí solo).
 const refreshKey = ref(0);
 
 const processedUsers = computed(() => {
@@ -39,8 +41,12 @@ const processedUsers = computed(() => {
 });
 
 const filteredUsers = computed(() => {
+  const query = searchQuery.value.toLowerCase();
   return processedUsers.value.filter((user) => {
-    const matchSearch = user.name?.toLowerCase().includes(searchQuery.value.toLowerCase()) || user.lastname?.toLowerCase().includes(searchQuery.value.toLowerCase()) || user.email?.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const matchSearch =
+      user.name?.toLowerCase().includes(query) ||
+      user.lastname?.toLowerCase().includes(query) ||
+      user.email?.toLowerCase().includes(query);
     const matchStatus = filterStatus.value === 'todos' || user.status === filterStatus.value;
     return matchSearch && matchStatus;
   });
@@ -64,6 +70,7 @@ const loadUsers = async () => {
   }
 };
 
+// ─── Editar reservas ──────────────────────────────────────────────────
 const startEditReservas = (user) => {
   editingUserId.value = user.uid;
   editingValue.value = user.loyalty.reservas;
@@ -80,18 +87,41 @@ const saveEditReservas = (user) => {
   refreshKey.value += 1;
 };
 
-const handleApprove = (user) => {
+// ─── Subir / bajar nivel ──────────────────────────────────────────────
+const esNivelMinimo = (user) => user.loyalty.nivel.includes('Bronce');
+const esNivelMaximo = (user) => user.loyalty.proximoNivel === 'Máximo nivel';
+
+const handlePromote = (user) => {
   const confirmado = window.confirm(
-    `¿Aprobar el ascenso de ${user.name} ${user.lastname ?? ''} a ${user.loyalty.proximoNivel}?`,
+    `¿Subir a ${user.name} ${user.lastname ?? ''} a ${user.loyalty.proximoNivel}?`,
   );
   if (!confirmado) return;
 
-  approvingUserId.value = user.uid;
+  changingUserId.value = user.uid;
   try {
     approveNivel(user.uid);
     refreshKey.value += 1;
   } finally {
-    approvingUserId.value = null;
+    changingUserId.value = null;
+  }
+};
+
+const handleDemote = (user) => {
+  if (typeof demoteNivel !== 'function') {
+    window.alert('Falta agregar demoteNivel en el store loyaltyManual.');
+    return;
+  }
+  const confirmado = window.confirm(
+    `¿Bajar a ${user.name} ${user.lastname ?? ''} un nivel desde ${user.loyalty.nivel}?`,
+  );
+  if (!confirmado) return;
+
+  changingUserId.value = user.uid;
+  try {
+    demoteNivel(user.uid);
+    refreshKey.value += 1;
+  } finally {
+    changingUserId.value = null;
   }
 };
 
@@ -116,7 +146,7 @@ onMounted(() => { loadUsers(); });
     <section class="loyalty-monitor">
       <div class="monitor-header">
         <h1>📊 Monitoreo de Loyalty</h1>
-        <p class="subtitle">Revisa el progreso de clientes y aprueba cambios de nivel</p>
+        <p class="subtitle">Revisa el progreso de clientes y cambia su nivel</p>
       </div>
       <div v-if="pendientesDeAprobacion > 0" class="pending-banner">
         🔔 Tienes <strong>{{ pendientesDeAprobacion }}</strong> {{ pendientesDeAprobacion === 1 ? 'usuario listo' : 'usuarios listos' }} para ascender de nivel.
@@ -166,33 +196,45 @@ onMounted(() => { loadUsers(); });
                 </div>
               </template>
               <template v-else>
-                <p class="reservas-count reservas-editable" title="Clic para ajustar manualmente" @click="startEditReservas(user)">
-                  {{ user.loyalty.reservas }} <span class="edit-icon">✎</span>
-                </p>
-                <p v-if="user.loyalty.proximoNivel !== 'Máximo nivel'" class="faltantes">
+                <p class="reservas-count">{{ user.loyalty.reservas }}</p>
+                <button type="button" class="edit-btn" @click="startEditReservas(user)">
+                  ✎ Editar compras
+                </button>
+                <p v-if="!esNivelMaximo(user)" class="faltantes">
                   {{ user.loyalty.reservasParaProximo > 0 ? `Faltan ${user.loyalty.reservasParaProximo}` : 'Listo para ascender' }}
                 </p>
               </template>
             </div>
-            <div v-if="user.loyalty.proximoNivel !== 'Máximo nivel'" class="level-box">
+            <div v-if="!esNivelMaximo(user)" class="level-box">
               <p class="label">Próximo</p>
               <span :class="['level-badge', getNivelBadgeClass(user.loyalty.proximoNivel)]">{{ user.loyalty.proximoNivel }}</span>
               <p class="discount">{{ user.loyalty.descuentoProximo }}%</p>
             </div>
           </div>
-          <div class="progress-section" v-if="user.loyalty.proximoNivel !== 'Máximo nivel'">
+          <div class="progress-section" v-if="!esNivelMaximo(user)">
             <div class="progress-bar">
               <div class="progress-fill" :style="{ width: `${user.porcentajeProgreso}%`, backgroundColor: getLevelColor(user.loyalty.nivel) }"></div>
             </div>
           </div>
-          <div v-if="user.status === 'listo'" class="action-area">
+          <div class="action-area">
             <button
+              v-if="!esNivelMinimo(user)"
+              type="button"
+              class="demote-btn"
+              :disabled="changingUserId === user.uid"
+              @click="handleDemote(user)"
+            >
+              ⬇ Bajar nivel
+            </button>
+            <button
+              v-if="!esNivelMaximo(user)"
               type="button"
               class="approve-btn"
-              :disabled="approvingUserId === user.uid"
-              @click="handleApprove(user)"
+              :class="{ 'is-ready': user.status === 'listo' }"
+              :disabled="changingUserId === user.uid"
+              @click="handlePromote(user)"
             >
-              {{ approvingUserId === user.uid ? 'Aprobando...' : `Aprobar ascenso a ${user.loyalty.proximoNivel}` }}
+              {{ changingUserId === user.uid ? 'Guardando...' : `⬆ Subir a ${user.loyalty.proximoNivel}` }}
             </button>
           </div>
         </article>
@@ -236,21 +278,26 @@ onMounted(() => { loadUsers(); });
 .badge-vip { background: rgba(155, 89, 182, 0.15); color: #6c3483; }
 .discount { margin: 4px 0 0; font-size: 0.85rem; color: #2D3E94; font-weight: 600; }
 .reservas-count { margin: 0; font-size: 1.2rem; font-weight: 700; color: #E91E81; }
-.reservas-editable { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
-.edit-icon { font-size: 0.7rem; opacity: 0.5; }
-.reservas-editable:hover .edit-icon { opacity: 1; }
 .reservas-input { width: 70px; padding: 4px 6px; border: 2px solid #2D3E94; border-radius: 4px; font-size: 1rem; font-weight: 700; color: #E91E81; }
 .edit-actions { display: flex; gap: 6px; margin-top: 6px; }
 .edit-save, .edit-cancel { padding: 4px 8px; border-radius: 4px; border: none; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
 .edit-save { background: #2D3E94; color: white; }
 .edit-cancel { background: #eee; color: #666; }
+.edit-btn { display: block; margin-top: 6px; padding: 6px 10px; background: #2D3E94; color: white; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(45, 62, 148, 0.3); }
+.edit-btn:hover { background: #E91E81; }
 .faltantes { margin: 4px 0 0; font-size: 0.8rem; color: #666; }
 .progress-section { margin-bottom: 10px; }
 .progress-bar { width: 100%; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
 .progress-fill { height: 100%; transition: width 0.3s ease; }
-.action-area { padding-top: 10px; border-top: 1px solid #FFD700; }
-.approve-btn { width: 100%; padding: 10px; background: #FFD700; color: #2D3E94; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+.action-area { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid #eee; }
+.approve-btn,
+.demote-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+.approve-btn { background: #e8ecff; color: #2D3E94; }
+.approve-btn.is-ready { background: #FFD700; }
 .approve-btn:hover:not(:disabled) { background: #FFC700; }
-.approve-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.demote-btn { background: #fff0f5; color: #c0144e; border: 2px solid #E91E81; }
+.demote-btn:hover:not(:disabled) { background: #E91E81; color: white; }
+.approve-btn:disabled,
+.demote-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 @media (max-width: 768px) { .users-grid { grid-template-columns: 1fr; } }
 </style>
