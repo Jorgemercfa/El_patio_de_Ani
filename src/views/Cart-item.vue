@@ -163,23 +163,23 @@ function buildWhatsAppMessage(items, total, totalWithDiscount, discount, discoun
     if (item.eventDetails) {
       const d = item.eventDetails;
       itemLines.push(
-        `   Responsable: ${d.responsable}`,
-        `   Dirección: ${d.direccion}, ${d.distrito}`,
-        `   Tipo de evento: ${d.tipoEvento}`,
-        `   Horario: ${d.horario}`,
-        `   Logística eléctrica: ${d.electrica}`,
-        `   Espacio: ${d.espacio} (${d.suelo})`,
-        `   Niños: ${d.invitados} (${d.edades})`,
-        `   Acceso: ${d.acceso}`,
-        `   Medidas: ${d.medida}${
+        `   👤 Responsable: ${d.responsable}`,
+        `   📍 Dirección: ${d.direccion}, ${d.distrito}`,
+        `   🎉 Tipo de evento: ${d.tipoEvento}`,
+        `   🕒 Horario: ${d.horario}`,
+        `   ⚡ Logística eléctrica: ${d.electrica}`,
+        `   📐 Espacio: ${d.espacio} (${d.suelo})`,
+        `   👧 Niños: ${d.invitados} (${d.edades})`,
+        `   🚪 Acceso: ${d.acceso}`,
+        `   📏 Medidas: ${d.medida}${
           d.telefonoMedida && d.telefonoMedida !== 'No indicado' ? ' - Tel: ' + d.telefonoMedida : ''
         }`,
       );
       if (d.modalidadInflable && d.modalidadInflable !== 'No aplica') {
-        itemLines.push(`   Modalidad: ${d.modalidadInflable}`);
+        itemLines.push(`   💦 Modalidad: ${d.modalidadInflable}`);
       }
       if (d.aguaConexion && d.aguaConexion !== 'No aplica') {
-        itemLines.push(`   Agua: ${d.aguaConexion} / Drenaje: ${d.aguaDrenaje}`);
+        itemLines.push(`   💧 Agua: ${d.aguaConexion} / Drenaje: ${d.aguaDrenaje}`);
       }
     }
 
@@ -187,7 +187,7 @@ function buildWhatsAppMessage(items, total, totalWithDiscount, discount, discoun
   });
 
   const parts = [
-    'Hola Ani, quiero reservar lo siguiente:',
+    '🎈Hola Ani 🤗, quiero reservar lo siguiente:',
     '',
     ...lines,
     '',
@@ -195,7 +195,7 @@ function buildWhatsAppMessage(items, total, totalWithDiscount, discount, discoun
   ];
 
   if (discount > 0) {
-    parts.push(`Descuento ${loyalty.nivel} (-${discount}%): -S/ ${discountAmt.toFixed(2)}`);
+    parts.push(`🏅 Descuento ${loyalty.nivel} (-${discount}%): -S/ ${discountAmt.toFixed(2)}`);
   }
 
   parts.push(`Total: S/ ${totalWithDiscount.toFixed(2)}`);
