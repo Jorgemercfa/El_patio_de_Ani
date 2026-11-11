@@ -1,3 +1,6 @@
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db, isFirebaseConfigured } from '@/firebase';
+
 export const NIVELES = [
   { nombre: '🥉 Bronce', minReservas: 0, descuento: 0 },
   { nombre: '🥈 Plata', minReservas: 3, descuento: 5 },
@@ -6,6 +9,7 @@ export const NIVELES = [
 ];
 
 const STORAGE_PREFIX = 'patio-loyalty-';
+const USERS_COLLECTION = 'user';
 
 const buildStorageKey = (userId) => `${STORAGE_PREFIX}${userId}`;
 
@@ -13,6 +17,14 @@ const normalizeReservas = (value) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
   return Math.max(0, Math.floor(parsed));
+};
+
+const normalizeSavedState = (value) => {
+  const source = value && typeof value === 'object' ? value : {};
+  return {
+    reservas: normalizeReservas(source.reservas ?? source.totalReservas ?? 0),
+    nivelAprobadoIndex: source.nivelAprobadoIndex ?? source.aprobadoNivel ?? 0,
+  };
 };
 
 const getNivelByReservas = (reservas) => {
@@ -56,7 +68,7 @@ const readLoyaltyReservas = (userId) => {
       return normalizeReservas(parsed);
     }
 
-    return normalizeReservas(parsed?.reservas);
+    return normalizeReservas(normalizeSavedState(parsed).reservas);
   } catch {
     return 0;
   }
@@ -64,10 +76,44 @@ const readLoyaltyReservas = (userId) => {
 
 const saveLoyaltyReservas = (userId, reservas) => {
   if (!userId) return;
-  localStorage.setItem(
-    buildStorageKey(userId),
-    JSON.stringify({ reservas: normalizeReservas(reservas) }),
-  );
+
+  const normalizedReservasValue = normalizeReservas(reservas);
+  const nextState = { reservas: normalizedReservasValue };
+  localStorage.setItem(buildStorageKey(userId), JSON.stringify(nextState));
+
+  if (isFirebaseConfigured && db) {
+    setDoc(
+      doc(db, USERS_COLLECTION, userId),
+      {
+        loyalty: {
+          ...nextState,
+          nivelAprobadoIndex: 0,
+        },
+      },
+      { merge: true },
+    ).catch((error) => {
+      console.warn('[Loyalty] No se pudo sincronizar la lealtad con Firestore:', error);
+    });
+  }
+};
+
+const hydrateLoyaltyStateFromFirestore = async (userId) => {
+  if (!userId || !isFirebaseConfigured || !db) return null;
+
+  try {
+    const userDoc = await getDoc(doc(db, USERS_COLLECTION, userId));
+    if (!userDoc.exists()) return null;
+
+    const userLoyalty = userDoc.data()?.loyalty;
+    if (!userLoyalty || typeof userLoyalty !== 'object') return null;
+
+    const hydratedState = normalizeSavedState(userLoyalty);
+    localStorage.setItem(buildStorageKey(userId), JSON.stringify(hydratedState));
+    return hydratedState;
+  } catch (error) {
+    console.warn('[Loyalty] No se pudo hidratar la lealtad desde Firestore:', error);
+    return null;
+  }
 };
 
 export function useLoyalty() {
@@ -80,11 +126,21 @@ export function useLoyalty() {
     return buildLoyaltyData(updatedReservas);
   };
 
+  const hydrateUserLoyalty = async (userId) => {
+    const hydrated = await hydrateLoyaltyStateFromFirestore(userId);
+    if (!hydrated) {
+      return { reservas: readLoyaltyReservas(userId) };
+    }
+
+    return hydrated;
+  };
+
   const getDescuento = (userId) => getLoyaltyData(userId).descuento;
 
   return {
     getLoyaltyData,
     addReserva,
+    hydrateUserLoyalty,
     getDescuento,
     NIVELES,
   };
