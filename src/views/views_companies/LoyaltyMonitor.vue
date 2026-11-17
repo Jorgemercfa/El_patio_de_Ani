@@ -145,8 +145,15 @@ onMounted(() => { loadUsers(); });
   <AdminLayout>
     <section class="loyalty-monitor">
       <div class="monitor-header">
-        <h1>📊 Monitoreo de Loyalty</h1>
-        <p class="subtitle">Revisa el progreso de clientes y cambia su nivel</p>
+        <div class="header-row">
+          <div>
+            <h1>📊 Monitoreo de Loyalty</h1>
+            <p class="subtitle">Revisa el progreso de clientes y cambia su nivel</p>
+          </div>
+          <router-link to="/Sign-up" class="signup-button">
+            ➕ Crear nuevo usuario
+          </router-link>
+        </div>
       </div>
       <div v-if="pendientesDeAprobacion > 0" class="pending-banner">
         🔔 Tienes <strong>{{ pendientesDeAprobacion }}</strong> {{ pendientesDeAprobacion === 1 ? 'usuario listo' : 'usuarios listos' }} para ascender de nivel.
@@ -248,6 +255,9 @@ onMounted(() => { loadUsers(); });
 .monitor-header { margin-bottom: 20px; }
 .monitor-header h1 { margin: 0 0 8px; color: #2D3E94; font-size: 1.6rem; }
 .subtitle { margin: 0; color: #666; font-size: 0.9rem; }
+.header-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.signup-button { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: #E91E81; color: white; border-radius: 8px; font-weight: 700; font-size: 0.9rem; text-decoration: none; box-shadow: 0 2px 8px rgba(233, 30, 129, 0.3); transition: background 0.2s; }
+.signup-button:hover { background: #2D3E94; }
 .pending-banner { background: #fff8e1; border: 2px solid #FFD700; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; color: #6c5300; font-size: 0.9rem; }
 .controls-area { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
 .search-input { padding: 10px 14px; border: 2px solid #E91E81; border-radius: 8px; font-size: 0.9rem; width: 100%; }
